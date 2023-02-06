@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/modules/Login/login_screen.dart';
+import 'package:mahdeko/network/cache_helper.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
 
@@ -22,9 +23,8 @@ class HomeLayout extends StatelessWidget {
           appBar: AppBar(
             leading: IconButton(icon:const Icon(Icons.logout),onPressed: (){
               FirebaseAuth.instance.signOut().whenComplete(() => {
-                // CacheHelper.sharedPreferences?.remove("id"),
-                // CacheHelper.sharedPreferences?.remove("adminCode"),
-                // CacheHelper.sharedPreferences!.clear()
+                CacheHelper.sharedPreferences?.remove("id"),
+                CacheHelper.sharedPreferences!.clear()
               }).whenComplete(() => {
                 navigatePushReplacement(context, const LoginScreen())
               });

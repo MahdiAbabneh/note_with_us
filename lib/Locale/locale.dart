@@ -29,7 +29,9 @@ class MyLocale implements Translations{
       "Gender":"جنس",
       "Please select gender":"يرجى تحديد الجنس",
       "Male":"ذكر",
-      "Female":"أنثى"
+      "Female":"أنثى",
+      "Successfully logged in":"تم تسجيل الدخول بنجاح",
+      "Create Account Failed Please Verify the Data Entered":"فشل إنشاء الحساب الرجاء التحقق من البيانات المدخلة"
     },
 
     "en" : {

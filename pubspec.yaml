@@ -50,6 +50,8 @@ dependencies:
   google_fonts: ^4.0.3
   circular_profile_avatar: ^2.0.5
   dropdown_button2: ^1.9.2
+  fluttertoast: ^8.1.2
+  conditional_builder_null_safety: ^0.0.6
 
 
 dev_dependencies:

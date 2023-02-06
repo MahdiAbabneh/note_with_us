@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 
 double responsive(context,mobile,tab){
@@ -15,3 +16,21 @@ void navigatePushReplacement(context, widget) => Navigator.pushReplacement(
   context,
   MaterialPageRoute(builder: (context) => widget),
 );
+
+Future<bool?> showToastSuccess(msg,context) => Fluttertoast.showToast(
+    msg: msg,
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.SNACKBAR,
+    timeInSecForIosWeb: 3,
+    backgroundColor: Theme.of(context).primaryColor,
+    textColor: Colors.white,
+    fontSize: responsive(context, 16.0, 24.0));
+
+Future<bool?> showToastFailed(msg,context) => Fluttertoast.showToast(
+    msg: msg,
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.SNACKBAR,
+    timeInSecForIosWeb: 3,
+    backgroundColor: Colors.red,
+    textColor: Colors.white,
+    fontSize:responsive(context, 16.0, 24.0));

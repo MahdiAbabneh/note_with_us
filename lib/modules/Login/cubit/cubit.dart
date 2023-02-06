@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/modules/Login/cubit/states.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mahdeko/network/cache_helper.dart';
 
 
 
@@ -20,9 +22,7 @@ class LoginCubit extends Cubit<LoginStates> {
         email: email,
         password: password)
         .then((value) {
-          print(value.user);
       emit(UserLoginSuccess());
-
     }).catchError((error) {
       emit(UserLoginError());
 
@@ -40,7 +40,27 @@ class LoginCubit extends Cubit<LoginStates> {
     emit(SocialChangePasswordVisibility());
   }
 
+  Future<UserCredential> signInWithGoogle() async {
+    emit(UserLoginLoading());
+    final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
+    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+    return await FirebaseAuth.instance.signInWithCredential(credential);
+}
 
-
+  void signInWithGoogleSuccess() async{
+    UserCredential userLoginGoogle=await signInWithGoogle();
+    if(userLoginGoogle.credential!.accessToken!=null)
+      {
+        emit(UserLoginSuccess());
+      }
+    else
+      {
+        emit(UserLoginError());
+      }
+  }
 
 }
