@@ -1,0 +1,2 @@
+String ?idForUser;
+int ? tokenForUser;

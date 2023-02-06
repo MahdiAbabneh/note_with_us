@@ -1,10 +1,13 @@
 import 'package:circular_profile_avatar/circular_profile_avatar.dart';
+import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:get/instance_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mahdeko/Compouents/adaptive_indicator.dart';
+import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/home_layout.dart';
@@ -26,14 +29,26 @@ class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    bool resCondition = MediaQuery.of(context).size.height < 430 || MediaQuery.of(context).size.width< 490;
+    //bool resCondition = MediaQuery.of(context).size.height < 430 || MediaQuery.of(context).size.width< 490;
     var cubit = LoginCubit.get(context);
     MyLocaleController controllerLang= Get.find();
     return BlocConsumer<LoginCubit, LoginStates>(
       listener: (context, state) {
         if(state is UserLoginSuccess)
           {
-            navigateTo(context, const HomeLayout());
+            CacheHelper.sharedPreferences?.clear().whenComplete(() =>
+                CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString()))
+                .whenComplete(() => {
+              idForUser = CacheHelper.getData(key:'id'),
+            })
+                .whenComplete(() => {
+              showToastSuccess(toast3.tr, context),
+            navigatePushReplacement(context, const HomeLayout())
+            });
+          }
+        if(state is UserLoginError)
+          {
+            showToastFailed(toast1.tr,context);
           }
       },
       builder: (context, state) {
@@ -148,18 +163,22 @@ class LoginScreen extends StatelessWidget {
 
                       SizedBox(width: double.infinity, child: Container(
                         height: 50,
-                        child:
-                        ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(
-                                0xFFC27D3C),
+                        child:ConditionalBuilder(
+                          fallback: (context) =>
+                              const Center(child: AdaptiveIndicator()),
+                          condition: state is! UserLoginLoading,
+                          builder:(context) => ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor:  const Color(
+                                  0xFFC27D3C),
+                              ), onPressed: () {
+                            if (formKey.currentState!.validate()) {
+                              cubit.loginForUser(context, emailController.text, passController.text);
+                            }
 
-                            ), onPressed: () {
-                          if (formKey.currentState!.validate()) {
-                         cubit.loginForUser(context, emailController.text, passController.text);
-                         }
+                          }, child:Text(loginText.tr, style:  TextStyle(
+                              fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),)),
+                        ),
 
-                        }, child:Text(loginText.tr, style:  TextStyle(
-                            fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),)),
                       )),
                       const SizedBox(height: 10,),
                       Stack(alignment: Alignment.center,children:[
@@ -186,10 +205,8 @@ class LoginScreen extends StatelessWidget {
                           foregroundColor: Theme.of(context).primaryColor,
                           cacheImage: true,
                           onTap: () async{
-                            UserCredential userLoginGoogle=await signInWithGoogle();
-                            print(userLoginGoogle.credential!.accessToken);
+                            cubit.signInWithGoogle().whenComplete(() => cubit.signInWithGoogleSuccess());
                           },
-                          // sets on tap
                           showInitialTextAbovePicture: true,
                           child: Image.asset(
                             "assets/images/google.png",
@@ -232,22 +249,6 @@ class LoginScreen extends StatelessWidget {
 
       },
     );
-  }
-  Future<UserCredential> signInWithGoogle() async {
-    // Trigger the authentication flow
-    final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
-
-    // Obtain the auth details from the request
-    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-
-    // Create a new credential
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth?.accessToken,
-      idToken: googleAuth?.idToken,
-    );
-
-    // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(credential);
   }
 
 }

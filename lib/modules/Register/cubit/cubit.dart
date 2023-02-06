@@ -20,7 +20,6 @@ class RegisterCubit extends Cubit<RegisterStates> {
     await FirebaseAuth.instance
         .createUserWithEmailAndPassword(email: email, password: password)
         .then((value) {
-          print(value.user);
       // FirebaseMessaging.instance.getToken().then((userValue) {
       //   UserDataModel model = UserDataModel(
       //     uId: value.user!.uid,
@@ -41,13 +40,11 @@ class RegisterCubit extends Cubit<RegisterStates> {
       // }).catchError((error) {
       //   emit(UserRegisterError());
       //
-      //   // showToastFailed("فشل في عملية تسجيل الدخول الرجاء التأكد من البيانات المدخلة");
+      //
       // });
+         emit(UserRegisterSuccess());
     }).catchError((error) {
-      print(error.toString());
       emit(UserRegisterError());
-
-      // showToastFailed("فشل في عملية تسجيل الدخول الرجاء التأكد من البيانات المدخلة");
     });
   }
 

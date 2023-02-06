@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
+import 'Compouents/constant_empty.dart';
 import 'Layout/Home/cubit/cubit.dart';
+import 'Layout/Home/home_layout.dart';
 import 'Locale/locale.dart';
 import 'bloc_observer.dart';
 import 'modules/Login/cubit/cubit.dart';
@@ -21,21 +23,38 @@ void main() async{
   await Firebase.initializeApp();
   await CacheHelper.init();
   Bloc.observer = AppBlocObserver();
-  runApp(const MyApp());
+  //CacheHelper.sharedPreferences!.clear();
+
+
+  Widget? widget;
+  idForUser = CacheHelper.getData(key:'id');
+  if (kDebugMode) {
+    print(idForUser);
+  }
+
+  if (idForUser != null){
+    widget = const HomeLayout();}
+ else{
+    widget = const LoginScreen();
+  }
+
+  runApp(MyApp(startWidget: widget));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Widget? startWidget;
+  const MyApp({super.key,
+    this.startWidget,
+  });
+  // This widget is the root of your application.
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-
       providers: [
         BlocProvider(create: (BuildContext context) => LoginCubit()),
         BlocProvider(create: (BuildContext context) => RegisterCubit()),
         BlocProvider(create: (BuildContext context) => HomeCubit()),
-
       ],
       child: BlocConsumer<LoginCubit,LoginStates>(
         listener: (context, state) {},
@@ -74,7 +93,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             locale: controllerLang.initialLang,
             translations:MyLocale(),
-            home: const LoginScreen(),
+            home:startWidget,
           );
         },
       ),

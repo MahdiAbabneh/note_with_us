@@ -1,12 +1,17 @@
+import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mahdeko/Compouents/adaptive_indicator.dart';
+import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/home_layout.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
+import 'package:mahdeko/network/cache_helper.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
 
@@ -27,7 +32,19 @@ class RegisterScreen extends StatelessWidget {
       listener: (context, state) {
         if(state is UserRegisterSuccess)
         {
-        navigateTo(context, const HomeLayout());
+          CacheHelper.sharedPreferences?.clear().whenComplete(() =>
+              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString()))
+              .whenComplete(() => {
+            idForUser = CacheHelper.getData(key:'id'),
+          })
+              .whenComplete(() => {
+            showToastSuccess(toast2.tr, context),
+            navigatePushReplacement(context, const HomeLayout())
+          });
+        }
+        if(state is UserRegisterError)
+        {
+          showToastFailed(toast4.tr,context);
         }
       },
       builder: (context, state) {
@@ -261,22 +278,28 @@ class RegisterScreen extends StatelessWidget {
                       const SizedBox(height: 40,),
                       SizedBox(width: double.infinity,child: SizedBox(
                         height: 50,
-                        child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor,
+                        child:ConditionalBuilder(
+                          fallback: (context) =>
+                          const Center(child: AdaptiveIndicator()),
+                          condition: state is! UserRegisterLoading,
+                          builder:(context) =>   ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor,
 
-                            ),onPressed: (){
+                              ),onPressed: (){
 
-                          if (formKey.currentState!.validate()) {
-                            cubit.registerForUser(emailController.text, passwordController.text);
-                            print(emailController.text);
-                            print(passwordController.text);
+                            if (formKey.currentState!.validate()) {
+                              cubit.registerForUser(emailController.text, passwordController.text);
+                              print(emailController.text);
+                              print(passwordController.text);
 
-                          }
+                            }
 
 
-                        },
-                            child:
-                            Text(createAccount.tr,style: TextStyle(fontWeight: FontWeight.bold,fontSize:  responsive(context, 14.0, 18.0)),)),
+                          },
+                              child:
+                              Text(createAccount.tr,style: TextStyle(fontWeight: FontWeight.bold,fontSize:  responsive(context, 14.0, 18.0)),)),
+                        ),
+
                       )),
 
 

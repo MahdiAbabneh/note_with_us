@@ -25,6 +25,8 @@ const String confirmation="Confirmation code";
 
 const String toast1="Login Failed Please Verify the Data Entered";
 
+const String toast4="Create Account Failed Please Verify the Data Entered";
+
 const String noHave="Don't have an account ? ";
 
 const String noHave2=" Create an account";
@@ -57,4 +59,6 @@ const String or="OR";
 const String male="Male";
 
 const String female="Female";
+
+const String toast3="Successfully logged in";
 
