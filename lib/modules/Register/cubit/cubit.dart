@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/models/user_data_model.dart';
 import 'package:mahdeko/modules/Register/cubit/states.dart';
 
@@ -20,31 +22,27 @@ class RegisterCubit extends Cubit<RegisterStates> {
     await FirebaseAuth.instance
         .createUserWithEmailAndPassword(email: email, password: password)
         .then((value) {
-      // FirebaseMessaging.instance.getToken().then((userValue) {
-      //   UserDataModel model = UserDataModel(
-      //     uId: value.user!.uid,
-      //     email: emailController.text,
-      //     username: userNameController.text,
-      //     image: '',
-      //     token: userValue!,
-      //     dateOfBirth: '',
-      //     phoneNumber: '',
-      //     gender: selectedGenderValue,
-      //     //token: value!!,
-      //   );
-      //   FirebaseFirestore.instance
-      //       .collection('users')
-      //       .doc(value.user!.uid)
-      //       .set(model.toJson());
-      //   emit(UserRegisterSuccess());
-      // }).catchError((error) {
-      //   emit(UserRegisterError());
-      //
-      //
-      // });
-         emit(UserRegisterSuccess());
-    }).catchError((error) {
-      emit(UserRegisterError());
+      FirebaseMessaging.instance.getToken().then((userValue) {
+        UserDataModel model = UserDataModel(
+          uId: value.user!.uid,
+          email: emailController.text,
+          username: userNameController.text,
+          image: '',
+          token: userValue!,
+          dateOfBirth: '',
+          phoneNumber: '',
+          gender: selectedGenderValue,
+        );
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(value.user!.uid)
+            .set(model.toJson());
+        emit(UserRegisterSuccess());
+      }).catchError((error) {
+        emit(UserRegisterError());
+
+
+      });
     });
   }
 
@@ -68,6 +66,5 @@ class RegisterCubit extends Cubit<RegisterStates> {
     emit(SocialChangeConfirmPasswordVisibility());
   }
 
-  String? selectedGenderValue;
 
 }

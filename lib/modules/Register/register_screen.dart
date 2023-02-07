@@ -118,7 +118,7 @@ class RegisterScreen extends StatelessWidget {
                           }
                           return null;
                         },
-                        onChanged: (value) { cubit.selectedGenderValue = value.toString();},
+                        onChanged: (value) { selectedGenderValue = value.toString();},
                       ),
                       const SizedBox(height: 20,),
                       TextFormField(

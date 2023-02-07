@@ -62,3 +62,23 @@ const String female="Female";
 
 const String toast3="Successfully logged in";
 
+const String homepage="Home";
+
+const String createNoteText="Create a note";
+
+const String personalPage="Personal";
+
+const String usersText="Users";
+
+const String notificationText="Notification";
+
+const String logoutText="Logout";
+
+const String likeText="Like";
+
+const String commentText="Comment";
+
+// const String homepage="Home page";
+// const String homepage="Home page";
+// const String homepage="Home page";
+

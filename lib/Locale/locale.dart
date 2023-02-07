@@ -31,7 +31,15 @@ class MyLocale implements Translations{
       "Male":"ذكر",
       "Female":"أنثى",
       "Successfully logged in":"تم تسجيل الدخول بنجاح",
-      "Create Account Failed Please Verify the Data Entered":"فشل إنشاء الحساب الرجاء التحقق من البيانات المدخلة"
+      "Create Account Failed Please Verify the Data Entered":"فشل إنشاء الحساب الرجاء التحقق من البيانات المدخلة",
+      "Home ":"الرئيسية",
+      "Create a note":"إنشاء ملاحظة",
+      "Personal":"الشخصية",
+      "Users":"المستخدمين",
+      "Notification":"الإشعارات",
+      "Logout":"تسجيل خروج",
+      "Like":"اعجبني",
+      "Comment":"تعليق",
     },
 
     "en" : {
