@@ -1,5 +1,6 @@
 import 'package:circular_profile_avatar/circular_profile_avatar.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:get/instance_manager.dart';
@@ -12,17 +13,14 @@ import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/home_layout.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
+import 'package:mahdeko/modules/Login/login_google_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 import '../Register/register_screen.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
 
 
-var emailController = TextEditingController();
-var passController = TextEditingController();
-var adminController = TextEditingController();
 
-final formKey = GlobalKey<FormState>();
 
 
 class LoginScreen extends StatelessWidget {
@@ -50,6 +48,17 @@ class LoginScreen extends StatelessWidget {
           {
             showToastFailed(toast1.tr,context);
           }
+        if(state is UserLoginGoogleSuccess)
+        {
+          CacheHelper.sharedPreferences?.clear().whenComplete(() =>
+              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString()))
+              .whenComplete(() => {
+            idForUser = CacheHelper.getData(key:'id'),
+          })
+              .whenComplete(() => {
+            navigatePushReplacement(context, const LoginGoogleScreen())
+          });
+        }
       },
       builder: (context, state) {
         return Scaffold(
@@ -85,161 +94,157 @@ class LoginScreen extends StatelessWidget {
                   child: Image.asset("assets/images/NWU.png",),
                 ),
                 const SizedBox(height: 50,),
-                Form(
-                  key: formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        cursorColor: const Color(
-                            0xFFC27D3C),
-                        controller: emailController,
-                        keyboardType:
-                        TextInputType.emailAddress,
-                        textInputAction:
-                        TextInputAction.newline,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.email, color: Color(
+                Column(
+                  children: [
+                    TextFormField(
+                      cursorColor: const Color(
+                          0xFFC27D3C),
+                      controller: emailLoginController,
+                      keyboardType:
+                      TextInputType.emailAddress,
+                      textInputAction:
+                      TextInputAction.newline,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.email, color: Color(
+                            0xFFC27D3C),),
+                        labelStyle: TextStyle(
+                            color: Colors.grey,
+                            fontSize: responsive(context, 14.0, 18.0)),
+                        contentPadding: const EdgeInsets.only(right: 10),
+                        labelText: email.tr,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          borderSide: const BorderSide(color:  Color(
+                              0xFFC27D3C),),),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          borderSide: const BorderSide(color:  Color(
                               0xFFC27D3C),),
-                          labelStyle: TextStyle(
-                              color: Colors.grey,
-                              fontSize: responsive(context, 14.0, 18.0)),
-                          contentPadding: const EdgeInsets.only(right: 10),
-                          labelText: email.tr,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(color:  Color(
-                                0xFFC27D3C),),),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(color:  Color(
-                                0xFFC27D3C),),
-                          ),
                         ),
-                        style: const TextStyle(
-                            fontSize: 20.0,
-                            color: Colors.black),
-                      ), //
+                      ),
+                      style: const TextStyle(
+                          fontSize: 20.0,
+                          color: Colors.black),
+                    ), //
 
-                      const SizedBox(height: 20,),
-                      TextFormField(
-                        controller: passController,
-                        cursorColor: const Color(
-                            0xFFC27D3C),
-                        keyboardType:
-                        TextInputType.visiblePassword,
-                        obscureText: cubit.isPassword,
-                        textInputAction:
-                        TextInputAction.newline,
-                        decoration: InputDecoration(
-                          suffixIcon: InkWell(
-                              onTap: () {
-                               cubit.changePasswordVisibility();
-                              },
-                              child: Icon(cubit.suffixPassword, color: Theme.of(context).primaryColor,)),
-                          prefixIcon: const Icon(Icons.lock, color: Color(
-                              0xFFC27D3C),),
-
-                          labelStyle:  TextStyle(
-                              color: Colors.grey,
-                              fontSize:  responsive(context, 14.0, 18.0)),
-                          contentPadding: const EdgeInsets.only(right: 10),
-                          labelText: password.tr,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(color: Color(
-                                0xFFC27D3C),),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(color:  Color(
-                                0xFFC27D3C),),
-                          ),
-                        ),
-                        style: const TextStyle(
-                            fontSize: 20.0,
-                            color: Colors.black),
-                      ), //
-                      const SizedBox(height: 20,),
-
-                      SizedBox(width: double.infinity, child: Container(
-                        height: 50,
-                        child:ConditionalBuilder(
-                          fallback: (context) =>
-                              const Center(child: AdaptiveIndicator()),
-                          condition: state is! UserLoginLoading,
-                          builder:(context) => ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor:  const Color(
-                                  0xFFC27D3C),
-                              ), onPressed: () {
-                            if (formKey.currentState!.validate()) {
-                              cubit.loginForUser(context, emailController.text, passController.text);
-                            }
-
-                          }, child:Text(loginText.tr, style:  TextStyle(
-                              fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),)),
-                        ),
-
-                      )),
-                      const SizedBox(height: 10,),
-                      Stack(alignment: Alignment.center,children:[
-                        const Divider(thickness: 1),
-                          CircleAvatar(
-                            radius: responsive(context, 17.0, 34.0),
-                            backgroundColor: Theme.of(context).primaryColor,
-                            child: Text(
-                              or.tr,
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: responsive(context, 12.0, 24.0)),
-                            ),
-                          )
-                        ] ),
-                      const SizedBox(height: 15,),
-                        CircularProfileAvatar(
-                          "",
-                          radius: responsive(context, 20.0, 40.0),
-                          backgroundColor: Colors.transparent,
-                          borderWidth: 1,
-                          borderColor: Theme.of(context).primaryColor,
-                          elevation: 3.0,
-                          foregroundColor: Theme.of(context).primaryColor,
-                          cacheImage: true,
-                          onTap: () async{
-                            cubit.signInWithGoogle().whenComplete(() => cubit.signInWithGoogleSuccess());
-                          },
-                          showInitialTextAbovePicture: true,
-                          child: Image.asset(
-                            "assets/images/google.png",
-                            height: responsive(context, 20.0, 40.0),
-                          ),
-                        ),
-
-                        Padding(
-                        padding: EdgeInsets.only(top: MediaQuery
-                            .of(context)
-                            .padding
-                            .top),
-                        child: Row(crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              noHave.tr, style:  TextStyle(
-                                fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),),
-                            InkWell(onTap: (){
-                               navigateTo(context, const RegisterScreen());
+                    const SizedBox(height: 20,),
+                    TextFormField(
+                      controller: passController,
+                      cursorColor: const Color(
+                          0xFFC27D3C),
+                      keyboardType:
+                      TextInputType.visiblePassword,
+                      obscureText: cubit.isPassword,
+                      textInputAction:
+                      TextInputAction.newline,
+                      decoration: InputDecoration(
+                        suffixIcon: InkWell(
+                            onTap: () {
+                             cubit.changePasswordVisibility();
                             },
-                              child: Text(
-                                noHave2.tr, style:  TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0),color: const Color(
-                                  0xFFC27D3C),),),
-                            ),
+                            child: Icon(cubit.suffixPassword, color: Theme.of(context).primaryColor,)),
+                        prefixIcon: const Icon(Icons.lock, color: Color(
+                            0xFFC27D3C),),
 
-                          ],
+                        labelStyle:  TextStyle(
+                            color: Colors.grey,
+                            fontSize:  responsive(context, 14.0, 18.0)),
+                        contentPadding: const EdgeInsets.only(right: 10),
+                        labelText: password.tr,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          borderSide: const BorderSide(color: Color(
+                              0xFFC27D3C),),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                          borderSide: const BorderSide(color:  Color(
+                              0xFFC27D3C),),
+                        ),
+                      ),
+                      style: const TextStyle(
+                          fontSize: 20.0,
+                          color: Colors.black),
+                    ), //
+                    const SizedBox(height: 20,),
+
+                    SizedBox(width: double.infinity, child: Container(
+                      height: 50,
+                      child:ConditionalBuilder(
+                        fallback: (context) =>
+                            const Center(child: AdaptiveIndicator()),
+                        condition:state is! UserLoginLoading,
+                        builder:(context) => ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor:  const Color(
+                                0xFFC27D3C),
+                            ), onPressed: () {
+                            cubit.loginForUser(context, emailLoginController.text, passController.text);
+
+
+                        }, child:Text(loginText.tr, style:  TextStyle(
+                            fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),)),
+                      ),
+
+                    )),
+                    const SizedBox(height: 10,),
+                    Stack(alignment: Alignment.center,children:[
+                      const Divider(thickness: 1),
+                        CircleAvatar(
+                          radius: responsive(context, 17.0, 34.0),
+                          backgroundColor: Theme.of(context).primaryColor,
+                          child: Text(
+                            or.tr,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: responsive(context, 12.0, 24.0)),
+                          ),
+                        )
+                      ] ),
+                    const SizedBox(height: 15,),
+                      CircularProfileAvatar(
+                        "",
+                        radius: responsive(context, 20.0, 40.0),
+                        backgroundColor: Colors.transparent,
+                        borderWidth: 1,
+                        borderColor: Theme.of(context).primaryColor,
+                        elevation: 3.0,
+                        foregroundColor: Theme.of(context).primaryColor,
+                        cacheImage: true,
+                        onTap: () async{
+                          cubit.userLoginGoogle=await cubit.signInWithGoogle();
+                        },
+                        showInitialTextAbovePicture: true,
+                        child: Image.asset(
+                          "assets/images/google.png",
+                          height: responsive(context, 20.0, 40.0),
                         ),
                       ),
 
-                    ],
-                  ),
+                      Padding(
+                      padding: EdgeInsets.only(top: MediaQuery
+                          .of(context)
+                          .padding
+                          .top),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            noHave.tr, style:  TextStyle(
+                              fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),),
+                          InkWell(onTap: (){
+                             navigateTo(context, const RegisterScreen());
+                          },
+                            child: Text(
+                              noHave2.tr, style:  TextStyle(
+                                fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0),color: const Color(
+                                0xFFC27D3C),),),
+                          ),
+
+                        ],
+                      ),
+                    ),
+
+                  ],
                 )
               ],),
             ),

@@ -15,12 +15,7 @@ import 'package:mahdeko/network/cache_helper.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
 
-TextEditingController userNameController = TextEditingController();
-TextEditingController emailController = TextEditingController();
-TextEditingController passwordController = TextEditingController();
-TextEditingController confirmPasswordController = TextEditingController();
 
-final formKey = GlobalKey<FormState>();
 
 
 class RegisterScreen extends StatelessWidget {
@@ -57,14 +52,14 @@ class RegisterScreen extends StatelessWidget {
               child: Column(children: [
                 const SizedBox(height: 10,),
                 Container(
-                  height: responsive(context, 180.0, 400.0),
+                  height: responsive(context, 120.0, 240.0),
                   color: Colors.white,
                   width: double.infinity,
                   child: Image.asset("assets/images/NWU2.png"),
                 ),
                 const SizedBox(height: 30),
                 Form(
-                  key: formKey,
+                  key: JosKeys.formKeyRegister,
                   child: Column(
                     children: [
                       DropdownButtonFormField2(
@@ -118,7 +113,48 @@ class RegisterScreen extends StatelessWidget {
                           }
                           return null;
                         },
-                        onChanged: (value) { selectedGenderValue = value.toString();},
+                        onChanged: (value) { selectedGenderRegisterValue = value.toString();},
+                      ),
+                      const SizedBox(height: 20,),
+                      TextFormField(
+                        onTap: (){
+                          cubit.selectDateRegister(context);
+                        },
+                        readOnly: true,
+                        controller: dateOfBirthRegisterController,
+                        validator: (value) {
+                          if(value!.isEmpty){
+                            return regex6.tr;
+                          }else{
+                            return null;
+                          }
+                        },
+                        cursorColor: Theme.of(context).primaryColor,
+                        keyboardType:
+                        TextInputType.text,
+                        textInputAction:
+                        TextInputAction.newline,
+                        decoration:  InputDecoration(
+                          errorMaxLines: 2,
+                          prefixIcon: Icon(Icons.date_range,color:Theme.of(context).primaryColor,),
+
+                          labelStyle: TextStyle(
+                              color: Colors.grey,
+                              fontSize:  responsive(context, 14.0, 18.0)),
+                          contentPadding: const EdgeInsets.only(right: 10),
+                          labelText: (dateOfBirthText.tr),
+                          border:  OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide: BorderSide(color:Theme.of(context).primaryColor,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide: BorderSide(color: Theme.of(context).primaryColor,),
+                          ),
+                        ),
+                        style: const TextStyle(
+                            fontSize: 20.0,
+                            color: Colors.black),
                       ),
                       const SizedBox(height: 20,),
                       TextFormField(
@@ -156,10 +192,10 @@ class RegisterScreen extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 20.0,
                             color: Colors.black),
-                      ),//
+                      ),
                       const SizedBox(height: 20,),
                       TextFormField(
-                        controller: emailController,
+                        controller: emailRegisterController,
                         validator: (value) {
                           if (value!.isEmpty) {
                             return regex2.tr;
@@ -287,14 +323,9 @@ class RegisterScreen extends StatelessWidget {
 
                               ),onPressed: (){
 
-                            if (formKey.currentState!.validate()) {
-                              cubit.registerForUser(emailController.text, passwordController.text);
-                              print(emailController.text);
-                              print(passwordController.text);
-
+                            if (JosKeys.formKeyRegister.currentState!.validate()) {
+                              cubit.registerForUser(emailRegisterController.text, passwordController.text);
                             }
-
-
                           },
                               child:
                               Text(createAccount.tr,style: TextStyle(fontWeight: FontWeight.bold,fontSize:  responsive(context, 14.0, 18.0)),)),

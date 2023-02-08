@@ -42,6 +42,8 @@ const String genderText="Gender";
 
 const String userNameText="User Name";
 
+const String dateOfBirthText="Date Of Birth";
+
 const String regex2="email address must not be empty";
 
 const String regex3="Password must be a minimum of 6 characters and a maximum of 10 characters";
@@ -49,6 +51,8 @@ const String regex3="Password must be a minimum of 6 characters and a maximum of
 const String regex4="Password is incorrect";
 
 const String regex5="Please select gender";
+
+const String regex6="Date Of Birth can't be empty";
 
 const String confirmPasswordText="Confirm Password";
 
@@ -78,7 +82,7 @@ const String likeText="Like";
 
 const String commentText="Comment";
 
-// const String homepage="Home page";
+const String loginProcess="To complete the login process, please fill in the following information:";
 // const String homepage="Home page";
 // const String homepage="Home page";
 

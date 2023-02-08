@@ -40,6 +40,10 @@ class MyLocale implements Translations{
       "Logout":"تسجيل خروج",
       "Like":"اعجبني",
       "Comment":"تعليق",
+      "Date Of Birth can't be empty":"لا يمكن ترك تاريخ الميلاد فارغًا",
+      "Date Of Birth":"تاريخ الميلاد",
+      "To complete the login process, please fill in the following information:":"لإكمال عملية تسجيل الدخول ، يرجى ملء المعلومات التالية:",
+
     },
 
     "en" : {

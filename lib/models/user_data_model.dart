@@ -8,6 +8,7 @@ class UserDataModel {
     this.phoneNumber,
     this.dateOfBirth,
     this.gender,
+    this.location,
   });
 
   String? uId;
@@ -18,6 +19,7 @@ class UserDataModel {
   String? phoneNumber;
   String?dateOfBirth;
   String?gender;
+  String?location;
 
 
   UserDataModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class UserDataModel {
     phoneNumber = json['phoneNumber'] ?? '';
     dateOfBirth = json['dateOfBirth'] ?? '';
     gender = json['gender'] ?? '';
+    location = json['location'] ?? '';
   }
 
   Map<String, dynamic> toJson() {
@@ -41,6 +44,7 @@ class UserDataModel {
       'phoneNumber': phoneNumber,
       'dateOfBirth': dateOfBirth,
       'gender': gender,
+      'location':location
 
     };
   }

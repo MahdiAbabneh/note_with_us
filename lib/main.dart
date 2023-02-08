@@ -46,7 +46,6 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key,
     this.startWidget,
   });
-  // This widget is the root of your application.
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +61,7 @@ class MyApp extends StatelessWidget {
           MyLocaleController controllerLang= Get.put(MyLocaleController());
           return GetMaterialApp(
             theme: ThemeData(
-                textTheme: GoogleFonts.almaraiTextTheme(Theme.of(context).textTheme),
+                fontFamily:CacheHelper.getData(key:"lang")=="ar"?"Almarai":"mali",
                 primaryColor: const Color(0xFFC27D3C),
                 appBarTheme: const AppBarTheme(
                   backgroundColor:Color(0xFFC27D3C),
@@ -70,11 +69,6 @@ class MyApp extends StatelessWidget {
                   // ignore: deprecated_member_use
                   backwardsCompatibility: false,
                   elevation: 0.0,
-                  titleTextStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
-                  ),
                   iconTheme: IconThemeData(
                     color: Colors.white,
                   ),
@@ -87,9 +81,8 @@ class MyApp extends StatelessWidget {
                   selectedItemColor:  Color(0xFFC27D3C),
                   unselectedItemColor: Colors.grey,
                   elevation: 20.0,
-                  // backgroundColor: Colors.black('333739'),
                 )),
-            title: "Note Day",
+            title: "Note with us ",
             debugShowCheckedModeBanner: false,
             locale: controllerLang.initialLang,
             translations:MyLocale(),
