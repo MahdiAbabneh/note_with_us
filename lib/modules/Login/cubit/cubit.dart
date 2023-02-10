@@ -23,9 +23,9 @@ class LoginCubit extends Cubit<LoginStates> {
 
   static LoginCubit get(context) => BlocProvider.of(context);
 
-  void loginForUser(context,String email, String password) {
+  Future<void> loginForUser(context,String email, String password)async {
     emit(UserLoginLoading());
-    FirebaseAuth.instance
+    await FirebaseAuth.instance
         .signInWithEmailAndPassword(
         email: email,
         password: password)
@@ -47,34 +47,39 @@ class LoginCubit extends Cubit<LoginStates> {
   }
 
   UserCredential? userLoginGoogle;
-  UserDataModel? user;
-  Future<UserCredential> signInWithGoogle() async {
-    emit(UserLoginLoading());
-    final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
-    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth?.accessToken,
-      idToken: googleAuth?.idToken,
-    );
-    return await FirebaseAuth.instance.signInWithCredential(credential).whenComplete(() {
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid).get().then((value) {
-           //user = UserDataModel.fromJson(value.data()!);
-            if(value.data()==null)
-              {
-                emit(UserLoginGoogleSuccess());
-              }
-            else{
-              emit(UserLoginSuccess());
-            }
+
+  Future<UserCredential?> signInWithGoogle() async {
+    try{
+      emit(UserLoginLoading());
+      final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
+      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+      return await FirebaseAuth.instance.signInWithCredential(credential).whenComplete(() {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser!.uid).get().then((value) {
+          //user = UserDataModel.fromJson(value.data()!);
+          if(value.data()==null)
+          {
+            emit(UserLoginGoogleSuccess());
+          }
+          else{
+            emit(UserLoginSuccess());
+          }
+        });
       });
-    });
+    }catch(e){
+      emit(UserLoginError());
+    }
+    return  null;
 }
 
-  void signInWithGoogleSuccess() async{
+  Future<void> signInWithGoogleSuccess() async{
     emit(UserLoginLoading());
-    FirebaseMessaging.instance.getToken().then((userValue) {
+   await FirebaseMessaging.instance.getToken().then((userValue) {
           UserDataModel model = UserDataModel(
             uId: userLoginGoogle?.user!.uid,
             email: userLoginGoogle?.user!.email,
@@ -83,7 +88,7 @@ class LoginCubit extends Cubit<LoginStates> {
             token: userValue!,
             dateOfBirth: dateOfBirthLoginController.text,
             phoneNumber: '',
-            gender: selectedGenderLoginValue=="ذكر"?"Male":selectedGenderLoginValue=="أنثى"?"":"Female",
+            gender: selectedGenderLoginValue=="ذكر"?"Male":selectedGenderLoginValue=="أنثى"?"Female":selectedGenderLoginValue,
             location: ''
           );
           FirebaseFirestore.instance

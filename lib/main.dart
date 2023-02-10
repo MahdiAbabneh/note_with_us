@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
 import 'Compouents/constant_empty.dart';
@@ -38,7 +39,7 @@ void main() async{
     widget = const LoginScreen();
   }
 
-  runApp(MyApp(startWidget: widget));
+  runApp(Phoenix(child: MyApp(startWidget: widget)));
 }
 
 class MyApp extends StatelessWidget {
@@ -53,7 +54,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (BuildContext context) => LoginCubit()),
         BlocProvider(create: (BuildContext context) => RegisterCubit()),
-        BlocProvider(create: (BuildContext context) => HomeCubit()),
+        BlocProvider(create: (BuildContext context) => HomeCubit()..getUserData()),
       ],
       child: BlocConsumer<LoginCubit,LoginStates>(
         listener: (context, state) {},

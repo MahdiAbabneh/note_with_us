@@ -83,6 +83,17 @@ const String likeText="Like";
 const String commentText="Comment";
 
 const String loginProcess="To complete the login process, please fill in the following information:";
-// const String homepage="Home page";
-// const String homepage="Home page";
+
+const String regex7="PhoneNumber must 10 numbers";
+
+const String phoneText="Phone";
+
+const String addressText="Address";
+
+const String years="years";
+
+const String save="Save";
+
+const String back="Back";
+
 

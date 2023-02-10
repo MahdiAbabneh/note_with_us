@@ -2,6 +2,7 @@ import 'package:circular_profile_avatar/circular_profile_avatar.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:get/get.dart';
 import 'package:get/instance_manager.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class LoginGoogleScreen extends StatelessWidget {
       listener: (context, state) {
         if(state is UserLoginGoogleInfoSuccess)
           {
+            Phoenix.rebirth(Get.context!);
             navigatePushReplacement(context, const HomeLayout());
             showToastSuccess(toast3.tr, context);
         }

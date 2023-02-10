@@ -5,6 +5,11 @@ int ? tokenForUser;
 String? selectedGenderRegisterValue;
 String? selectedGenderLoginValue;
 
+String? usernameData;
+String? dateOfBirthData;
+String? genderData;
+String? phoneNumberData;
+String? addressData;
 
 //Register
 TextEditingController userNameController = TextEditingController();
@@ -19,10 +24,18 @@ TextEditingController dateOfBirthLoginController = TextEditingController();
 TextEditingController emailLoginController = TextEditingController();
 TextEditingController passController = TextEditingController();
 
+//profile
+TextEditingController userNameProfileController = TextEditingController(text: usernameData);
+TextEditingController userPhoneProfileController = TextEditingController(text:phoneNumberData );
+TextEditingController userAddressProfileController = TextEditingController(text:addressData );
+
+
+
 class JosKeys {
   static final formKeyRegister = GlobalKey<FormState>();
   static final formKeyLogin = GlobalKey<FormState>();
-
+  static final formKeyUserNameProfile = GlobalKey<FormState>();
+  static final formKeyPhoneNumberProfile = GlobalKey<FormState>();
 }
 
 

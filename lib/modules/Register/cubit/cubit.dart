@@ -22,32 +22,37 @@ class RegisterCubit extends Cubit<RegisterStates> {
 
   Future<void> registerForUser(String email, String password) async {
     emit(UserRegisterLoading());
-    await FirebaseAuth.instance
-        .createUserWithEmailAndPassword(email: email, password: password)
-        .then((value) {
-      FirebaseMessaging.instance.getToken().then((userValue) {
-        UserDataModel model = UserDataModel(
-          uId: value.user!.uid,
-          email: emailRegisterController.text,
-          username: userNameController.text,
-          image: '',
-          token: userValue!,
-          dateOfBirth: dateOfBirthRegisterController.text,
-          phoneNumber: '',
-          gender:  selectedGenderRegisterValue=="ذكر"?"Male":selectedGenderRegisterValue=="أنثى"?"":"Female",
-          location: '',
-        );
-        FirebaseFirestore.instance
-            .collection('users')
-            .doc(value.user!.uid)
-            .set(model.toJson());
-        emit(UserRegisterSuccess());
-      }).catchError((error) {
-        emit(UserRegisterError());
-
-
+    try{
+      await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password)
+          .then((value) {
+            FirebaseAuth.instance.currentUser!.sendEmailVerification();
+        FirebaseMessaging.instance.getToken().then((userValue) {
+          UserDataModel model = UserDataModel(
+            uId: value.user!.uid,
+            email: emailRegisterController.text,
+            username: userNameController.text,
+            image: '',
+            token: userValue!,
+            dateOfBirth: dateOfBirthRegisterController.text,
+            phoneNumber: '',
+            gender:selectedGenderRegisterValue=="ذكر"?"Male":selectedGenderRegisterValue=="أنثى"?"Female":selectedGenderRegisterValue,
+            location: '',
+          );
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(value.user!.uid)
+              .set(model.toJson());
+          emit(UserRegisterSuccess());
+        }).catchError((error) {
+          emit(UserRegisterError());
+        });
       });
-    });
+    }
+    catch(e){
+      emit(UserRegisterError());
+    }
+
   }
 
   IconData suffixPassword = Icons.visibility_off_outlined;

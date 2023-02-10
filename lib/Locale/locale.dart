@@ -43,6 +43,12 @@ class MyLocale implements Translations{
       "Date Of Birth can't be empty":"لا يمكن ترك تاريخ الميلاد فارغًا",
       "Date Of Birth":"تاريخ الميلاد",
       "To complete the login process, please fill in the following information:":"لإكمال عملية تسجيل الدخول ، يرجى ملء المعلومات التالية:",
+      "PhoneNumber must 10 numbers":"رقم الهاتف يجب أن يكون عشرة أرقام",
+      "Phone":"الهاتف",
+      "Address":"العنوان",
+      "years":"سنه",
+      "Save":"حفظ",
+      "Back":"الرجوع"
 
     },
 

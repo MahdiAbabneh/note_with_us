@@ -4,6 +4,7 @@ import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -133,7 +134,7 @@ class HomeLayout extends StatelessWidget {
                           CacheHelper.sharedPreferences?.remove("id"),
                           CacheHelper.sharedPreferences!.clear()
                         }).whenComplete(() => {
-                          navigatePushReplacement(context, const LoginScreen())
+                          navigatePushReplacement(context, const LoginScreen()),
                         });
 
                       },
