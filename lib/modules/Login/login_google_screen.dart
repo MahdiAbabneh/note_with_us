@@ -1,21 +1,16 @@
-import 'package:circular_profile_avatar/circular_profile_avatar.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:get/get.dart';
-import 'package:get/instance_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/home_layout.dart';
-import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/network/cache_helper.dart';
-import '../Register/register_screen.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
 
@@ -32,9 +27,15 @@ class LoginGoogleScreen extends StatelessWidget {
       listener: (context, state) {
         if(state is UserLoginGoogleInfoSuccess)
           {
-            Phoenix.rebirth(Get.context!);
-            navigatePushReplacement(context, const HomeLayout());
-            showToastSuccess(toast3.tr, context);
+            CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString())
+                .whenComplete(() => {
+              idForUser = CacheHelper.getData(key:'id'),
+            })
+                .whenComplete(() => {
+              Phoenix.rebirth(Get.context!),
+              navigatePushReplacement(context,  const HomeLayout()),
+              showToastSuccess(toast3.tr, context),
+            });
         }
         if(state is UserLoginGoogleInfoError)
           {

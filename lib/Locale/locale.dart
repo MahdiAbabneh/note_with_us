@@ -32,7 +32,7 @@ class MyLocale implements Translations{
       "Female":"أنثى",
       "Successfully logged in":"تم تسجيل الدخول بنجاح",
       "Create Account Failed Please Verify the Data Entered":"فشل إنشاء الحساب الرجاء التحقق من البيانات المدخلة",
-      "Home ":"الرئيسية",
+      "Home":"الرئيسية",
       "Create a note":"إنشاء ملاحظة",
       "Personal":"الشخصية",
       "Users":"المستخدمين",
@@ -48,7 +48,14 @@ class MyLocale implements Translations{
       "Address":"العنوان",
       "years":"سنه",
       "Save":"حفظ",
-      "Back":"الرجوع"
+      "Back":"الرجوع",
+      "Select Image":'اختر صورة',
+      "you can add image from 1 to 3 just":"يمكنك إضافة صور من 1 إلى 3 فقط",
+      "Show more":"عرض المزيد",
+      "Show less":"عرض أقل",
+      "you add note successfully":"قمت بإضافة الملاحظة بنجاح",
+      "Write here ...":"أكتب هنا...",
+      "please add text or image!":"الرجاء أضافة نص او صوره على الأقل "
 
     },
 

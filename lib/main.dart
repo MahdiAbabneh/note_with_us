@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
 import 'Compouents/constant_empty.dart';
 import 'Layout/Home/cubit/cubit.dart';
@@ -34,7 +33,7 @@ void main() async{
   }
 
   if (idForUser != null){
-    widget = const HomeLayout();}
+    widget =  const HomeLayout();}
  else{
     widget = const LoginScreen();
   }
@@ -54,7 +53,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (BuildContext context) => LoginCubit()),
         BlocProvider(create: (BuildContext context) => RegisterCubit()),
-        BlocProvider(create: (BuildContext context) => HomeCubit()..getUserData()),
+        BlocProvider(create: (BuildContext context) => HomeCubit()..getUserData()..getPosts()),
       ],
       child: BlocConsumer<LoginCubit,LoginStates>(
         listener: (context, state) {},
@@ -62,6 +61,10 @@ class MyApp extends StatelessWidget {
           MyLocaleController controllerLang= Get.put(MyLocaleController());
           return GetMaterialApp(
             theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Color(0xFFC27D3C),
+                  primary:Color(0xFFC27D3C),
+                ),
                 fontFamily:CacheHelper.getData(key:"lang")=="ar"?"Almarai":"mali",
                 primaryColor: const Color(0xFFC27D3C),
                 appBarTheme: const AppBarTheme(

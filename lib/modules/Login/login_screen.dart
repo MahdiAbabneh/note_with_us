@@ -1,13 +1,10 @@
 import 'package:circular_profile_avatar/circular_profile_avatar.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:get/get.dart';
-import 'package:get/instance_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
@@ -23,26 +20,23 @@ import 'cubit/states.dart';
 
 
 
-
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    //bool resCondition = MediaQuery.of(context).size.height < 430 || MediaQuery.of(context).size.width< 490;
     var cubit = LoginCubit.get(context);
     MyLocaleController controllerLang= Get.find();
     return BlocConsumer<LoginCubit, LoginStates>(
       listener: (context, state) {
         if(state is UserLoginSuccess)
           {
-            CacheHelper.sharedPreferences?.clear().whenComplete(() =>
-                CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString()))
+                CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString())
                 .whenComplete(() => {
               idForUser = CacheHelper.getData(key:'id'),
             })
                 .whenComplete(() => {
             Phoenix.rebirth(Get.context!),
-            navigatePushReplacement(context, const HomeLayout()),
+            navigatePushReplacement(context,  HomeLayout()),
             showToastSuccess(toast3.tr, context),
              });
           }
@@ -52,8 +46,7 @@ class LoginScreen extends StatelessWidget {
           }
         if(state is UserLoginGoogleSuccess)
         {
-          CacheHelper.sharedPreferences?.clear().whenComplete(() =>
-              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString()))
+              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString())
               .whenComplete(() => {
             idForUser = CacheHelper.getData(key:'id'),
           })
@@ -127,7 +120,7 @@ class LoginScreen extends StatelessWidget {
                       style: const TextStyle(
                           fontSize: 20.0,
                           color: Colors.black),
-                    ), //
+                    ),
 
                     const SizedBox(height: 20,),
                     TextFormField(

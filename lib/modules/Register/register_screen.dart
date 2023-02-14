@@ -1,7 +1,6 @@
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +10,6 @@ import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/home_layout.dart';
-import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
@@ -28,14 +26,13 @@ class RegisterScreen extends StatelessWidget {
       listener: (context, state) {
         if(state is UserRegisterSuccess)
         {
-          CacheHelper.sharedPreferences?.clear().whenComplete(() =>
-              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString()))
+              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString())
               .whenComplete(() => {
             idForUser = CacheHelper.getData(key:'id'),
           })
               .whenComplete(() => {
             Phoenix.rebirth(Get.context!),
-            navigatePushReplacement(context, const HomeLayout()),
+            navigatePushReplacement(context,  const HomeLayout()),
             showToastSuccess(toast2.tr, context),
           });
         }

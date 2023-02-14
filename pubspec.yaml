@@ -47,7 +47,6 @@ dependencies:
   firebase_messaging: ^14.2.1
   google_sign_in: ^5.4.4
   http: ^0.13.5
-  google_fonts: ^4.0.3
   circular_profile_avatar: ^2.0.5
   dropdown_button2: ^1.9.2
   fluttertoast: ^8.1.2
@@ -57,6 +56,18 @@ dependencies:
   flutter_rounded_date_picker: ^3.0.2
   age_calculator: ^1.0.0
   flutter_phoenix: ^1.1.0
+  image_picker: ^0.8.6+1
+  image_cropper: ^3.0.1
+  awesome_dialog: ^3.0.2
+  status_view: ^0.0.2
+  readmore: ^2.2.0
+  cached_network_image: ^3.2.3
+  photo_view: ^0.14.0
+
+
+
+
+
 
 
 dev_dependencies:

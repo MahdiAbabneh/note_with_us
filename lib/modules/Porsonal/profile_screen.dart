@@ -1,4 +1,6 @@
 
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +24,9 @@ class ProfileScreen extends StatelessWidget {
     var cubit = HomeCubit.get(context);
     return BlocConsumer<HomeCubit, HomeStates>(
       listener: (context, state) {
+        if(state is UserSelectProfileImageSuccess){
+          cubit.uploadUserProfileImage(context);
+        }
       },
       builder: (context, state) {
         return Scaffold(
@@ -32,6 +37,9 @@ class ProfileScreen extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if(state is  UserProfileImageUploadLoading||state is UserUpdateDataLoading)
+                     LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
+                  SizedBox(height: 10,),
                   Stack(alignment: Alignment.center,
                       children:[
                         Opacity(
@@ -51,9 +59,9 @@ class ProfileScreen extends StatelessWidget {
                                     backgroundColor:Theme.of(context).primaryColor,
                                     minRadius:responsive(context, 95.0, 190.0),
                                     child:CircleAvatar(
+                                      backgroundColor: Theme.of(context).primaryColor,
                                       radius:  responsive(context, 90.0, 180.0),
-                                      backgroundImage:
-                                      genderData=="Male"? const AssetImage("assets/images/boy.png",):const AssetImage("assets/images/giral.png",),
+                                      backgroundImage:CachedNetworkImageProvider(profileImage!),
                                     )),
                                 const SizedBox(
                                   height: 5,
@@ -99,8 +107,56 @@ class ProfileScreen extends StatelessWidget {
                           ),
                             IconButton(
                                 onPressed: (){
+                                  AwesomeDialog(
+                                    customHeader: Icon(Icons.info,size: responsive(context, 100.0, 200.0),color: Theme.of(context).primaryColor,),
+                                    showCloseIcon: true,
+                                    btnCancel: null,
+                                    btnOk: null,
+                                    body:Column(children: [
+                                       Text(
+                                        selectImageText.tr,
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: responsive(context, 18.0, 28)),
+                                      ),
+                                      const SizedBox(
+                                        height: 20,
+                                      ),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          IconButton(
+                                              onPressed: () {
+                                               cubit.selectProfileImageFromCamera();
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon:  Icon(
+                                                Icons.camera_alt_outlined,
+                                                size: responsive(context, 35.0, 70.0),
+                                              )),
+                                          const SizedBox(
+                                            width: 50,
+                                          ),
+                                          IconButton(
+                                              onPressed: () {
+                                               cubit.selectProfileImageFromGallery();
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(
+                                                Icons.image_outlined,
+                                                size: 35,
+                                              )),
+                                        ],
+                                      ),
+                                      const SizedBox(
+                                        height: 40,
+                                      ),
+                                    ]),
+                                      context: context,
+                                      dialogType: DialogType.question,
+                                      animType: AnimType.scale,
+                                      title:selectImageText.tr,
+                                  ).show();
                                 },
-                                icon: Icon(Icons.camera_alt_outlined,color: Theme.of(context).primaryColor,size: 35,)),
+                                icon: Icon(Icons.camera_alt_outlined,color: Theme.of(context).primaryColor,size:  responsive(context, 35.0, 70.0),)),
                           ]
                         ),
                       ]
@@ -650,6 +706,7 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+
 
 
                 ],

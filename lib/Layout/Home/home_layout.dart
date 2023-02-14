@@ -1,20 +1,21 @@
-
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
+import 'package:mahdeko/modules/CreateNote/create_note_screen.dart';
 import 'package:mahdeko/modules/Login/login_screen.dart';
 import 'package:mahdeko/modules/Porsonal/profile_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
+import 'package:readmore/readmore.dart';
+import 'package:status_view/status_view.dart';
 import 'cubit/cubit.dart';
 import 'cubit/states.dart';
 
@@ -24,6 +25,7 @@ class HomeLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     var cubit = HomeCubit.get(context);
     MyLocaleController controllerLang= Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
@@ -171,18 +173,7 @@ class HomeLayout extends StatelessWidget {
                 }
                 if(i==2)
                 {
-                  // mobadrahNameController.text="";
-                  // mobadrahTextController.text="";
-                  // SocialCubit.get(context).postImage=null;
-                  // SocialCubit.get(context).numberOfHours=1;
-                  // SocialCubit.get(context).postType=SocialCubit.get(context).post2;
-
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) =>  PostScreen(),
-                  //   ),
-                  // );
+                 navigateTo(context, const CreateNoteScreen());
                 }
                 if(i==3)
                 {
@@ -201,24 +192,44 @@ class HomeLayout extends StatelessWidget {
               }
           ),
           body: ConditionalBuilder(
-            condition:true,
+            condition:state is! UserDataLoading,
             builder: (context) => SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
                   const SizedBox(height: 20,),
                   ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) =>
+                      itemBuilder: (context, index,) =>
                           buildPostItem(
                             context,
+                              index,
+                           cubit.postsList[index]
+                                .values
+                                .single
+                                .ownerImage,
+                            cubit.postsList[index]
+                                .values
+                                .single.ownerName,
+                            cubit.postsList[index]
+                                .values
+                                .single.time,
+                            cubit.postsList[index]
+                                .values
+                                .single
+                                .text,
+                              cubit
+                              .postsList[index]
+                              .values
+                              .single
+                              .image
                           ),
                       separatorBuilder: (context, index) => const SizedBox(
                         height: 8.0,
                       ),
 
-                      itemCount:10 // it will be change),
+                      itemCount:cubit.postsList.length
                   ),
                 ],
               ),
@@ -231,7 +242,8 @@ class HomeLayout extends StatelessWidget {
       });
   }
 
-  Widget buildPostItem(context,)
+
+  Widget buildPostItem(context,index,ownerImage,ownerName,time,text,imagePosts)
 
   =>Card(
     shape: RoundedRectangleBorder(
@@ -243,42 +255,42 @@ class HomeLayout extends StatelessWidget {
     ),
     child: Padding(
       padding: const EdgeInsets.all(10),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundColor:Theme.of(context).primaryColor,
-                minRadius: 31.0,
-                child:
-                const CircleAvatar(
-                  radius: 30.0,
-                  backgroundImage:
-                AssetImage("assets/images/NWU.png",),
-                )
-                ,
+              StatusView(
+                radius: 40,
+                spacing: 15,
+                strokeWidth: 2,
+                indexOfSeenStatus:imagePosts.isEmpty?3: 3-HomeCubit.get(context).postsList[index]
+                    .values
+                    .single
+                    .image.length,
+                numberOfStatus: 3,
+                padding: 4,
+                centerImageUrl: ownerImage!,
+                seenColor: Colors.grey,
+                unSeenColor: Colors.red,
               ),
-              const SizedBox(
-                width: 10.0,
-              ),
+              const SizedBox(width: 10,),
               Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(padding: const EdgeInsets.only(top: 15),child:  Text(" {ownerName} ",style: (TextStyle(fontWeight: FontWeight.bold)),)),
-                  SizedBox(height: 3,),
-                  //SocialCubit.get(context).dateAndTimeFormat(time)
-                  Text("2/2/2020",style: TextStyle(fontSize: 12),)
+                  Text(
+                    ownerName!,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor
+                    ),
+                  ),
+                  const SizedBox(height: 3,),
+                   Text(HomeCubit.get(context).dateAndTimeFormat(time),style: const TextStyle(fontSize: 12),)
                 ],
               ),
               const Spacer(),
-              IconButton(onPressed: (){
-                // SocialCubit.get(context).getPosts();
-              }, icon:const Icon (Icons.delete,size: 30,))
+              IconButton(onPressed: (){}, icon:const Icon(Icons.delete))
             ],
           ),
           Padding(
@@ -286,34 +298,51 @@ class HomeLayout extends StatelessWidget {
               vertical: 15.0,
             ),
             child: Container(
-
               width: double.infinity,
               height: 1.0,
               color: Colors.grey[300],
             ),
           ),
-          Text("text"),
-          const SizedBox(height: 20,),
-          // if(image != '')
-            // Padding(
-            //     padding: const EdgeInsetsDirectional.only(top: 5.0),
-            //     child: Stack(
-            //       alignment: Alignment.bottomRight,
-            //       children: [
-            //         Stack(alignment: Alignment.centerLeft, children: [
-            //           SizedBox(
-            //             height:375,
-            //             width: MediaQuery.of(context).size.width.toInt()<=560?double.infinity:double.infinity,
-            //             child:
-            //             Image.network(
-            //               '${image}',fit: BoxFit.cover,
-            //             ),
-            //
-            //           ),
-            //         ]),
-            //       ],
-            //     )),
-
+               ReadMoreText(
+                 text,
+                trimLines: 2,
+                colorClickableText: Colors.pink,
+                trimMode: TrimMode.Line,
+                trimCollapsedText: showMore.tr,
+                trimExpandedText: showLess.tr,
+                moreStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10,),
+          SizedBox(height:imagePosts.length!=0? 300:0,
+            child: PhotoViewGallery.builder(
+              itemCount: imagePosts.length,
+              builder: (context, index) {
+                return PhotoViewGalleryPageOptions(
+                  imageProvider:NetworkImage(imagePosts[index],),
+                  minScale: PhotoViewComputedScale.contained * 0.8,
+                  maxScale: PhotoViewComputedScale.covered * 2,
+                );
+              },
+              scrollPhysics: BouncingScrollPhysics(),
+              backgroundDecoration: BoxDecoration(
+                borderRadius:const BorderRadius.all(Radius.circular(20)),
+                color: Theme.of(context).canvasColor,
+              ),
+              enableRotation:true,
+              loadingBuilder: (context, event) => Center(
+                child: SizedBox(
+                  width: 30.0,
+                  height: 30.0,
+                  child: CircularProgressIndicator(
+                    backgroundColor:Colors.red,
+                    value: event == null
+                        ? 0
+                        : event.cumulativeBytesLoaded / event.expectedTotalBytes!,
+                  ),
+                ),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(
               vertical: 5.0,
@@ -336,9 +365,9 @@ class HomeLayout extends StatelessWidget {
                           const SizedBox(
                             width: 5.0,
                           ),
-                          Padding(
+                          const Padding(
                             padding:
-                            const EdgeInsets.only(top: 4.0),
+                            EdgeInsets.only(top: 4.0),
                             child: Text("10"),
                           ),
 
@@ -373,8 +402,8 @@ class HomeLayout extends StatelessWidget {
                             width: 5.0,
                           ),
                           Row(
-                            children:  [
-                              const Text(
+                            children:  const [
+                              Text(
                                 "56",
                               ),
                             ],
@@ -383,11 +412,6 @@ class HomeLayout extends StatelessWidget {
                       ),
                     ),
                     onTap: () {
-                      // postToWorkWithComment = post;
-                      // commentsForOnePost = comments;
-                      // indexForOnePost = index;
-                      // navigateTo(context,  CommentAdminScreen());
-
                     },
                   ),
                 ),
@@ -483,3 +507,8 @@ class HomeLayout extends StatelessWidget {
   );
 }
 
+final imageList = [
+  "assets/images/NWU.png",
+  "assets/images/NWU.png",
+  "assets/images/NWU.png",
+];

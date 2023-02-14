@@ -96,4 +96,19 @@ const String save="Save";
 
 const String back="Back";
 
+const String selectImageText="Select Image";
+
+const String toast5="you can add image from 1 to 3 just";
+
+const String showMore="Show more";
+
+const String showLess="Show less";
+
+const String toast6="you add note successfully";
+
+const String writeHere="Write here ...";
+
+const String toast7="please add text or image!";
+
+
 

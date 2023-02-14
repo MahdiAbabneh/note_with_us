@@ -26,13 +26,16 @@ class RegisterCubit extends Cubit<RegisterStates> {
       await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password)
           .then((value) {
-            FirebaseAuth.instance.currentUser!.sendEmailVerification();
+            //FirebaseAuth.instance.currentUser!.sendEmailVerification();
         FirebaseMessaging.instance.getToken().then((userValue) {
           UserDataModel model = UserDataModel(
             uId: value.user!.uid,
             email: emailRegisterController.text,
             username: userNameController.text,
-            image: '',
+            image: selectedGenderRegisterValue=="ذكر"?'https://cdn-icons-png.flaticon.com/512/146/146007.png?w=740&t=st=1675798040~exp=1675798640~hmac=2f09fbe38c3577a6e7d6a9b4dbdf09c4e7412c4a56717a1aa8e96e51e1ecd467'
+                :selectedGenderRegisterValue=="Male"?'https://cdn-icons-png.flaticon.com/512/146/146007.png?w=740&t=st=1675798040~exp=1675798640~hmac=2f09fbe38c3577a6e7d6a9b4dbdf09c4e7412c4a56717a1aa8e96e51e1ecd467'
+                :selectedGenderRegisterValue=="أنثى"?'https://cdn-icons-png.flaticon.com/512/146/146005.png?w=740&t=st=1676069504~exp=1676070104~hmac=72e19bd69ea7b7beef7ed4a5a710bd820a1378dfd1876925c69ce16f96110d6e'
+                :selectedGenderRegisterValue=="Female"?'https://cdn-icons-png.flaticon.com/512/146/146005.png?w=740&t=st=1676069504~exp=1676070104~hmac=72e19bd69ea7b7beef7ed4a5a710bd820a1378dfd1876925c69ce16f96110d6e':"",
             token: userValue!,
             dateOfBirth: dateOfBirthRegisterController.text,
             phoneNumber: '',

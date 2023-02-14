@@ -84,7 +84,10 @@ class LoginCubit extends Cubit<LoginStates> {
             uId: userLoginGoogle?.user!.uid,
             email: userLoginGoogle?.user!.email,
             username:userNameLoginController.text,
-            image: '',
+            image:selectedGenderLoginValue=="ذكر"?'https://cdn-icons-png.flaticon.com/512/146/146007.png?w=740&t=st=1675798040~exp=1675798640~hmac=2f09fbe38c3577a6e7d6a9b4dbdf09c4e7412c4a56717a1aa8e96e51e1ecd467'
+                :selectedGenderLoginValue=="Male"?'https://cdn-icons-png.flaticon.com/512/146/146007.png?w=740&t=st=1675798040~exp=1675798640~hmac=2f09fbe38c3577a6e7d6a9b4dbdf09c4e7412c4a56717a1aa8e96e51e1ecd467'
+                :selectedGenderLoginValue=="أنثى"?'https://cdn-icons-png.flaticon.com/512/146/146005.png?w=740&t=st=1676069504~exp=1676070104~hmac=72e19bd69ea7b7beef7ed4a5a710bd820a1378dfd1876925c69ce16f96110d6e'
+                :selectedGenderLoginValue=="Female"?'https://cdn-icons-png.flaticon.com/512/146/146005.png?w=740&t=st=1676069504~exp=1676070104~hmac=72e19bd69ea7b7beef7ed4a5a710bd820a1378dfd1876925c69ce16f96110d6e':"",
             token: userValue!,
             dateOfBirth: dateOfBirthLoginController.text,
             phoneNumber: '',
