@@ -40,4 +40,38 @@ class UserCreatePostSuccess extends HomeStates {}
 
 class UserCreatePostError extends HomeStates {}
 
+class UserGetPostLoading extends HomeStates {}
+
+class UserGetPostSuccess extends HomeStates {}
+
+class UserGetPostError extends HomeStates {}
+
+class UserGetPostOnlyMeLoading extends HomeStates {}
+
+class UserGetPostOnlyMeSuccess extends HomeStates {}
+
+class UserGetPostOnlyMeError extends HomeStates {}
+
+class UserReminderLoading extends HomeStates {}
+
+class UserReminderSuccess extends HomeStates {}
+
+class UserReminderError extends HomeStates {}
+
+class UserRingingSuccess extends HomeStates {}
+
+class UserRingingError extends HomeStates {}
+
+class UserLikeSuccess extends HomeStates {}
+
+class UserLikeError extends HomeStates {}
+
+class UserDeletePostLoading extends HomeStates {}
+
+class UserDeletePostSuccess extends HomeStates {}
+
+class UserDeletePostError extends HomeStates {}
+
+
+
 

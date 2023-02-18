@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
+import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/modules/CreateNote/create_note_screen.dart';
 import 'package:mahdeko/modules/Login/login_screen.dart';
 import 'package:mahdeko/modules/Porsonal/profile_screen.dart';
+import 'package:mahdeko/modules/PostOnlyMe/post_only_me_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -157,15 +159,16 @@ class HomeLayout extends StatelessWidget {
               backgroundColor: Theme.of(context).primaryColor,
               items: const [
                 TabItem(icon: Icons.home),
-                TabItem(icon: Icons.notifications),
-                TabItem(icon: Icons.add),
-                TabItem(icon: Icons.person),
                 TabItem(icon: Icons.people),
+                TabItem(icon: Icons.add),
+                TabItem(icon: Icons.person_pin_outlined),
+                TabItem(icon: Icons.person),
+
               ],
               onTap: (int i) {
                 if(i==0)
                 {
-                  // SocialCubit.get(context).getPosts();
+                  cubit.getPosts();
                 }
                 if(i==1)
                 {
@@ -181,18 +184,13 @@ class HomeLayout extends StatelessWidget {
                 }
                 if(i==4)
                 {
-                  // SocialCubit.get(context).getUsers();
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) =>  const UsersAdminScreen(),
-                  //   ),
-                  // );
+                 navigateTo(context, PostOnlyMeScreen());
+                 cubit.getPostsOnlyMe();
                 }
               }
           ),
           body: ConditionalBuilder(
-            condition:state is! UserDataLoading,
+            condition:state is! UserGetPostLoading,
             builder: (context) => SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
@@ -223,7 +221,16 @@ class HomeLayout extends StatelessWidget {
                               .postsList[index]
                               .values
                               .single
-                              .image
+                              .image,
+                                  cubit.postsList[index]
+                              .values
+                              .single
+                              .numOfImages,
+                              cubit.postsList[index]
+                                  .values
+                                  .single
+                                  .likes,
+                              cubit.postsList[index]
                           ),
                       separatorBuilder: (context, index) => const SizedBox(
                         height: 8.0,
@@ -231,6 +238,7 @@ class HomeLayout extends StatelessWidget {
 
                       itemCount:cubit.postsList.length
                   ),
+                  SizedBox(height: 40,),
                 ],
               ),
             ),
@@ -243,7 +251,7 @@ class HomeLayout extends StatelessWidget {
   }
 
 
-  Widget buildPostItem(context,index,ownerImage,ownerName,time,text,imagePosts)
+  Widget buildPostItem(context,index,ownerImage,ownerName,time,text,imagePosts,numImages,likes,post)
 
   =>Card(
     shape: RoundedRectangleBorder(
@@ -263,10 +271,7 @@ class HomeLayout extends StatelessWidget {
                 radius: 40,
                 spacing: 15,
                 strokeWidth: 2,
-                indexOfSeenStatus:imagePosts.isEmpty?3: 3-HomeCubit.get(context).postsList[index]
-                    .values
-                    .single
-                    .image.length,
+                indexOfSeenStatus:numImages,
                 numberOfStatus: 3,
                 padding: 4,
                 centerImageUrl: ownerImage!,
@@ -290,7 +295,10 @@ class HomeLayout extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              IconButton(onPressed: (){}, icon:const Icon(Icons.delete))
+              Visibility(visible:HomeCubit.get(context).postsList[index].values.single.ownerId==idForUser ,child: IconButton(onPressed: (){
+                HomeCubit.get(context).deletePost(post).whenComplete(() => HomeCubit.get(context).getPosts());
+
+              }, icon:const Icon(Icons.delete)))
             ],
           ),
           Padding(
@@ -343,81 +351,9 @@ class HomeLayout extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 5.0,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 5.0,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.thumb_up_off_alt_rounded,
-                            size: 16.0,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(
-                            width: 5.0,
-                          ),
-                          const Padding(
-                            padding:
-                            EdgeInsets.only(top: 4.0),
-                            child: Text("10"),
-                          ),
 
+          SizedBox(height: 10,),
 
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      // postToWorkWithComment = post;
-                      // likesForOnePost = likes;
-                      // indexForOnePost = index;
-                      // navigateTo(context, const LikesAdminScreen());
-
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 5.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(
-                            Icons.chat,
-                            size: 16.0,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(
-                            width: 5.0,
-                          ),
-                          Row(
-                            children:  const [
-                              Text(
-                                "56",
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.only(
               bottom: 10.0,
@@ -428,79 +364,46 @@ class HomeLayout extends StatelessWidget {
               color: Colors.grey[300],
             ),
           ),
-          Row(children: [
-            Expanded(
-              child: IntrinsicHeight(
-                child: Row(
-                  children: [
-                    IconButton(
-                        onPressed: (){
-                         // SocialCubit.get(context).updatePostLikes(post);
-                        },
-                        icon:
-                        // SocialCubit.get(context).postsList[index].values.single.likes
-                        //     .any((element) => element.ownerName ==
-                        //     SocialCubit.get(context).user!.username)
-                        //     ? Icon ( Icons.thumb_up_off_alt_rounded,color: Theme.of(context).primaryColor,)
-                        //     :
-                        const Icon ( Icons.thumb_up_off_alt_rounded)
-                    ),
-                    Text(
-                      likeText.tr,
-                    ),
-                    const Spacer(),
-                    const VerticalDivider(
-                      color: Colors.grey,
-                    ),
-                    const Spacer(),
-                    IconButton(
-                        onPressed: (){
-                          // postToWorkWithComment = post;
-                          // commentsForOnePost = comments;
-                          // indexForOnePost = index;
-                          // navigateTo(context,  CommentAdminScreen());
-
-                        },
-                        icon:const Icon (Icons.chat_outlined,
-                        )),
-                     Text(
-                       commentText.tr,
-                    ),
-                    const Spacer(),
-
-                    // if(isMobadrah == true)
-                    //   InkWell(
-                    //     onTap: (){
-                    //       postToWorkWithComment = post;
-                    //       numberOfHoursForCurrentMobadrah = numberOfHours;
-                    //       navigateTo(context, AcceptRejectOrderScreen(
-                    //         noResponseUsers: noResponseUsers,
-                    //         acceptedUsers: acceptedUsers,
-                    //         rejectedUsers: rejectedUsers,
-                    //         mobadrahName: mobadrahName,
-                    //       ));
-                    //
-                    //     },
-                    //     child: Row(
-                    //       children: [
-                    //         const VerticalDivider(
-                    //           color: Colors.grey,
-                    //         ),
-                    //         Icon (Icons.task_outlined,size: 30,color: Theme.of(context).primaryColor),
-                    //         Text(
-                    //           " الطلبات",style: TextStyle(color: Theme.of(context).primaryColor),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    //
-                    // if(isMobadrah == true)
-                    //   const Spacer(),
-                  ],
-                ),
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Row(children: [
+              IconButton(
+                  onPressed: (){
+                   HomeCubit.get(context).updatePostLikes(post);
+                  },
+                  icon:
+                  HomeCubit.get(context).postsList[index].values.single.likes
+                      .any((element) => element.ownerName ==
+                      HomeCubit.get(context).user!.username)
+                      ? Icon ( Icons.thumb_up_off_alt_rounded,color: Theme.of(context).primaryColor,)
+                      :
+                  const Icon ( Icons.thumb_up_off_alt_rounded)
               ),
-            ),
-          ]),
+              Text(
+                likeText.tr,
+              ),
+              Spacer(),
+              Row(
+                children: [
+                  Icon(
+                    Icons.thumb_up_off_alt_rounded,
+                    size: 16.0,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(
+                    width: 5.0,
+                  ),
+                  Padding(
+                    padding:
+                    const EdgeInsets.only(top: 4.0),
+                    child: Text("${likes.length}"),
+                  ),
+
+
+                ],
+              ),
+            ]),
+          ),
         ],
       ),
     ),

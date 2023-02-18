@@ -108,7 +108,18 @@ const String toast6="you add note successfully";
 
 const String writeHere="Write here ...";
 
-const String toast7="please add text or image!";
+const String toast7="please add Type First and text or image !";
+
+const String ringing="Ringing...";
+
+const String stop="Stop";
+
+const String undo="Undo";
+
+const String onlyMeText="ONLY ME";
+
+const String shareText="SHARE";
+
 
 
 

@@ -55,7 +55,12 @@ class MyLocale implements Translations{
       "Show less":"عرض أقل",
       "you add note successfully":"قمت بإضافة الملاحظة بنجاح",
       "Write here ...":"أكتب هنا...",
-      "please add text or image!":"الرجاء أضافة نص او صوره على الأقل "
+      "please add Type First and text or image at least !":"الرجاء أضافة نوع الملاحظة ثم أضافة نص او صوره على الأقل ",
+      "Ringing...":"رنين...",
+      "Stop":"أوقف",
+      "Undo":"تراجع",
+      "ONLY ME":"لوحدي",
+      "SHARE":"مشاركة"
 
     },
 

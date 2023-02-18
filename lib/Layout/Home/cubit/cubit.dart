@@ -1,9 +1,10 @@
 import 'dart:core';
 import 'dart:io';
+import 'package:alarm/alarm.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -240,17 +241,32 @@ Future<void> createPost() async {
       ownerName:  user!.username!,
       text: textPostController.text,
       time: dateFormat(nowTime),
-      comments: [],
+      reminder: [],
+      numOfImages: 3-imagesForPost.length,
     );
 
-   await FirebaseFirestore.instance
-        .collection('posts')
-        .add(model.toJson())
-        .then((value) {
-     emit(UserCreatePostSuccess());
-   }).catchError((error) {
-     emit(UserCreatePostError());
-   });
+    if(selectedTypeNoteValue=="SHARE")
+      {
+        await FirebaseFirestore.instance
+            .collection('postsMain')
+            .add(model.toJson())
+            .then((value) {
+          emit(UserCreatePostSuccess());
+        }).catchError((error) {
+          emit(UserCreatePostError());
+        });
+      }
+    else{
+      await FirebaseFirestore.instance
+          .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
+          .add(model.toJson())
+          .then((value) {
+        emit(UserCreatePostSuccess());
+      }).catchError((error) {
+        emit(UserCreatePostError());
+      });
+
+    }
   }
   else{
     PostDataModel model = PostDataModel(
@@ -261,17 +277,32 @@ Future<void> createPost() async {
       ownerName:  user!.username!,
       text: textPostController.text,
       time: dateFormat(nowTime),
-      comments: [],
+      reminder: [],
+      numOfImages: 3,
     );
+    if(selectedTypeNoteValue=="SHARE")
+      {
+        await FirebaseFirestore.instance
+            .collection('postsMain')
+            .add(model.toJson())
+            .then((value) {
+          emit(UserCreatePostSuccess());
+        }).catchError((error) {
+          emit(UserCreatePostError());
+        });
+      }
+    else{
+      await FirebaseFirestore.instance
+          .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
+          .add(model.toJson())
+          .then((value) {
+        emit(UserCreatePostSuccess());
+      }).catchError((error) {
+        emit(UserCreatePostError());
+      });
+    }
 
-    await FirebaseFirestore.instance
-        .collection('posts')
-        .add(model.toJson())
-        .then((value) {
-      emit(UserCreatePostSuccess());
-    }).catchError((error) {
-      emit(UserCreatePostError());
-    });
+
 
   }
   getPosts();
@@ -280,14 +311,241 @@ Future<void> createPost() async {
   List<Map<String,PostDataModel>> postsList = [];
 
   Future<void> getPosts() async {
-   FirebaseFirestore.instance.collection('posts').orderBy("time",descending: true).snapshots().listen((value) {
+    emit(UserGetPostLoading());
+    await FirebaseFirestore.instance.collection('postsMain').orderBy("time",descending: true).get().then((value) {
       postsList = [];
       for (var element in value.docs) {
         postsList.add(
             {element.reference.id: PostDataModel.fromJson(element.data())});
       }
+      emit(UserGetPostSuccess());
+    }).catchError((onError){
+      emit(UserGetPostError());
     });
   }
+
+  List<Map<String,PostDataModel>> postsListOnlyMe = [];
+  List <TimeOfDay?> selectedTime=[];
+  bool showNotif = true;
+  List <bool> isRinging = [];
+  bool loopAudio = true;
+
+  Future<void> getPostsOnlyMe() async {
+    emit(UserGetPostOnlyMeLoading());
+    await FirebaseFirestore
+        .instance
+        .collection('postsOnlyMe')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .collection("myPost")
+        .orderBy("time",descending: true).get().then((value) {
+      postsListOnlyMe = [];
+      for (var element in value.docs) {
+        
+        postsListOnlyMe.add(
+            {element.reference.id: PostDataModel.fromJson(element.data())});
+      }
+          selectedTime=[];
+      for (int i = 0; i < postsListOnlyMe.length; i++) {
+        selectedTime.add(value.docs[i].data()["reminder"].isEmpty?null:TimeOfDay.fromDateTime(DateTime.parse(postsListOnlyMe[i].values.single.reminder.single.selectedTime!)));
+      }
+          isRinging = [];
+      for (int i = 0; i < postsListOnlyMe.length; i++) {
+        isRinging.add(false);
+      }
+       print(selectedTime);
+        print(isRinging);
+
+      emit(UserGetPostOnlyMeSuccess());
+    }).catchError((onError){
+      print(onError);
+      emit(UserGetPostOnlyMeError());
+    });
+  }
+
+
+  void updatePostLikes(Map<String, PostDataModel> post) {
+    if (post.values.single.likes.any((element) => element.ownerName == user!.username)) {
+      debugPrint('exist and remove');
+
+      post.values.single.likes.removeWhere((element) => element.ownerName == user!.username);
+    } else {
+      LikeDataModel likeDataModel = LikeDataModel(
+        ownerId: user!.uId!,
+        ownerName: user!.username!,
+        ownerImage: user!.image!,
+      );
+      debugPrint('not exist and add');
+
+      post.values.single.likes.add(likeDataModel);
+    }
+    FirebaseFirestore.instance
+        .collection('postsMain')
+        .doc(post.keys.single)
+        .update(post.values.single.toJson())
+        .then((value) {
+      emit(UserLikeSuccess());
+    }).catchError((error) {
+      debugPrint(error.toString());
+
+      emit(UserLikeError());
+    });
+  }
+
+  Future<void> deletePost(Map<String, PostDataModel> post)async {
+
+    emit(UserDeletePostLoading());
+
+    await FirebaseFirestore.instance
+        .collection('postsMain')
+        .doc(post.keys.single)
+        .delete()
+        .then((value) {
+      emit(UserDeletePostSuccess());
+
+    }).catchError((error) {
+
+      emit(UserDeletePostError());
+
+    });
+  }
+
+  Future<void> deletePostOnlyMe(Map<String, PostDataModel> post)async {
+
+    emit(UserDeletePostLoading());
+
+    await FirebaseFirestore.instance
+        .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
+        .doc(post.keys.single)
+        .delete()
+        .then((value) {
+      emit(UserDeletePostSuccess());
+
+    }).catchError((error) {
+
+      emit(UserDeletePostError());
+
+    });
+  }
+
+  Future<void> postReminder(Map<String, PostDataModel> post,selectedTime,isRinging)async {
+    emit(UserReminderLoading());
+    if(post.values.single.reminder.isNotEmpty)
+      {
+        post.values.single.reminder.removeLast();
+        final now = DateTime.now();
+
+        ReminderDataModel reminderDataModel = ReminderDataModel(
+          selectedTime: DateTime(
+            now.year,
+            now.month,
+            now.day,
+            selectedTime!.hour,
+            selectedTime!.minute,
+          ).toString(),
+          isRinging: isRinging,
+        );
+        post.values.single.reminder.add(reminderDataModel);
+      }
+    else {
+      print(selectedTime);
+      print(isRinging);
+      final now = DateTime.now();
+
+      ReminderDataModel reminderDataModel = ReminderDataModel(
+        selectedTime: DateTime(
+          now.year,
+          now.month,
+          now.day,
+          selectedTime!.hour,
+          selectedTime!.minute,
+        ).toString(),
+        isRinging: isRinging,
+      );
+      post.values.single.reminder.add(reminderDataModel);
+    }
+    FirebaseFirestore.instance
+        .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
+        .doc(post.keys.single)
+        .update(post.values.single.toJson())
+        .then((value) {
+      emit(UserReminderSuccess());
+    }).catchError((error) {
+      debugPrint(error.toString());
+
+      emit(UserReminderError());
+    });
+  }
+
+  Future<void> updatePostReminder(Map<String, PostDataModel> post)async {
+
+    post.values.single.reminder.removeLast();
+    FirebaseFirestore.instance
+        .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
+        .doc(post.keys.single)
+        .update(post.values.single.toJson())
+        .then((value) {
+      emit(UserReminderSuccess());
+    }).catchError((error) {
+      debugPrint(error.toString());
+      emit(UserReminderError());
+    });
+  }
+
+
+  Future<void> pickTime(context,index) async {
+    final res = await showTimePicker(
+      initialTime: TimeOfDay(
+        hour: TimeOfDay.now().hour,
+        minute: TimeOfDay.now().minute + 1,
+      ),
+      context: context,
+      confirmText: 'SET ALARM',
+    );
+
+    if (res == null) return;
+    selectedTime[index] = res;
+
+    final now = DateTime.now();
+    DateTime dt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      selectedTime[index]!.hour,
+      selectedTime[index]!.minute,
+    );
+
+    if (ringDay(index) == 'tomorrow') dt = dt.add(const Duration(days: 1));
+
+    setAlarm(index,dt);
+  }
+
+  String ringDay(index) {
+    final now = TimeOfDay.now();
+
+    if (selectedTime[index]!.hour > now.hour) return 'today';
+    if (selectedTime[index]!.hour < now.hour) return 'tomorrow';
+
+    if (selectedTime[index]!.minute > now.minute) return 'today';
+    if (selectedTime[index]!.minute < now.minute) return 'tomorrow';
+
+    return 'tomorrow';
+  }
+
+  Future<void> setAlarm(index,DateTime dateTime, [bool enableNotif = true]) async {
+    await Alarm.set(
+      alarmDateTime: dateTime,
+      assetAudio: 'assets/sample.mp3',
+      loopAudio: loopAudio,
+      onRing: () {
+          isRinging[index] = true;
+          selectedTime[index] = null;
+          emit(UserRingingSuccess());
+      },
+      notifTitle: showNotif && enableNotif ? 'Now is the time' : null,
+      notifBody: showNotif && enableNotif ? 'You have to do this note' : null,
+    );
+  }
+
 }
 
 

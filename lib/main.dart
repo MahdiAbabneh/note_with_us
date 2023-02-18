@@ -86,7 +86,7 @@ class MyApp extends StatelessWidget {
                   unselectedItemColor: Colors.grey,
                   elevation: 20.0,
                 )),
-            title: "Note with us ",
+            title: "Note with us",
             debugShowCheckedModeBanner: false,
             locale: controllerLang.initialLang,
             translations:MyLocale(),

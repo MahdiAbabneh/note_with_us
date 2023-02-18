@@ -4,6 +4,8 @@ String ?idForUser;
 int ? tokenForUser;
 String? selectedGenderRegisterValue;
 String? selectedGenderLoginValue;
+String? selectedTypeNoteValue;
+
 
 String? usernameData;
 String? dateOfBirthData;

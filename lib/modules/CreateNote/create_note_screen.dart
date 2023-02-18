@@ -5,6 +5,7 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
+import 'package:custom_radio_grouped_button/custom_radio_grouped_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,7 @@ class CreateNoteScreen extends StatelessWidget {
             cubit.imageFileListFromGallery!.clear();
             cubit.imagesForPost.clear();
             textPostController.clear();
+            selectedTypeNoteValue=null;
             showToastSuccess(toast6.tr, context);
             navigatePushReplacement(context, const HomeLayout());
           }
@@ -85,6 +87,30 @@ class CreateNoteScreen extends StatelessWidget {
                               cubit.selectPostImages();
                             }, icon: Icon(Icons.image,color:cubit.imageFileListFromGallery!.length==3?Colors.grey: Theme.of(context).primaryColor,)),
                           ],
+                        ),
+                        const Divider(),
+                        SizedBox(height: 5,),
+                        CustomRadioButton(width: 150,
+                          elevation: 0,
+                          absoluteZeroSpacing: true,
+                          unSelectedColor: Theme.of(context).canvasColor,
+                        buttonLables:  [
+                          onlyMeText.tr,
+                          shareText.tr,
+                        ],
+                        buttonValues: const [
+                          'ONLYME',
+                          'SHARE',
+                        ],
+                        buttonTextStyle: const ButtonTextStyle(
+                              selectedColor: Colors.white,
+                              unSelectedColor: Colors.black,
+                              textStyle: TextStyle(fontSize: 16)),
+                          radioButtonValue: (value) {
+                            selectedTypeNoteValue=value;
+                            print(value);
+                          },
+                          selectedColor: Theme.of(context).primaryColor,
                         ),
                         const Divider(),
                         const SizedBox(height: 10,),
@@ -171,13 +197,22 @@ class CreateNoteScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(backgroundColor:  const Color(
                             0xFFC27D3C),
                         ), onPressed:() {
-                          if(textPostController.text.isEmpty&&cubit.imageFileListFromGallery!.isEmpty)
+                          if(textPostController.text.isEmpty&&cubit.imageFileListFromGallery!.isEmpty&&selectedTypeNoteValue==null)
                             {
                               showToastFailed(toast7.tr, context);
                             }
                           else
                             {
-                              cubit.createPost();
+                              if(selectedTypeNoteValue=='SHARE'&&(textPostController.text.isNotEmpty||cubit.imageFileListFromGallery!.isNotEmpty))
+                                {
+                                  cubit.createPost();
+                                }
+                              else if(selectedTypeNoteValue=='ONLYME'&&(textPostController.text.isNotEmpty||cubit.imageFileListFromGallery!.isNotEmpty)){
+                                cubit.createPost();
+                              }
+                              else{
+                                showToastFailed(toast7.tr, context);
+                              }
                             }
                     }, child:Text(createNoteText.tr, style:  TextStyle(
                         fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),)),
