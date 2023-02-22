@@ -2,6 +2,7 @@ import 'package:conditional_builder_null_safety/conditional_builder_null_safety.
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -61,8 +62,12 @@ class LoginGoogleScreen extends StatelessWidget {
                         children: [
                           DropdownButtonFormField2(
                             decoration:  InputDecoration(
+                              enabledBorder:OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide:  const BorderSide(color: Colors.grey),
+                              ) ,
                               errorMaxLines: 1,
-                              prefixIcon: Icon(Icons.group,color:Theme.of(context).primaryColor,),
+                              prefixIcon: Icon(FontAwesomeIcons.venusMars,color:Theme.of(context).primaryColor,),
                               labelStyle: TextStyle(
                                   color: Colors.grey,
                                   fontSize:responsive(context, 14.0, 18.0)),
@@ -132,8 +137,12 @@ class LoginGoogleScreen extends StatelessWidget {
                             textInputAction:
                             TextInputAction.newline,
                             decoration:  InputDecoration(
+                              enabledBorder:OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide:  const BorderSide(color: Colors.grey),
+                              ) ,
                               errorMaxLines: 2,
-                              prefixIcon: Icon(Icons.date_range,color:Theme.of(context).primaryColor,),
+                              prefixIcon: Icon(FontAwesomeIcons.solidCalendarDays,color:Theme.of(context).primaryColor,),
 
                               labelStyle: TextStyle(
                                   color: Colors.grey,
@@ -169,8 +178,12 @@ class LoginGoogleScreen extends StatelessWidget {
                             textInputAction:
                             TextInputAction.newline,
                             decoration:  InputDecoration(
+                              enabledBorder:OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide:  const BorderSide(color: Colors.grey),
+                              ) ,
                               errorMaxLines: 2,
-                              prefixIcon: Icon(Icons.person,color:Theme.of(context).primaryColor,),
+                              prefixIcon: Icon(FontAwesomeIcons.userLarge,color:Theme.of(context).primaryColor,),
 
                               labelStyle: TextStyle(
                                   color: Colors.grey,

@@ -55,12 +55,19 @@ class MyLocale implements Translations{
       "Show less":"عرض أقل",
       "you add note successfully":"قمت بإضافة الملاحظة بنجاح",
       "Write here ...":"أكتب هنا...",
-      "please add Type First and text or image at least !":"الرجاء أضافة نوع الملاحظة ثم أضافة نص او صوره على الأقل ",
+      "please add Type First and text or image !":"الرجاء أضافة نوع الملاحظة ثم أضافة نص او صوره على الأقل ",
       "Ringing...":"رنين...",
       "Stop":"أوقف",
       "Undo":"تراجع",
       "ONLY ME":"لوحدي",
-      "SHARE":"مشاركة"
+      "SHARE":"مشاركة",
+      "Origin":"الآصلي",
+      "Blue":"الأزرق",
+      "Pink":"الزهري",
+      "Theme":"الألوان",
+      "Name":"الأسم",
+      "Your phone number is shown to everyone.":"يتم عرض رقم هاتفك للجميع.",
+      "The Dark Mode is enabled for Origin.":"تم تمكين الوضع المظلم لـ الآصلي فقط."
 
     },
 

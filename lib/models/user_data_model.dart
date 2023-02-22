@@ -9,6 +9,8 @@ class UserDataModel {
     this.dateOfBirth,
     this.gender,
     this.location,
+    this.theme,
+    this.darkMood
   });
 
   String? uId;
@@ -17,9 +19,11 @@ class UserDataModel {
   String? token;
   String? image;
   String? phoneNumber;
-  String?dateOfBirth;
-  String?gender;
-  String?location;
+  String? dateOfBirth;
+  String? gender;
+  String? location;
+  String? theme;
+  bool ?  darkMood;
 
 
   UserDataModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class UserDataModel {
     dateOfBirth = json['dateOfBirth'] ?? '';
     gender = json['gender'] ?? '';
     location = json['location'] ?? '';
+    theme = json['theme'] ?? '';
+    darkMood = json['darkMood'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -44,7 +50,9 @@ class UserDataModel {
       'phoneNumber': phoneNumber,
       'dateOfBirth': dateOfBirth,
       'gender': gender,
-      'location':location
+      'location':location,
+      'theme':theme,
+      'darkMood':darkMood
 
     };
   }

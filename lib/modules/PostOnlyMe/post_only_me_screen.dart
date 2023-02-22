@@ -4,6 +4,7 @@ import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -51,7 +52,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
           appBar: AppBar(
               title:  Text(homepage.tr)),
           body: ConditionalBuilder(
-            condition:state is! UserGetPostOnlyMeLoading,
+            condition:state is! UserGetPostOnlyMeLoading&&cubit.usersList.isNotEmpty ,
             builder: (context) => SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
@@ -64,13 +65,18 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                           buildPostItem(
                             context,
                               index,
-                           cubit.postsListOnlyMe[index]
+                            cubit
+                                .usersMap[cubit
+                                .postsListOnlyMe[index]
                                 .values
                                 .single
-                                .ownerImage,
-                            cubit.postsListOnlyMe[index]
+                                .ownerId].image!,
+                            cubit
+                                .usersMap[cubit
+                                .postsListOnlyMe[index]
                                 .values
-                                .single.ownerName,
+                                .single
+                                .ownerId].username!,
                             cubit.postsListOnlyMe[index]
                                 .values
                                 .single.time,
@@ -140,7 +146,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                 padding: 4,
                 centerImageUrl: ownerImage!,
                 seenColor: Colors.grey,
-                unSeenColor: Colors.red,
+                unSeenColor: Theme.of(context).primaryColor,
               ),
               const SizedBox(width: 10,),
               Column(
@@ -167,7 +173,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                   });
 
                 } ,
-                icon: Icon(Icons.alarm,color:cubit.selectedTime[index] != null?Theme.of(context).primaryColor:Colors.black ,),
+                icon: Icon(FontAwesomeIcons.bell,color:cubit.selectedTime[index] != null?Theme.of(context).primaryColor:Colors.grey ,),
 
               ),
               const SizedBox(width: 10,),
@@ -175,7 +181,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
               IconButton(onPressed: (){
                 HomeCubit.get(context).deletePostOnlyMe(post).whenComplete(() => HomeCubit.get(context).getPostsOnlyMe());
 
-              }, icon:const Icon(Icons.delete))
+              }, icon:const Icon(FontAwesomeIcons.trash))
             ],
           ),
           Padding(
@@ -255,7 +261,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                   width: 30.0,
                   height: 30.0,
                   child: CircularProgressIndicator(
-                    backgroundColor:Colors.red,
+                    backgroundColor:Colors.grey,
                     value: event == null
                         ? 0
                         : event.cumulativeBytesLoaded / event.expectedTotalBytes!,

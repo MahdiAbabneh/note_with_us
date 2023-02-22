@@ -5,6 +5,7 @@ int ? tokenForUser;
 String? selectedGenderRegisterValue;
 String? selectedGenderLoginValue;
 String? selectedTypeNoteValue;
+int? indexUser ;
 
 
 String? usernameData;
@@ -13,6 +14,8 @@ String? genderData;
 String? phoneNumberData;
 String? addressData;
 String? profileImage;
+String? themeData;
+bool? darkMoodData;
 
 //Register
 TextEditingController userNameController = TextEditingController();

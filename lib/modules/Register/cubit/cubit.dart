@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/models/user_data_model.dart';
@@ -41,6 +43,9 @@ class RegisterCubit extends Cubit<RegisterStates> {
             phoneNumber: '',
             gender:selectedGenderRegisterValue=="ذكر"?"Male":selectedGenderRegisterValue=="أنثى"?"Female":selectedGenderRegisterValue,
             location: '',
+            theme: 'origin',
+            darkMood: false,
+
           );
           FirebaseFirestore.instance
               .collection('users')
@@ -58,23 +63,23 @@ class RegisterCubit extends Cubit<RegisterStates> {
 
   }
 
-  IconData suffixPassword = Icons.visibility_off_outlined;
+  IconData suffixPassword =FontAwesomeIcons.eyeSlash;
   bool isPassword = true;
 
   void changePasswordVisibility() {
     isPassword = !isPassword;
     suffixPassword =
-    !isPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined;
+    !isPassword ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash;
     emit(SocialChangePasswordVisibilityRegister());
   }
 
-  IconData suffixConfirmPassword = Icons.visibility_off_outlined;
+  IconData suffixConfirmPassword = FontAwesomeIcons.eyeSlash;
   bool isConfirmPassword = true;
 
   void changeConfirmPasswordVisibility() {
     isConfirmPassword = !isConfirmPassword;
     suffixConfirmPassword =
-    !isConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined;
+    !isConfirmPassword ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash;
     emit(SocialChangeConfirmPasswordVisibility());
   }
 
@@ -84,7 +89,9 @@ class RegisterCubit extends Cubit<RegisterStates> {
         textPositiveButton:CacheHelper.getData(key:"lang")=="ar"?"موافق": "OK",
         textNegativeButton:CacheHelper.getData(key:"lang")=="ar"?"الخروج":"CANCEL",
       fontFamily: CacheHelper.getData(key:"lang")=="ar"?"Almarai":"mali",
-      imageHeader:NetworkImage("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdATqA4BZF69cbrTVtiI48SLILp5mRi6fohHbnI3UnaVtxqeEcH4T0n2JaZxa9UHHdpp0&usqp=CAU") ,
+      imageHeader: const CachedNetworkImageProvider(
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdATqA4BZF69cbrTVtiI48SLILp5mRi6fohHbnI3UnaVtxqeEcH4T0n2JaZxa9UHHdpp0&usqp=CAU",
+           ),
       theme: ThemeData(
           primaryColor: Theme
               .of(context)

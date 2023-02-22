@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
@@ -36,13 +38,13 @@ class LoginCubit extends Cubit<LoginStates> {
     });
   }
 
-  IconData suffixPassword = Icons.visibility_off_outlined;
+  IconData suffixPassword = FontAwesomeIcons.eyeSlash;
   bool isPassword = true;
 
   void changePasswordVisibility() {
     isPassword = !isPassword;
     suffixPassword =
-    !isPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined;
+    !isPassword ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash;
     emit(SocialChangePasswordVisibility());
   }
 
@@ -92,7 +94,9 @@ class LoginCubit extends Cubit<LoginStates> {
             dateOfBirth: dateOfBirthLoginController.text,
             phoneNumber: '',
             gender: selectedGenderLoginValue=="ذكر"?"Male":selectedGenderLoginValue=="أنثى"?"Female":selectedGenderLoginValue,
-            location: ''
+            location: '',
+            theme: 'origin',
+            darkMood: false,
           );
           FirebaseFirestore.instance
               .collection('users')
@@ -110,8 +114,9 @@ class LoginCubit extends Cubit<LoginStates> {
       textPositiveButton:CacheHelper.getData(key:"lang")=="ar"?"موافق": "OK",
       textNegativeButton:CacheHelper.getData(key:"lang")=="ar"?"الخروج":"CANCEL",
       fontFamily: CacheHelper.getData(key:"lang")=="ar"?"Almarai":"mali",
-      imageHeader:NetworkImage("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdATqA4BZF69cbrTVtiI48SLILp5mRi6fohHbnI3UnaVtxqeEcH4T0n2JaZxa9UHHdpp0&usqp=CAU") ,
-      theme: ThemeData(
+      imageHeader: const CachedNetworkImageProvider(
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdATqA4BZF69cbrTVtiI48SLILp5mRi6fohHbnI3UnaVtxqeEcH4T0n2JaZxa9UHHdpp0&usqp=CAU",
+      ),      theme: ThemeData(
           primaryColor: Theme
               .of(context)
               .primaryColor,

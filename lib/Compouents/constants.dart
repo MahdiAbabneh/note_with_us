@@ -42,6 +42,8 @@ const String genderText="Gender";
 
 const String userNameText="User Name";
 
+const String nameText="Name";
+
 const String dateOfBirthText="Date Of Birth";
 
 const String regex2="email address must not be empty";
@@ -119,6 +121,18 @@ const String undo="Undo";
 const String onlyMeText="ONLY ME";
 
 const String shareText="SHARE";
+
+const String originColor="Origin";
+
+const String blueColor="Blue";
+
+const String pinkColor="Pink";
+
+const String themeText="Theme";
+
+const String thePhoneInfo="Your phone number is shown to everyone.";
+
+const String theThemeInfo="The Dark Mode is enabled for Origin.";
 
 
 

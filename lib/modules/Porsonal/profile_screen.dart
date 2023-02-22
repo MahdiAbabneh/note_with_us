@@ -2,17 +2,23 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
+import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/models/user_data_model.dart';
+import 'package:mahdeko/modules/Login/login_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
+import 'package:toggle_switch/toggle_switch.dart';
 
 
 class ProfileScreen extends StatelessWidget {
@@ -22,6 +28,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var cubit = HomeCubit.get(context);
+    MyLocaleController controllerLang= Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
       listener: (context, state) {
         if(state is UserSelectProfileImageSuccess){
@@ -40,12 +47,32 @@ class ProfileScreen extends StatelessWidget {
                   if(state is  UserProfileImageUploadLoading||state is UserUpdateDataLoading)
                      LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
                   SizedBox(height: 10,),
+                  Center(
+                    child: ToggleSwitch(
+                      minWidth: double.infinity,
+                      initialLabelIndex: 0,
+                      cornerRadius: 15.0,
+                      activeFgColor: Colors.white,
+                      inactiveBgColor: Colors.grey,
+                      inactiveFgColor: Colors.white,
+                      totalSwitches: 2,
+                      labels:CacheHelper.getData(key:"lang")=="ar"? ['العربية', 'English']:['English', 'العربية'],
+                      onToggle: (index) {
+                        if(CacheHelper.getData(key:"lang")=="ar")
+                        {
+                          controllerLang.changeLang("en");
+                        }
+                        else{
+                          controllerLang.changeLang("ar");
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10,),
+                  Divider(),
                   Stack(alignment: Alignment.center,
                       children:[
-                        Opacity(
-                          opacity: 0.3,
-                          child: Image.asset("assets/images/NWU.png",
-                            fit: BoxFit.cover,height: responsive(context, 250.0, 500.0),),),
+
                         Stack(alignment:CacheHelper.getData(key:"lang")=="ar"?Alignment.topRight:Alignment.topLeft ,
                           children: [
                             Container(
@@ -57,17 +84,16 @@ class ProfileScreen extends StatelessWidget {
                               children: <Widget>[
                                 CircleAvatar(
                                     backgroundColor:Theme.of(context).primaryColor,
-                                    minRadius:responsive(context, 95.0, 190.0),
+                                    minRadius:responsive(context, 93.0, 190.0),
                                     child:CircleAvatar(
                                       backgroundColor: Theme.of(context).primaryColor,
                                       radius:  responsive(context, 90.0, 180.0),
                                       backgroundImage:CachedNetworkImageProvider(profileImage!),
                                     )),
-                                const SizedBox(
-                                  height: 5,
-                                ),
+                                SizedBox(height: 20,),
                                 Column(children: [
                                   Container(
+                                    width: double.infinity,
                                     padding: const EdgeInsets.all(5),
                                     decoration: BoxDecoration(
                                         color: Theme.of(context).primaryColor,
@@ -85,6 +111,7 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 10,),
                                   Container(
+                                    width: double.infinity,
                                     padding: const EdgeInsets.all(5),
                                     decoration: BoxDecoration(
                                         color: Theme.of(context).primaryColor,
@@ -100,6 +127,7 @@ class ProfileScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(height: 10,),
                                 ],),
 
                               ],
@@ -108,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
                             IconButton(
                                 onPressed: (){
                                   AwesomeDialog(
-                                    customHeader: Icon(Icons.info,size: responsive(context, 100.0, 200.0),color: Theme.of(context).primaryColor,),
+                                    customHeader: Icon(FontAwesomeIcons.circleInfo,size: responsive(context, 50.0, 150.0),color: Theme.of(context).primaryColor,),
                                     showCloseIcon: true,
                                     btnCancel: null,
                                     btnOk: null,
@@ -129,7 +157,7 @@ class ProfileScreen extends StatelessWidget {
                                                 Navigator.of(context).pop();
                                               },
                                               icon:  Icon(
-                                                Icons.camera_alt_outlined,
+                                                FontAwesomeIcons.cameraRetro,color: Theme.of(context).primaryColor,
                                                 size: responsive(context, 35.0, 70.0),
                                               )),
                                           const SizedBox(
@@ -140,9 +168,10 @@ class ProfileScreen extends StatelessWidget {
                                                cubit.selectProfileImageFromGallery();
                                                 Navigator.of(context).pop();
                                               },
-                                              icon: const Icon(
-                                                Icons.image_outlined,
-                                                size: 35,
+                                              icon:  Icon(
+                                                FontAwesomeIcons.image,
+                                                color: Theme.of(context).primaryColor,
+                                                size: responsive(context, 35.0, 70.0),
                                               )),
                                         ],
                                       ),
@@ -156,12 +185,13 @@ class ProfileScreen extends StatelessWidget {
                                       title:selectImageText.tr,
                                   ).show();
                                 },
-                                icon: Icon(Icons.camera_alt_outlined,color: Theme.of(context).primaryColor,size:  responsive(context, 35.0, 70.0),)),
+                                icon: Icon( FontAwesomeIcons.camera,color: Theme.of(context).primaryColor,size:  responsive(context, 35.0, 70.0),)),
                           ]
                         ),
                       ]
                   ),
-                  const SizedBox(height: 20,),
+                  Divider(),
+                  const SizedBox(height: 5,),
                   Container(
                     decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey,width: 0.7),
@@ -170,21 +200,22 @@ class ProfileScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         const SizedBox(width: 5,),
-                        Icon(Icons.person,color:Theme.of(context).primaryColor),
-                        const SizedBox(width: 5,),
+                        Icon(FontAwesomeIcons.userLarge,color:Theme.of(context).primaryColor),
+                        const SizedBox(width: 10,),
                         Text(
-                          userNameText.tr,
+                          nameText.tr,
                           style: TextStyle(
                             color:Theme.of(context).primaryColor,
                             fontSize: responsive(context, 16.0, 22.0),
 
                           ),
                         ),
-                        const SizedBox(width: 10,),
+                        const SizedBox(width: 35,),
                         Expanded(
                           child: Text(
                             usernameData!,
                             style: TextStyle(
+                              decoration: TextDecoration.underline,
                               color: Theme.of(context).primaryColor,
                               fontSize:  responsive(context, 18.0, 24.0),
                               fontWeight: FontWeight.bold,
@@ -232,7 +263,6 @@ class ProfileScreen extends StatelessWidget {
                                               labelStyle: TextStyle(
                                                   color: Colors.grey,
                                                   fontSize:  responsive(context, 14.0, 18.0)),
-                                              contentPadding: const EdgeInsets.only(right: 10),
                                               labelText: (userNameText.tr),
                                               border:  OutlineInputBorder(
                                                 borderRadius: BorderRadius.circular(15.0),
@@ -245,7 +275,7 @@ class ProfileScreen extends StatelessWidget {
                                             ),
                                             style: const TextStyle(
                                                 fontSize: 20.0,
-                                                color: Colors.black),
+                                               ),
                                           ),
                                         ),
                                       ),
@@ -342,7 +372,7 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ));
                         },
-                            icon: Icon(Icons.edit,color: Theme.of(context).primaryColor,))
+                            icon: Icon(FontAwesomeIcons.edit,color: Theme.of(context).primaryColor,))
                       ],
                     ),
                   ),
@@ -355,8 +385,8 @@ class ProfileScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         const SizedBox(width: 5,),
-                        Icon(Icons.phone,color: Theme.of(context).primaryColor,),
-                        const SizedBox(width: 5,),
+                        Icon(FontAwesomeIcons.phone,color: Theme.of(context).primaryColor,),
+                        const SizedBox(width: 10,),
                         Expanded(flex: 1,
                           child: Text(
                             phoneText.tr,
@@ -371,13 +401,14 @@ class ProfileScreen extends StatelessWidget {
                           child: Text(
                             phoneNumberData!,
                             style: TextStyle(
+                              decoration: TextDecoration.underline,
                               color: Theme.of(context).primaryColor,
                               fontSize:  responsive(context, 18.0, 24.0),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 20,),
+                        const SizedBox(width: 35,),
                         IconButton(onPressed: (){
                           showModalBottomSheet(isScrollControlled: true,context: context, builder: (context) =>
                               SizedBox(
@@ -392,6 +423,23 @@ class ProfileScreen extends StatelessWidget {
                                         child: Text(phoneText.tr,style: TextStyle(fontSize: responsive(context, 16.0, 22.0),),),
                                       ),
                                       const Divider(),
+                                      const SizedBox(height: 10,),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(FontAwesomeIcons.circleInfo,color: Colors.red,),
+                                                  const SizedBox(width: 10,),
+                                                  Text(
+                                                    thePhoneInfo.tr,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                       const SizedBox(height: 30,),
                                       Padding(
                                         padding: const EdgeInsets.only(
@@ -417,7 +465,6 @@ class ProfileScreen extends StatelessWidget {
                                               labelStyle: TextStyle(
                                                   color: Colors.grey,
                                                   fontSize:  responsive(context, 14.0, 18.0)),
-                                              contentPadding: const EdgeInsets.only(right: 10),
                                               labelText: (phoneText.tr),
                                               border:  OutlineInputBorder(
                                                 borderRadius: BorderRadius.circular(15.0),
@@ -430,7 +477,7 @@ class ProfileScreen extends StatelessWidget {
                                             ),
                                             style: const TextStyle(
                                                 fontSize: 20.0,
-                                                color: Colors.black),
+                                               ),
                                           ),
                                         ),
                                       ),
@@ -527,7 +574,7 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ));
                         },
-                            icon: Icon(phoneNumberData==""?Icons.add_circle:Icons.edit,color: Theme.of(context).primaryColor,))
+                            icon: Icon(phoneNumberData==""?Icons.add_circle_outline:FontAwesomeIcons.edit,color: Theme.of(context).primaryColor,))
                       ],
                     ),
                   ),
@@ -540,7 +587,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         const SizedBox(width: 5,),
-                        Icon(Icons.pin_drop,color: Theme.of(context).primaryColor,),
+                        Icon(FontAwesomeIcons.locationArrow,color: Theme.of(context).primaryColor,),
                         const SizedBox(width: 5,),
                         Expanded(flex: 1,
                           child: Text(
@@ -556,6 +603,7 @@ class ProfileScreen extends StatelessWidget {
                           child: Text(
                             addressData!,
                             style: TextStyle(
+                              decoration: TextDecoration.underline,
                               color: Theme.of(context).primaryColor,
                               fontSize:  responsive(context, 18.0, 24.0),
                               fontWeight: FontWeight.bold,
@@ -582,7 +630,22 @@ class ProfileScreen extends StatelessWidget {
                                         padding: const EdgeInsets.only(
                                             right: 10,left: 10),
                                         child:  TextFormField(
-                                          maxLength: 10,
+                                          readOnly: true,
+                                          onTap: (){
+                                            showCountryPicker(
+                                              exclude: <String>['IL'],
+                                              showSearch:false,
+                                              countryListTheme: CountryListThemeData(
+                                                borderRadius: BorderRadius.all(Radius.circular(1)),
+                                                bottomSheetHeight: MediaQuery.of(context).size.width,
+                                              ),
+                                              context: context,
+                                              showPhoneCode: false,
+                                              onSelect: (Country country) {
+                                                userAddressProfileController.text= country.name;
+                                              },
+                                            );
+                                          },
                                           controller: userAddressProfileController,
                                           cursorColor: Theme.of(context).primaryColor,
                                           keyboardType:
@@ -595,7 +658,6 @@ class ProfileScreen extends StatelessWidget {
                                             labelStyle: TextStyle(
                                                 color: Colors.grey,
                                                 fontSize:  responsive(context, 14.0, 18.0)),
-                                            contentPadding: const EdgeInsets.only(right: 10),
                                             labelText: (addressText.tr),
                                             border:  OutlineInputBorder(
                                               borderRadius: BorderRadius.circular(15.0),
@@ -608,7 +670,7 @@ class ProfileScreen extends StatelessWidget {
                                           ),
                                           style: const TextStyle(
                                               fontSize: 20.0,
-                                              color: Colors.black),
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 20,),
@@ -702,7 +764,213 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ));
                         },
-                            icon: Icon(addressData==""?Icons.add_circle:Icons.edit,color: Theme.of(context).primaryColor,))
+                            icon: Icon(addressData==""?Icons.add_circle_outline:FontAwesomeIcons.edit,color: Theme.of(context).primaryColor,))
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20,),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey,width: 0.7),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 5,),
+                        Icon(FontAwesomeIcons.eyeDropper,color:Theme.of(context).primaryColor),
+                        const SizedBox(width: 10,),
+                        Text(
+                          themeText.tr,
+                          style: TextStyle(
+                            color:Theme.of(context).primaryColor,
+                            fontSize: responsive(context, 16.0, 22.0),
+
+                          ),
+                        ),
+                        const SizedBox(width: 38,),
+                        Expanded(
+                          child: Text(
+                            themeData!,
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                              color: Theme.of(context).primaryColor,
+                              fontSize:  responsive(context, 18.0, 24.0),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20,),
+                        IconButton(onPressed: (){
+                          showModalBottomSheet(isScrollControlled: true,context: context, builder: (context) =>
+                              SizedBox(
+                                width: double.infinity,
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children:  [
+                                      Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Text(themeText.tr,style: TextStyle(fontSize: responsive(context, 16.0, 22.0),),),
+                                      ),
+                                      const Divider(),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child:  Row(
+                                          children: [
+                                            const Icon(FontAwesomeIcons.infoCircle,color: Colors.red,),
+                                            const SizedBox(width: 10,),
+                                                  Text(
+                                                    theThemeInfo.tr,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                    ),
+                                                  ),
+                                                ],
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 30,),
+                                      Center(
+                                        child: ToggleSwitch(
+                                          minWidth: double.infinity,
+                                          initialLabelIndex:themeData == 'origin'
+                                              ? 0
+                                              : themeData == 'blue'
+                                              ? 1
+                                              : themeData == 'pink'
+                                              ? 2
+                                              : 0,
+                                          cornerRadius: 15.0,
+                                          activeFgColor: Colors.white,
+                                          inactiveBgColor: Colors.grey,
+                                          inactiveFgColor: Colors.white,
+                                          totalSwitches: 3,
+                                          labels: [
+                                            originColor.tr,
+                                            blueColor.tr,
+                                            pinkColor.tr
+                                          ],
+                                          activeBgColors: const [[Colors.amber], [Colors.blue], [Colors.pink]],
+                                          onToggle: (index) {
+                                            if(index==0)
+                                              {
+                                               themeData='origin';
+                                               }
+                                            else if(index==1)
+                                              {
+                                                themeData='blue';
+                                              }
+                                            else if(index==2){
+                                              themeData='pink';
+                                            }
+                                            Get.changeTheme(FlexThemeData.light(
+                                              scheme: themeData == 'origin'
+                                                  ? FlexScheme.mango
+                                                  : themeData == 'blue'
+                                                  ? FlexScheme.ebonyClay
+                                                  : themeData == 'pink'
+                                                  ? FlexScheme.sakura
+                                                  : FlexScheme.mango,
+                                              fontFamily:
+                                              CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
+                                            ),);
+                                                CacheHelper.sharedPreferences?.setString("theme", themeData!);
+                                                FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(FirebaseAuth.instance.currentUser!.uid).update(
+                                                    {"theme": themeData!});
+                                                Navigator.pop(context);
+
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20,),
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 10,left: 10),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child:
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                },
+                                                style: ElevatedButton
+                                                    .styleFrom(
+                                                  padding: const EdgeInsets
+                                                      .only(
+                                                      top:
+                                                      3,
+                                                      right:
+                                                      3,
+                                                      left:
+                                                      3),
+                                                  primary: Colors
+                                                      .white,
+                                                ),
+                                                child:  Text(
+                                                  back.tr,
+                                                  style: const TextStyle(
+                                                      color: Colors
+                                                          .black,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold,
+                                                      fontSize:
+                                                      20),
+                                                ),
+                                              ),
+                                            ),
+
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding:  EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom,),
+                                        child: const SizedBox(height: 20,),
+                                      ),
+
+
+                                    ],
+                                  ),
+                                ),
+                              ));
+                        },
+                            icon: Icon(FontAwesomeIcons.edit,color: Theme.of(context).primaryColor,))
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20,),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey,width: 0.7),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 5,),
+                        Icon(FontAwesomeIcons.circleInfo,color:Theme.of(context).primaryColor),
+                        const SizedBox(width: 10,),
+                        Text(
+                          logoutText.tr,
+                          style: TextStyle(
+                            color:Theme.of(context).primaryColor,
+                            fontSize: responsive(context, 16.0, 22.0),
+
+                          ),
+                        ),
+                       Spacer(),
+                        IconButton(onPressed: (){
+                          FirebaseAuth.instance.signOut().whenComplete(() => {
+                            CacheHelper.sharedPreferences?.remove("id"),
+                            CacheHelper.sharedPreferences!.clear()
+                          }).whenComplete(() => {
+                            navigatePushReplacement(context, const LoginScreen()),
+                          });
+                        },
+                            icon: Icon(FontAwesomeIcons.signOutAlt,color: Theme.of(context).primaryColor,))
                       ],
                     ),
                   ),

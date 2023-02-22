@@ -10,6 +10,8 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
+import 'package:mahdeko/models/chat_model.dart';
+import 'package:mahdeko/models/message_model.dart';
 import 'package:mahdeko/models/post_data.dart';
 import 'package:mahdeko/models/user_data_model.dart';
 import 'package:age_calculator/age_calculator.dart';
@@ -34,6 +36,7 @@ class HomeCubit extends Cubit<HomeStates> {
       phoneNumberData = user!.phoneNumber;
       addressData = user!.location;
       profileImage = user!.image;
+      themeData=user!.theme!;
       emit(UserDataSuccess());
     }).catchError((error) {
       emit(UserDataError());
@@ -64,6 +67,33 @@ class HomeCubit extends Cubit<HomeStates> {
     );
     durationAge = AgeCalculator.age(dateTimeFormat);
   }
+
+  DateDuration? durationUserAge;
+
+  void ageCalculatorUsers(date) {
+    var re = RegExp(
+      r'^'
+      r'(?<day>[0-9]{1,2})'
+      r'/'
+      r'(?<month>[0-9]{1,2})'
+      r'/'
+      r'(?<year>[0-9]{4,})'
+      r'$',
+    );
+
+    var match = re.firstMatch(date!);
+    if (match == null) {
+      throw const FormatException('Unrecognized date format');
+    }
+
+    var dateTimeFormat = DateTime(
+      int.parse(match.namedGroup('year')!),
+      int.parse(match.namedGroup('month')!),
+      int.parse(match.namedGroup('day')!),
+    );
+    durationUserAge = AgeCalculator.age(dateTimeFormat);
+  }
+
 
   Future<void> updateUserData(updateData, controller) async {
     emit(UserUpdateDataLoading());
@@ -545,6 +575,153 @@ Future<void> createPost() async {
       notifBody: showNotif && enableNotif ? 'You have to do this note' : null,
     );
   }
+
+  List<UserDataModel> usersList = [];
+  Map<String,dynamic> usersMap = {};
+
+  void getUsers() {
+    FirebaseFirestore.instance.collection('users').snapshots().listen((value) {
+
+      usersList = [];
+      usersMap = {};
+
+      for (var element in value.docs) {
+        if (UserDataModel.fromJson(element.data()).uId != user!.uId) {
+          usersList.add(UserDataModel.fromJson(element.data()));
+        }
+      }
+      for (var element in value.docs) {
+        usersMap.addAll({
+          UserDataModel.fromJson(element.data()).uId.toString() :
+          UserDataModel.fromJson(element.data())
+        });
+      }
+
+      debugPrint(usersList.length.toString());
+      print(usersList);
+      print(usersMap);
+
+      emit(UserGetUsersSuccess());
+
+    });
+  }
+
+  TextEditingController messageController = TextEditingController();
+
+  void sendMessage(UserDataModel userDataModel) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uId)
+        .collection('chats')
+        .get()
+        .then((value) {
+      MessageDataModel model = MessageDataModel(
+        time: DateTime.now().toString(),
+        message: messageController.text,
+        receiverId: userDataModel.uId!,
+        senderId: user!.uId!,
+      );
+
+      if (value.docs
+          .any((element) => element.reference.id != userDataModel.uId)) {
+        ChatDataModel chatDataModel = ChatDataModel(
+          username: userDataModel.username!,
+          userId: userDataModel.uId!,
+          userImage: userDataModel.image!,
+        );
+
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uId)
+            .collection('chats')
+            .doc(userDataModel.uId)
+            .set(chatDataModel.toJson())
+            .then((value) {})
+            .catchError((error) {
+          debugPrint(error.toString());
+
+          emit(UserChatError());
+
+        });
+
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(userDataModel.uId)
+            .collection('chats')
+            .doc(user!.uId)
+            .set(chatDataModel.toJson())
+            .then((value) {})
+            .catchError((error) {
+          debugPrint(error.toString());
+
+          emit(UserChatError());
+
+        });
+      }
+      else {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uId)
+            .collection('chats')
+            .doc(userDataModel.uId)
+            .collection('messages')
+            .add(model.toJson())
+            .then((value) {
+          messageController.clear();
+        }).catchError((error) {
+          debugPrint(error.toString());
+
+          emit(UserChatError());
+
+        });
+
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(userDataModel.uId)
+            .collection('chats')
+            .doc(user!.uId)
+            .collection('messages')
+            .add(model.toJson())
+            .then((value) {
+          messageController.clear();
+        }).catchError((error) {
+          debugPrint(error.toString());
+
+          emit(UserChatError());
+
+        });
+      }
+    }).catchError((error) {
+
+      emit(UserChatError());
+    });
+  }
+
+  List<MessageDataModel> messagesList = [];
+
+  void getMessages(UserDataModel userDataModel) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uId)
+        .collection('chats')
+        .doc(userDataModel.uId)
+        .collection('messages').orderBy('time', descending: true,)
+        .snapshots()
+        .listen((value) {
+      messagesList = [];
+
+      for (var element in value.docs) {
+        messagesList.add(MessageDataModel.fromJson(element.data()));
+      }
+
+      debugPrint(messagesList.length.toString());
+
+      emit(UserGetMessagesSuccess());
+    });
+  }
+
+
+
 
 }
 

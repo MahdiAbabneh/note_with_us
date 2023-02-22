@@ -65,6 +65,10 @@ dependencies:
   photo_view: ^0.14.0
   custom_radio_grouped_button: ^2.1.2+2
   alarm: ^0.0.6
+  country_picker: ^2.0.19
+  flex_color_scheme: ^6.1.2
+  toggle_switch: ^2.0.1
+  font_awesome_flutter: ^10.4.0
 
 
 

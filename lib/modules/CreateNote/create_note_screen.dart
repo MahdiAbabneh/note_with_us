@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -72,7 +73,7 @@ class CreateNoteScreen extends StatelessWidget {
                               padding: 4,
                               centerImageUrl: profileImage!,
                               seenColor: Colors.grey,
-                              unSeenColor: Colors.red,
+                              unSeenColor: Theme.of(context).primaryColor,
                             ),
                             const SizedBox(width: 10,),
                             Text(
@@ -85,12 +86,12 @@ class CreateNoteScreen extends StatelessWidget {
                             const Spacer(),
                             IconButton(onPressed:cubit.imageFileListFromGallery!.length==3?null: (){
                               cubit.selectPostImages();
-                            }, icon: Icon(Icons.image,color:cubit.imageFileListFromGallery!.length==3?Colors.grey: Theme.of(context).primaryColor,)),
+                            }, icon: Icon(FontAwesomeIcons.images,color:cubit.imageFileListFromGallery!.length==3?Colors.grey: Theme.of(context).primaryColor, )),
                           ],
                         ),
                         const Divider(),
                         SizedBox(height: 5,),
-                        CustomRadioButton(width: 150,
+                        CustomRadioButton(spacing: 10,enableShape:true ,shapeRadius: 25,width: 150,
                           elevation: 0,
                           absoluteZeroSpacing: true,
                           unSelectedColor: Theme.of(context).canvasColor,
@@ -104,7 +105,7 @@ class CreateNoteScreen extends StatelessWidget {
                         ],
                         buttonTextStyle: const ButtonTextStyle(
                               selectedColor: Colors.white,
-                              unSelectedColor: Colors.black,
+                              unSelectedColor: Colors.grey,
                               textStyle: TextStyle(fontSize: 16)),
                           radioButtonValue: (value) {
                             selectedTypeNoteValue=value;
@@ -194,8 +195,11 @@ class CreateNoteScreen extends StatelessWidget {
                     const Center(child: AdaptiveIndicator()),
                     condition:state is! UserCreatePostLoading,
                     builder:(context) => ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor:  const Color(
-                            0xFFC27D3C),
+                        style: ElevatedButton.styleFrom(backgroundColor:  Theme.of(context).primaryColor,
+                          shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(15.0),
+                              )),
                         ), onPressed:() {
                           if(textPostController.text.isEmpty&&cubit.imageFileListFromGallery!.isEmpty&&selectedTypeNoteValue==null)
                             {
@@ -214,7 +218,7 @@ class CreateNoteScreen extends StatelessWidget {
                                 showToastFailed(toast7.tr, context);
                               }
                             }
-                    }, child:Text(createNoteText.tr, style:  TextStyle(
+                    }, child:Text(createNoteText.tr, style:  TextStyle(color:  Colors.white,
                         fontWeight: FontWeight.bold, fontSize:  responsive(context, 14.0, 18.0)),)),
                   ),
                 ),

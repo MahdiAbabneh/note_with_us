@@ -2,6 +2,7 @@ import 'package:conditional_builder_null_safety/conditional_builder_null_safety.
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,14 +64,19 @@ class RegisterScreen extends StatelessWidget {
                     children: [
                       DropdownButtonFormField2(
                         decoration:  InputDecoration(
+                          enabledBorder:OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide:  const BorderSide(color: Colors.grey),
+                          ) ,
                           errorMaxLines: 1,
-                          prefixIcon: Icon(Icons.group,color:Theme.of(context).primaryColor,),
+                          prefixIcon: Icon(FontAwesomeIcons.venusMars,color:Theme.of(context).primaryColor,),
                           labelStyle: TextStyle(
                               color: Colors.grey,
                               fontSize:responsive(context, 14.0, 18.0)),
                           contentPadding: const EdgeInsets.only(right: 10),
                           labelText: genderText.tr,
                           border:  OutlineInputBorder(
+
                             borderRadius: BorderRadius.circular(15.0),
                             borderSide: BorderSide(color:Theme.of(context).primaryColor,),
                           ),
@@ -83,7 +89,7 @@ class RegisterScreen extends StatelessWidget {
                         icon:  Padding(
                           padding: const EdgeInsets.only(left: 10.0),
                           child: Icon(
-                            Icons.arrow_drop_down,
+                            FontAwesomeIcons.caretDown,
                             color: Theme.of(context).primaryColor,
                           ),
                         ),
@@ -116,6 +122,7 @@ class RegisterScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20,),
                       TextFormField(
+
                         onTap: (){
                           cubit.selectDateRegister(context);
                         },
@@ -134,8 +141,13 @@ class RegisterScreen extends StatelessWidget {
                         textInputAction:
                         TextInputAction.newline,
                         decoration:  InputDecoration(
+
+                          enabledBorder:OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide:  const BorderSide(color: Colors.grey),
+                          ) ,
                           errorMaxLines: 2,
-                          prefixIcon: Icon(Icons.date_range,color:Theme.of(context).primaryColor,),
+                          prefixIcon: Icon(FontAwesomeIcons.solidCalendarDays,color:Theme.of(context).primaryColor,),
 
                           labelStyle: TextStyle(
                               color: Colors.grey,
@@ -153,7 +165,7 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         style: const TextStyle(
                             fontSize: 20.0,
-                            color: Colors.black),
+                        ),
                       ),
                       const SizedBox(height: 20,),
                       TextFormField(
@@ -171,8 +183,12 @@ class RegisterScreen extends StatelessWidget {
                         textInputAction:
                         TextInputAction.newline,
                         decoration:  InputDecoration(
+                          enabledBorder:OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide:  const BorderSide(color: Colors.grey),
+                          ) ,
                           errorMaxLines: 2,
-                          prefixIcon: Icon(Icons.person,color:Theme.of(context).primaryColor,),
+                          prefixIcon: Icon(FontAwesomeIcons.userLarge,color:Theme.of(context).primaryColor,),
 
                           labelStyle: TextStyle(
                               color: Colors.grey,
@@ -190,7 +206,7 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         style: const TextStyle(
                             fontSize: 20.0,
-                            color: Colors.black),
+                            ),
                       ),
                       const SizedBox(height: 20,),
                       TextFormField(
@@ -208,7 +224,11 @@ class RegisterScreen extends StatelessWidget {
                         textInputAction:
                         TextInputAction.newline,
                         decoration:  InputDecoration(
-                          prefixIcon: Icon(Icons.email,color: Theme.of(context).primaryColor,),
+                          enabledBorder:OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide:  const BorderSide(color: Colors.grey),
+                          ) ,
+                          prefixIcon: Icon(FontAwesomeIcons.envelopeCircleCheck,color: Theme.of(context).primaryColor,),
 
                           labelStyle: TextStyle(
                               color: Colors.grey,
@@ -226,7 +246,7 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         style: const TextStyle(
                             fontSize: 20.0,
-                            color: Colors.black),
+                        ),
                       ),//
                       const SizedBox(height: 20,),
                       TextFormField(
@@ -245,11 +265,15 @@ class RegisterScreen extends StatelessWidget {
                         TextInputAction.newline,
                         obscureText: cubit.isPassword,
                         decoration:  InputDecoration(
+                          enabledBorder:OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide:  const BorderSide(color: Colors.grey),
+                          ) ,
                           errorMaxLines: 2,
                           suffixIcon: InkWell(onTap: (){
                             cubit.changePasswordVisibility();
                           },child: Icon(cubit.suffixPassword,color: Theme.of(context).primaryColor,)),
-                          prefixIcon:  Icon(Icons.lock,color:Theme.of(context).primaryColor,),
+                          prefixIcon:  Icon(FontAwesomeIcons.lock,color:Theme.of(context).primaryColor,),
 
                           labelStyle:  TextStyle(
                               color: Colors.grey,
@@ -267,7 +291,7 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         style: const TextStyle(
                             fontSize: 20.0,
-                            color: Colors.black),
+                           ),
                       ),//
                       const SizedBox(height: 20,),
                       TextFormField(
@@ -286,11 +310,15 @@ class RegisterScreen extends StatelessWidget {
                         textInputAction:
                         TextInputAction.newline,
                         decoration:  InputDecoration(
+                          enabledBorder:OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            borderSide:  const BorderSide(color: Colors.grey),
+                          ) ,
                           suffixIcon: InkWell(onTap: (){
                            cubit.changeConfirmPasswordVisibility();
                           },
                               child: Icon(cubit.suffixConfirmPassword,color:Theme.of(context).primaryColor,)),
-                          prefixIcon:  Icon(Icons.lock,color: Theme.of(context).primaryColor,),
+                          prefixIcon:  Icon(FontAwesomeIcons.unlock,color: Theme.of(context).primaryColor,),
 
                           labelStyle:  TextStyle(
                               color: Colors.grey,
@@ -308,7 +336,7 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         style: const TextStyle(
                             fontSize: 20.0,
-                            color: Colors.black),
+                            ),
                       ),//
                       const SizedBox(height: 40,),
                       SizedBox(width: double.infinity,child: SizedBox(
@@ -319,6 +347,10 @@ class RegisterScreen extends StatelessWidget {
                           condition: state is! UserRegisterLoading,
                           builder:(context) =>   ElevatedButton(
                               style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor,
+                                shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(15.0),
+                                    )),
 
                               ),onPressed: (){
 
@@ -327,13 +359,10 @@ class RegisterScreen extends StatelessWidget {
                             }
                           },
                               child:
-                              Text(createAccount.tr,style: TextStyle(fontWeight: FontWeight.bold,fontSize:  responsive(context, 14.0, 18.0)),)),
+                              Text(createAccount.tr,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize:  responsive(context, 14.0, 18.0)),)),
                         ),
 
                       )),
-
-
-
                     ],
                   ),
                 )

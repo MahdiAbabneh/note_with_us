@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -13,6 +15,7 @@ import 'package:mahdeko/modules/CreateNote/create_note_screen.dart';
 import 'package:mahdeko/modules/Login/login_screen.dart';
 import 'package:mahdeko/modules/Porsonal/profile_screen.dart';
 import 'package:mahdeko/modules/PostOnlyMe/post_only_me_screen.dart';
+import 'package:mahdeko/modules/Users/users_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -32,137 +35,38 @@ class HomeLayout extends StatelessWidget {
     MyLocaleController controllerLang= Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
       listener: (context, state) {
+        if(state is UserGetPostSuccess)
+          {
+            cubit.getUsers();
+          }
       },
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
-              title:  Text(homepage.tr))
-          ,drawer: Drawer(
-          backgroundColor: Theme.of(context).primaryColor,
-          child: SafeArea(
-            child: ListTileTheme(
-              textColor: Colors.white,
-              iconColor: Colors.white,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      width: 150.0,
-                      height: 150.0,
-                      margin: const EdgeInsets.only(
-                        top: 100.0,
-                        bottom: 64.0,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      decoration: const BoxDecoration(
-                        color: Colors.black26,
-                        shape: BoxShape.circle,
-                      ),
-                      child:Image.asset("assets/images/NWU.png",),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        // SocialCubit.get(context).getPosts();
-                        // Navigator.pop(context);
-                      },
-                      leading: const Icon(Icons.home),
-                      title:  Text(homepage.tr,style: TextStyle(fontSize: responsive(context, 16.0, 20.0))),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        // mobadrahNameController.text="";
-                        // mobadrahTextController.text="";
-                        // SocialCubit.get(context).postImage=null;
-                        // SocialCubit.get(context).numberOfHours=1;
-                        // SocialCubit.get(context).postType=SocialCubit.get(context).post2;
-                        //
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) =>  PostScreen(),
-                        //   ),
-                        // );
-                      },
-                      leading: const Icon(Icons.add),
-                      title:  Text(createNoteText.tr,style: TextStyle(fontSize: responsive(context, 16.0, 20.0))),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) =>  MyProfileAdminScreen(),
-                        //   ),
-                        // );
-                      },
-                      leading: const Icon(Icons.person),
-                      title:  Text(personalPage.tr,style: TextStyle(fontSize: responsive(context, 16.0, 20.0))),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        // Navigator.push(
-                        //     context,
-                        //     MaterialPageRoute(
-                        //       builder: (context) => const UsersAdminScreen(),
-                        //     ));
-                      },
-                      leading: const Icon(Icons.people),
-                      title:  Text(usersText.tr,style: TextStyle(fontSize: responsive(context, 16.0, 20.0))),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        // navigateTo(context,const NotificationsAdminScreen());
+            actions: [const Icon(FontAwesomeIcons.moon),Switch(value: darkMoodData!, onChanged: (val){
+              Get.changeThemeMode(val?ThemeMode.dark:ThemeMode.light);
+              CacheHelper.sharedPreferences?.setBool("darkMood", val);
+              darkMoodData=val;
+              FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid).update(
+                  {"darkMood": val});
 
-                      },
-                      leading: const Icon(Icons.circle_notifications),
-                      title:  Text(notificationText.tr,style: TextStyle(fontSize: responsive(context, 16.0, 20.0))),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        if(CacheHelper.getData(key:"lang")=="ar")
-                        {
-                          controllerLang.changeLang("en");
-                        }
-                        else{
-                          controllerLang.changeLang("ar");
-                        }
-
-                      },
-                      leading: const Icon(Icons.language),
-                      title:Text(CacheHelper.getData(key:"lang")=="ar"?"العربية":"English",style: TextStyle(fontSize: responsive(context, 16.0, 20.0)),),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        FirebaseAuth.instance.signOut().whenComplete(() => {
-                          CacheHelper.sharedPreferences?.remove("id"),
-                          CacheHelper.sharedPreferences!.clear()
-                        }).whenComplete(() => {
-                          navigatePushReplacement(context, const LoginScreen()),
-                        });
-
-                      },
-                      leading: const Icon(Icons.exit_to_app),
-                      title:  Text(logoutText.tr),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+              
+            })],
+              title:  Text(homepage.tr)),
           bottomNavigationBar: ConvexAppBar(
               color: Colors.white,
               activeColor: Colors.white,
               style:TabStyle.fixedCircle,
               initialActiveIndex: 0,
               backgroundColor: Theme.of(context).primaryColor,
-              items: const [
-                TabItem(icon: Icons.home),
-                TabItem(icon: Icons.people),
-                TabItem(icon: Icons.add),
-                TabItem(icon: Icons.person_pin_outlined),
-                TabItem(icon: Icons.person),
+              items:  [
+                TabItem(icon: Icon(FontAwesomeIcons.trophy,color: Colors.white, )),
+                TabItem(icon: Icon(FontAwesomeIcons.users,color: Colors.white, )),
+                TabItem(icon: Icon(FontAwesomeIcons.add,color: Theme.of(context).primaryColor, )),
+                TabItem(icon: Icon(FontAwesomeIcons.userPen,color: Colors.white, )),
+                TabItem(icon: Icon(FontAwesomeIcons.userClock,color: Colors.white, )),
 
               ],
               onTap: (int i) {
@@ -172,10 +76,11 @@ class HomeLayout extends StatelessWidget {
                 }
                 if(i==1)
                 {
-                  // navigateTo(context,const NotificationsAdminScreen());
+                  navigateTo(context,const UsersScreen());
                 }
                 if(i==2)
                 {
+                  selectedTypeNoteValue=null;
                  navigateTo(context, const CreateNoteScreen());
                 }
                 if(i==3)
@@ -190,7 +95,7 @@ class HomeLayout extends StatelessWidget {
               }
           ),
           body: ConditionalBuilder(
-            condition:state is! UserGetPostLoading,
+            condition:state is! UserGetPostLoading&&cubit.usersList.isNotEmpty ,
             builder: (context) => SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
@@ -203,13 +108,18 @@ class HomeLayout extends StatelessWidget {
                           buildPostItem(
                             context,
                               index,
-                           cubit.postsList[index]
-                                .values
-                                .single
-                                .ownerImage,
-                            cubit.postsList[index]
-                                .values
-                                .single.ownerName,
+                              cubit
+                                  .usersMap[cubit
+                                  .postsList[index]
+                                  .values
+                                  .single
+                                  .ownerId].image!,
+                              cubit
+                                  .usersMap[cubit
+                                  .postsList[index]
+                                  .values
+                                  .single
+                                  .ownerId].username!,
                             cubit.postsList[index]
                                 .values
                                 .single.time,
@@ -276,7 +186,7 @@ class HomeLayout extends StatelessWidget {
                 padding: 4,
                 centerImageUrl: ownerImage!,
                 seenColor: Colors.grey,
-                unSeenColor: Colors.red,
+                unSeenColor:Theme.of(context).primaryColor,
               ),
               const SizedBox(width: 10,),
               Column(
@@ -298,7 +208,7 @@ class HomeLayout extends StatelessWidget {
               Visibility(visible:HomeCubit.get(context).postsList[index].values.single.ownerId==idForUser ,child: IconButton(onPressed: (){
                 HomeCubit.get(context).deletePost(post).whenComplete(() => HomeCubit.get(context).getPosts());
 
-              }, icon:const Icon(Icons.delete)))
+              }, icon:const  Icon(FontAwesomeIcons.trash)))
             ],
           ),
           Padding(
@@ -342,7 +252,7 @@ class HomeLayout extends StatelessWidget {
                   width: 30.0,
                   height: 30.0,
                   child: CircularProgressIndicator(
-                    backgroundColor:Colors.red,
+                    backgroundColor:Colors.grey,
                     value: event == null
                         ? 0
                         : event.cumulativeBytesLoaded / event.expectedTotalBytes!,
@@ -377,7 +287,7 @@ class HomeLayout extends StatelessWidget {
                       HomeCubit.get(context).user!.username)
                       ? Icon ( Icons.thumb_up_off_alt_rounded,color: Theme.of(context).primaryColor,)
                       :
-                  const Icon ( Icons.thumb_up_off_alt_rounded)
+                  const Icon ( Icons.thumb_up_off_alt_rounded,color: Colors.grey,)
               ),
               Text(
                 likeText.tr,

@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,8 +29,11 @@ void main() async{
 
   Widget? widget;
   idForUser = CacheHelper.getData(key:'id');
+  darkMoodData=CacheHelper.getData(key:'darkMood')??false;
+  themeData=CacheHelper.getData(key: 'theme')??'origin';
   if (kDebugMode) {
     print(idForUser);
+    print(themeData);
   }
 
   if (idForUser != null){
@@ -60,32 +64,29 @@ class MyApp extends StatelessWidget {
         builder: (context, state) {
           MyLocaleController controllerLang= Get.put(MyLocaleController());
           return GetMaterialApp(
-            theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: Color(0xFFC27D3C),
-                  primary:Color(0xFFC27D3C),
-                ),
-                fontFamily:CacheHelper.getData(key:"lang")=="ar"?"Almarai":"mali",
-                primaryColor: const Color(0xFFC27D3C),
-                appBarTheme: const AppBarTheme(
-                  backgroundColor:Color(0xFFC27D3C),
-                  titleSpacing: 20.0,
-                  // ignore: deprecated_member_use
-                  backwardsCompatibility: false,
-                  elevation: 0.0,
-                  iconTheme: IconThemeData(
-                    color: Colors.white,
-                  ),
-                ),
-                floatingActionButtonTheme: const FloatingActionButtonThemeData(
-                  backgroundColor:  Color(0xFFC27D3C),
-                ),
-                bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor:  Color(0xFFC27D3C),
-                  unselectedItemColor: Colors.grey,
-                  elevation: 20.0,
-                )),
+            theme: FlexThemeData.light(
+              scheme: themeData == 'origin'
+                  ? FlexScheme.mango
+                  : themeData == 'blue'
+                      ? FlexScheme.ebonyClay
+                      : themeData == 'pink'
+                          ? FlexScheme.sakura
+                          : FlexScheme.mango,
+              fontFamily:
+                  CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
+            ),
+            darkTheme: FlexThemeData.dark(
+              scheme: themeData == 'origin'
+                  ? FlexScheme.mango
+                  : themeData == 'blue'
+                      ? FlexScheme.ebonyClay
+                      : themeData == 'pink'
+                          ? FlexScheme.sakura
+                          : FlexScheme.mango,
+              fontFamily:
+                  CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
+            ),
+            themeMode: darkMoodData! ? ThemeMode.dark : ThemeMode.light,
             title: "Note with us",
             debugShowCheckedModeBanner: false,
             locale: controllerLang.initialLang,
