@@ -1,18 +1,3 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
-
-
-
-
-
-const String  application_json='application/json';
-
-const Color darkBlueColor= Color(0xff005cb9);
-
-const Color grayColor= Color(0xDFEEF8FF);
-
-const String appFont="MyriadPro";
-
 const String email="Email";
 
 const String password="Password";
@@ -30,7 +15,6 @@ const String toast4="Create Account Failed Please Verify the Data Entered";
 const String noHave="Don't have an account ? ";
 
 const String noHave2=" Create an account";
-
 
 const String loginText="Login";
 

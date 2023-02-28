@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -135,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
                             IconButton(
                                 onPressed: (){
                                   AwesomeDialog(
-                                    customHeader: Icon(FontAwesomeIcons.circleInfo,size: responsive(context, 50.0, 100.0),color: Theme.of(context).primaryColor,),
+                                    customHeader: Icon(FontAwesomeIcons.circleInfo,size:100,color: Theme.of(context).primaryColor,),
                                     showCloseIcon: true,
                                     btnCancel: null,
                                     btnOk: null,
@@ -991,10 +992,12 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                        const Spacer(),
-                        IconButton(onPressed: (){
-                          FirebaseAuth.instance.signOut().whenComplete(() => {
-                            CacheHelper.sharedPreferences?.remove("id"),
-                            CacheHelper.sharedPreferences!.clear()
+                        IconButton(onPressed: ()async{
+                          await FirebaseAuth.instance.signOut().whenComplete(() async{
+                             await cubit.subscription?.cancel();
+                            CacheHelper.sharedPreferences!.clear();
+                              Get.changeThemeMode(ThemeMode.light);
+                          darkMoodData=false;
                           }).whenComplete(() => {
                             navigatePushReplacement(context, const LoginScreen()),
                           });

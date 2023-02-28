@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:alarm/alarm.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:empty_widget/empty_widget.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -33,6 +30,8 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
   @override
   void initState() {
     HomeCubit.get(context).getPostsOnlyMe();
+    HomeCubit.get(context).getReminder();
+    HomeCubit.get(context).reminderChange();
     super.initState();
   }
 
@@ -53,14 +52,13 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                   if(cubit.selectedTime!= null)
                     cubit.addReminder(),
                 });
-
               } ,
               icon: const Icon(FontAwesomeIcons.bell,),
 
             ),],
               title:  Text(personalPage.tr)),
           body: ConditionalBuilder(
-            condition:state is! UserGetPostOnlyMeLoading&&cubit.usersList.isNotEmpty ,
+            condition:state is! UserGetPostOnlyMeLoading,
             builder: (context) => SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(
@@ -75,7 +73,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                           Text(
                             'Alarm will ring ${cubit.ringDay()} at ${cubit.selectedTime!.format(context)}',
                           ),
-                        if (cubit.isRinging) Text("'🔔 ${ringing.tr} 🔔'"),
+                        if (cubit.isRinging) Text("🔔 ${ringing.tr} 🔔"),
                         const Spacer(),
                         if (cubit.isRinging)
                           RawMaterialButton(
@@ -433,6 +431,8 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                       FlutterClipboard.copy(text);
                       showToastSuccess(copyText.tr, context);
                       AwesomeDialog(
+                        customHeader: Icon(FontAwesomeIcons.circleCheck,size:100,color: Theme.of(context).primaryColor,),
+                        btnOkColor: Theme.of(context).primaryColor,
                         btnOkText: okText.tr,
                         context: context,
                         animType: AnimType.leftSlide,
@@ -453,6 +453,8 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                       showToastSuccess(saveText.tr, context);
                       HomeCubit.get(context).saveImageInGallery(imagePosts).whenComplete((){
                         AwesomeDialog(
+                          customHeader: Icon(FontAwesomeIcons.circleCheck,size:100,color: Theme.of(context).primaryColor,),
+                          btnOkColor: Theme.of(context).primaryColor,
                           btnOkText: okText.tr,
                           context: context,
                           animType: AnimType.leftSlide,

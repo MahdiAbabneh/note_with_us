@@ -54,8 +54,6 @@ class UserGetPostOnlyMeError extends HomeStates {}
 
 class UserReminderLoading extends HomeStates {}
 
-class UserGetUsersSuccess extends HomeStates {}
-
 class UserReminderSuccess extends HomeStates {}
 
 class UserReminderError extends HomeStates {}

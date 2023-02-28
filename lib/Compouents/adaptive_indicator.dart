@@ -11,9 +11,7 @@ class AdaptiveIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (Platform.isAndroid) {
-      return const CircularProgressIndicator(color:  Color(
-          0xFFC27D3C),
-      );
+      return const CircularProgressIndicator();
     }
     return const CupertinoActivityIndicator();
   }

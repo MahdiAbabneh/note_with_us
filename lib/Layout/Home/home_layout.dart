@@ -44,6 +44,7 @@ class HomeLayout extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
+              automaticallyImplyLeading: false,
             actions: [const Icon(FontAwesomeIcons.moon),Switch(value: darkMoodData!, onChanged: (val){
               Get.changeThemeMode(val?ThemeMode.dark:ThemeMode.light);
               CacheHelper.sharedPreferences?.setBool("darkMood", val);
@@ -95,7 +96,7 @@ class HomeLayout extends StatelessWidget {
               }
           ),
           body: ConditionalBuilder(
-              condition:state is! UserGetPostLoading&&cubit.usersList.isNotEmpty ,
+              condition:state is! UserGetPostLoading,
               builder: (context) => SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
@@ -450,7 +451,8 @@ class HomeLayout extends StatelessWidget {
                     FlutterClipboard.copy(text);
                     showToastSuccess(copyText.tr, context);
                     AwesomeDialog(
-                    btnOkColor: Theme.of(context).primaryColor,
+                      customHeader: Icon(FontAwesomeIcons.circleCheck,size:100,color: Theme.of(context).primaryColor,),
+                      btnOkColor: Theme.of(context).primaryColor,
                       btnOkText: okText.tr,
                       context: context,
                       animType: AnimType.leftSlide,
@@ -471,6 +473,7 @@ class HomeLayout extends StatelessWidget {
                     showToastSuccess(saveText.tr, context);
                     HomeCubit.get(context).saveImageInGallery(imagePosts).whenComplete((){
                       AwesomeDialog(
+                        customHeader: Icon(FontAwesomeIcons.circleCheck,size:100,color: Theme.of(context).primaryColor,),
                         btnOkColor: Theme.of(context).primaryColor,
                         btnOkText: okText.tr,
                         context: context,

@@ -485,34 +485,43 @@ Future<void> createPost() async {
   }
 
   Future<void> getReminder()async {
-    ReminderDataModel? reminderGetDataModel;
+    if(FirebaseAuth.instance.currentUser==null)
+      {
+        emit(UserReminderSuccess());
+      }
+    else {
+      ReminderDataModel? reminderGetDataModel;
 
-    emit(UserReminderLoading());
+      emit(UserReminderLoading());
 
-    await FirebaseFirestore.instance
-        .collection('reminder')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .get()
-        .then((value) {
-      reminderGetDataModel=ReminderDataModel.fromJson(value.data()!);
-      selectedTime=TimeOfDay.fromDateTime(DateTime.parse(reminderGetDataModel!.selectedTime!));
-      isRinging=reminderGetDataModel!.isRinging;
-      emit(UserReminderSuccess());
-
-    }).catchError((error) {
-
-      emit(UserReminderError());
-
-    });
+      await FirebaseFirestore.instance
+          .collection('reminder')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .get()
+          .then((value) {
+        reminderGetDataModel = ReminderDataModel.fromJson(value.data()!);
+        selectedTime = TimeOfDay.fromDateTime(
+            DateTime.parse(reminderGetDataModel!.selectedTime!));
+        isRinging = reminderGetDataModel!.isRinging;
+        emit(UserReminderSuccess());
+      }).catchError((error) {
+        emit(UserReminderError());
+      });
+    }
   }
 
   StreamSubscription? subscription;
   Future<void>reminderChange()async{
-    subscription = Alarm.ringStream.stream.listen((onData) {
-      isRinging= true;
-      selectedTime=null;
-      emit(UserChangeReminder());
-    });
+    try {
+      subscription = Alarm.ringStream.stream.listen((onData) {
+        isRinging = true;
+        selectedTime = null;
+        emit(UserChangeReminder());
+      });
+    }
+    catch (error) {
+      emit(UserReminderError());
+    }
   }
 
   Future<void> pickTime(context) async {
@@ -590,9 +599,6 @@ Future<void> createPost() async {
           UserDataModel.fromJson(element.data())
         });
       }
-
-      emit(UserGetUsersSuccess());
-
     });
   }
 
