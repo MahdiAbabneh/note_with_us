@@ -1,6 +1,9 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:clipboard/clipboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,9 +13,8 @@ import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
-import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/modules/CreateNote/create_note_screen.dart';
-import 'package:mahdeko/modules/Login/login_screen.dart';
+import 'package:mahdeko/modules/Games/games_screen.dart';
 import 'package:mahdeko/modules/Porsonal/profile_screen.dart';
 import 'package:mahdeko/modules/PostOnlyMe/post_only_me_screen.dart';
 import 'package:mahdeko/modules/Users/users_screen.dart';
@@ -32,7 +34,6 @@ class HomeLayout extends StatelessWidget {
   Widget build(BuildContext context) {
 
     var cubit = HomeCubit.get(context);
-    MyLocaleController controllerLang= Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
       listener: (context, state) {
         if(state is UserGetPostSuccess)
@@ -62,17 +63,17 @@ class HomeLayout extends StatelessWidget {
               initialActiveIndex: 0,
               backgroundColor: Theme.of(context).primaryColor,
               items:  [
-                TabItem(icon: Icon(FontAwesomeIcons.trophy,color: Colors.white, )),
-                TabItem(icon: Icon(FontAwesomeIcons.users,color: Colors.white, )),
+                const TabItem(icon: Icon(FontAwesomeIcons.childReaching,color: Colors.white, )),
+                const TabItem(icon: Icon(FontAwesomeIcons.users,color: Colors.white, )),
                 TabItem(icon: Icon(FontAwesomeIcons.add,color: Theme.of(context).primaryColor, )),
-                TabItem(icon: Icon(FontAwesomeIcons.userPen,color: Colors.white, )),
-                TabItem(icon: Icon(FontAwesomeIcons.userClock,color: Colors.white, )),
+                const TabItem(icon: Icon(FontAwesomeIcons.userClock,color: Colors.white, )),
+                const TabItem(icon: Icon(FontAwesomeIcons.userPen,color: Colors.white, )),
 
               ],
               onTap: (int i) {
                 if(i==0)
                 {
-                  cubit.getPosts();
+                 navigateTo(context, const GamesScreen());
                 }
                 if(i==1)
                 {
@@ -85,76 +86,85 @@ class HomeLayout extends StatelessWidget {
                 }
                 if(i==3)
                 {
-                 navigateTo(context, const ProfileScreen());
+                  navigateTo(context, const PostOnlyMeScreen());
                 }
                 if(i==4)
                 {
-                 navigateTo(context, PostOnlyMeScreen());
-                 cubit.getPostsOnlyMe();
+                  navigateTo(context, const ProfileScreen());
                 }
               }
           ),
           body: ConditionalBuilder(
-            condition:state is! UserGetPostLoading&&cubit.usersList.isNotEmpty ,
-            builder: (context) => SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20,),
-                  ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index,) =>
-                          buildPostItem(
-                            context,
-                              index,
-                              cubit
-                                  .usersMap[cubit
-                                  .postsList[index]
-                                  .values
-                                  .single
-                                  .ownerId].image!,
-                              cubit
-                                  .usersMap[cubit
-                                  .postsList[index]
-                                  .values
-                                  .single
-                                  .ownerId].username!,
-                            cubit.postsList[index]
-                                .values
-                                .single.time,
-                            cubit.postsList[index]
-                                .values
-                                .single
-                                .text,
-                              cubit
-                              .postsList[index]
-                              .values
-                              .single
-                              .image,
-                                  cubit.postsList[index]
-                              .values
-                              .single
-                              .numOfImages,
-                              cubit.postsList[index]
-                                  .values
-                                  .single
-                                  .likes,
-                              cubit.postsList[index]
-                          ),
-                      separatorBuilder: (context, index) => const SizedBox(
-                        height: 8.0,
-                      ),
+              condition:state is! UserGetPostLoading&&cubit.usersList.isNotEmpty ,
+              builder: (context) => SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    if(state is  UserSaveImageInGalleryLoading)
+                      LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
+                    const SizedBox(height: 20,),
+                    EasyRefresh(onRefresh: ()async {
+                      await cubit.getPosts();
+                    },
+                      child: SizedBox(height:MediaQuery.of(context).size.height-160,
+                        child: ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
 
-                      itemCount:cubit.postsList.length
-                  ),
-                  SizedBox(height: 40,),
-                ],
+                            shrinkWrap: true,
+                          itemBuilder: (context, index,) =>
+                                buildPostItem(
+                                  context,
+                                    index,
+                                    cubit
+                                        .usersMap[cubit
+                                        .postsList[index]
+                                        .values
+                                        .single
+                                        .ownerId].image!,
+                                    cubit
+                                        .usersMap[cubit
+                                        .postsList[index]
+                                        .values
+                                        .single
+                                        .ownerId].username!,
+                                  cubit.postsList[index]
+                                      .values
+                                      .single.time,
+                                  cubit.postsList[index]
+                                      .values
+                                      .single
+                                      .text,
+                                    cubit
+                                    .postsList[index]
+                                    .values
+                                    .single
+                                    .image,
+                                        cubit.postsList[index]
+                                    .values
+                                    .single
+                                    .numOfImages,
+                                    cubit.postsList[index]
+                                        .values
+                                        .single
+                                        .likes,
+                                    cubit.postsList[index]
+                                ),
+                            separatorBuilder: (context, index) => const SizedBox(
+                              height: 8.0,
+                            ),
+
+                            itemCount:cubit.postsList.length
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40,),
+                  ],
+                ),
               ),
+              fallback: (BuildContext context) =>
+                  const Center(child:AdaptiveIndicator()),
             ),
-            fallback: (BuildContext context) =>
-                const Center(child:AdaptiveIndicator()),
-          ),
+
         );
 
       });
@@ -205,8 +215,127 @@ class HomeLayout extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              Visibility(visible:HomeCubit.get(context).postsList[index].values.single.ownerId==idForUser ,child: IconButton(onPressed: (){
-                HomeCubit.get(context).deletePost(post).whenComplete(() => HomeCubit.get(context).getPosts());
+              Visibility(visible:HomeCubit.get(context).postsList[index].values.single.ownerId==idForUser ,child: IconButton(
+                  onPressed: (){
+                    showModalBottomSheet(isScrollControlled: true,context: context, builder: (context) =>
+                        SizedBox(
+                          width: double.infinity,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children:  [
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Text(
+                                    deleteNotePostText.tr,
+                                    style: TextStyle(
+                                      fontSize: responsive(
+                                          context, 16.0, 22.0),
+                                    ),
+                                  ),
+                                ),
+                                const Divider(),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10,left: 10),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child:
+                                        ElevatedButton(
+                                          onPressed:
+                                              () { HomeCubit.get(context)
+                                                            .deletePost(post)
+                                                            .whenComplete(() {
+                                                Navigator.pop(context);
+                                                HomeCubit.get(
+                                                    context)
+                                                    .getPosts();
+                                              });
+                                                      },
+                                          style: ElevatedButton
+                                              .styleFrom(
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(15.0),
+                                                )),
+                                            padding: const EdgeInsets
+                                                .only(
+                                                top:
+                                                3,
+                                                right:
+                                                3,
+                                                left:
+                                                3), backgroundColor: Theme.of(
+                                                context)
+                                                .primaryColor,
+                                          ),
+                                          child:  Text(
+                                            yesText.tr,
+                                            style: const TextStyle(
+                                                color: Colors
+                                                    .white,
+                                                fontWeight:
+                                                FontWeight
+                                                    .bold,
+                                                fontSize:
+                                                20),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        width: 20,
+                                      ),
+                                      Expanded(
+                                        child:
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          style: ElevatedButton
+                                              .styleFrom(
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(15.0),
+                                                )),
+                                            padding: const EdgeInsets
+                                                .only(
+                                                top:
+                                                3,
+                                                right:
+                                                3,
+                                                left:
+                                                3), backgroundColor: Colors
+                                                .white,
+                                          ),
+                                          child:  Text(
+                                            back.tr,
+                                            style: const TextStyle(
+                                                color: Colors
+                                                    .black,
+                                                fontWeight:
+                                                FontWeight
+                                                    .bold,
+                                                fontSize:
+                                                20),
+                                          ),
+                                        ),
+                                      ),
+
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding:  EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom,),
+                                  child: const SizedBox(height: 20,),
+                                ),
+
+
+                              ],
+                            ),
+                          ),
+                        ));
+
 
               }, icon:const  Icon(FontAwesomeIcons.trash)))
             ],
@@ -223,7 +352,7 @@ class HomeLayout extends StatelessWidget {
           ),
                ReadMoreText(
                  text,
-                trimLines: 2,
+                trimLines: 8,
                 colorClickableText: Colors.pink,
                 trimMode: TrimMode.Line,
                 trimCollapsedText: showMore.tr,
@@ -241,7 +370,7 @@ class HomeLayout extends StatelessWidget {
                   maxScale: PhotoViewComputedScale.covered * 2,
                 );
               },
-              scrollPhysics: BouncingScrollPhysics(),
+              scrollPhysics: const BouncingScrollPhysics(),
               backgroundDecoration: BoxDecoration(
                 borderRadius:const BorderRadius.all(Radius.circular(20)),
                 color: Theme.of(context).canvasColor,
@@ -262,7 +391,29 @@ class HomeLayout extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 10,),
+          const SizedBox(height: 10,),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.thumb_up_off_alt_rounded,
+                  size: 16.0,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(
+                  width: 5.0,
+                ),
+                Padding(
+                  padding:
+                  const EdgeInsets.only(top: 4.0),
+                  child: Text("${likes.length}"),
+                ),
+
+
+              ],
+            ),
+          ),
 
           Padding(
             padding: const EdgeInsets.only(
@@ -292,25 +443,49 @@ class HomeLayout extends StatelessWidget {
               Text(
                 likeText.tr,
               ),
-              Spacer(),
-              Row(
-                children: [
-                  Icon(
-                    Icons.thumb_up_off_alt_rounded,
-                    size: 16.0,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(
-                    width: 5.0,
-                  ),
-                  Padding(
-                    padding:
-                    const EdgeInsets.only(top: 4.0),
-                    child: Text("${likes.length}"),
-                  ),
-
-
-                ],
+              const Spacer(),
+              if(text!="")
+              IconButton(
+                  onPressed: (){
+                    FlutterClipboard.copy(text);
+                    showToastSuccess(copyText.tr, context);
+                    AwesomeDialog(
+                    btnOkColor: Theme.of(context).primaryColor,
+                      btnOkText: okText.tr,
+                      context: context,
+                      animType: AnimType.leftSlide,
+                      headerAnimationLoop: false,
+                      dialogType: DialogType.success,
+                      showCloseIcon: true,
+                      title: copiedTextDone.tr,
+                      btnOkOnPress: () {},
+                      btnOkIcon: Icons.check_circle,
+                      onDismissCallback: (type) {},
+                    ).show();
+                  },
+                  icon:  Icon ( FontAwesomeIcons.fileText,color: Theme.of(context).primaryColor,)
+              ),
+              if(imagePosts.isNotEmpty)
+              IconButton(
+                  onPressed: (){
+                    showToastSuccess(saveText.tr, context);
+                    HomeCubit.get(context).saveImageInGallery(imagePosts).whenComplete((){
+                      AwesomeDialog(
+                        btnOkColor: Theme.of(context).primaryColor,
+                        btnOkText: okText.tr,
+                        context: context,
+                        animType: AnimType.leftSlide,
+                        headerAnimationLoop: false,
+                        dialogType: DialogType.success,
+                        showCloseIcon: true,
+                        title: saveImageDone.tr,
+                        btnOkOnPress: () {},
+                        btnOkIcon: Icons.check_circle,
+                        onDismissCallback: (type) {},
+                      ).show();
+                    });
+                  },
+                  icon:  Icon ( FontAwesomeIcons.fileImage,color: Theme.of(context).primaryColor,)
               ),
             ]),
           ),
@@ -319,9 +494,3 @@ class HomeLayout extends StatelessWidget {
     ),
   );
 }
-
-final imageList = [
-  "assets/images/NWU.png",
-  "assets/images/NWU.png",
-  "assets/images/NWU.png",
-];

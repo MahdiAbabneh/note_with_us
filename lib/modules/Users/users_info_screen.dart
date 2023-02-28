@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -8,7 +9,6 @@ import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
-import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/modules/Users/chat_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 
@@ -19,7 +19,6 @@ class UsersInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var cubit = HomeCubit.get(context);
-    MyLocaleController controllerLang = Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
         listener: (context, state) {},
         builder: (context, state) {
@@ -31,11 +30,8 @@ class UsersInfoScreen extends StatelessWidget {
             body: ListView(
               children: <Widget>[
                 const SizedBox(height: 8,),
-
-
                 Stack(alignment: Alignment.center,
                     children:[
-
                       Stack(alignment:CacheHelper.getData(key:"lang")=="ar"?Alignment.topRight:Alignment.topLeft ,
                           children: [
                             Container(
@@ -112,7 +108,7 @@ class UsersInfoScreen extends StatelessWidget {
                                       ),
                                     ],),
                                   ),
-                                  Divider(),
+                                  const Divider(),
                                 ],
                               ),
                             ),
@@ -124,23 +120,25 @@ class UsersInfoScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Spacer(),
+                    const Spacer(),
                     IconButton(onPressed: (){
                       cubit.messageController.text = "";
                       navigateTo(context,  ChatScreen(userDataModel: cubit.usersList[indexUser!]));
                     },
                         icon:  Icon(FontAwesomeIcons.commenting,color: Theme.of(context).primaryColor,size: 45,)),
-                    Spacer(),
-                    IconButton(onPressed: (){
-                      cubit.messageController.text = "";
-                      navigateTo(context,  ChatScreen(userDataModel: cubit.usersList[indexUser!]));
+                    const Spacer(),
+                    IconButton(onPressed: ()async{
+                      if(cubit.usersList[indexUser!].phoneNumber != ""){
+                        await FlutterPhoneDirectCaller.callNumber('${cubit.usersList[indexUser!].phoneNumber}');
+                      }else{
+                        showToastFailed(toast8.tr,context);
+                      }
                     },
-                        icon:  Icon(FontAwesomeIcons.phone,color: Theme.of(context).primaryColor,size: 45,)),
-                    Spacer(),
-
+                        icon: Icon(FontAwesomeIcons.phone,color: Theme.of(context).primaryColor,size: 45,)),
+                    const Spacer(),
                   ],),
                 const SizedBox(height: 8,),
-                Divider(),
+                const Divider(),
               ],
             ),
           );

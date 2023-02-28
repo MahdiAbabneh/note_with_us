@@ -1,17 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
-import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/models/message_model.dart';
 import 'package:mahdeko/models/user_data_model.dart';
-import 'package:mahdeko/network/cache_helper.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserDataModel userDataModel;
@@ -35,12 +34,25 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     var cubit = HomeCubit.get(context);
-    MyLocaleController controllerLang = Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
         listener: (context, state) {},
         builder: (context, state) {
           return Scaffold(
             appBar: AppBar(
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 10,right: 10),
+                  child: IconButton(onPressed: ()async{
+                    if(cubit.usersList[indexUser!].phoneNumber != ""){
+                      await FlutterPhoneDirectCaller.callNumber('${cubit.usersList[indexUser!].phoneNumber}');
+                    }else{
+                      showToastFailed(toast8.tr,context);
+                    }
+                  },
+                      icon:  const Icon(FontAwesomeIcons.phone,)),
+                ),
+
+              ],
               title: Row(
                 children: [
                   CachedNetworkImage(
@@ -57,7 +69,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     placeholder: (context, url) => const CircularProgressIndicator(),
                     errorWidget: (context, url, error) => const Icon(Icons.error),
                   ),
-                  SizedBox(width: 10,),
+                  const SizedBox(width: 10,),
                   Text(
                     widget.userDataModel.username!,
                   ),
@@ -121,16 +133,14 @@ class _ChatScreenState extends State<ChatScreen> {
                             decoration:  InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15.0),
-                                borderSide: const BorderSide(color:  Color(
-                                    0xFFC27D3C),),),
+                                borderSide:  BorderSide(color:Theme.of(context).primaryColor,),),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15.0),
-                                borderSide: const BorderSide(color:  Color(
-                                    0xFFC27D3C),),
+                                borderSide:  BorderSide(color:Theme.of(context).primaryColor, ),
                               ),
                             ),
                             style: const TextStyle(
-                                fontSize: 16.0, color: Colors.black),
+                                fontSize: 16.0),
                           ),
                         ),
                       ),
@@ -243,7 +253,7 @@ class UserItem extends StatelessWidget {
                   15.0,
                 ),
               ),
-              color: Colors.grey[200],
+              color: darkMoodData! ?  Colors.grey :  Colors.grey[200],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

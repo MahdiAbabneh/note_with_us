@@ -38,7 +38,7 @@ class LoginScreen extends StatelessWidget {
             })
                 .whenComplete(() => {
             Phoenix.rebirth(Get.context!),
-            navigatePushReplacement(context,  HomeLayout()),
+            navigatePushReplacement(context,  const HomeLayout()),
             showToastSuccess(toast3.tr, context),
              });
           }
@@ -110,7 +110,7 @@ class LoginScreen extends StatelessWidget {
                         labelText: email.tr,
                         enabledBorder:OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.0),
-                          borderSide:  BorderSide(color: Colors.grey),
+                          borderSide:  const BorderSide(color: Colors.grey),
                         ) ,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.0),
@@ -149,7 +149,7 @@ class LoginScreen extends StatelessWidget {
                         labelText: password.tr,
                         enabledBorder:OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.0),
-                          borderSide:  BorderSide(color: Colors.grey),
+                          borderSide:  const BorderSide(color: Colors.grey),
                         ) ,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.0),
@@ -166,7 +166,7 @@ class LoginScreen extends StatelessWidget {
                     ), //
                     const SizedBox(height: 20,),
 
-                    SizedBox(width: double.infinity, child: Container(
+                    SizedBox(width: double.infinity, child: SizedBox(
                       height: 50,
                       child:ConditionalBuilder(
                         fallback: (context) =>

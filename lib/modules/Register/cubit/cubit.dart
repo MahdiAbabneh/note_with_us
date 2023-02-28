@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,6 @@ import 'package:mahdeko/models/user_data_model.dart';
 import 'package:mahdeko/modules/Register/cubit/states.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 
-import '../register_screen.dart';
 
 
 

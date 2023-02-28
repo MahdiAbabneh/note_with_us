@@ -1,6 +1,6 @@
+import 'package:alarm/alarm.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
@@ -15,26 +15,20 @@ import 'modules/Login/cubit/states.dart';
 import 'modules/Login/login_screen.dart';
 import 'modules/Register/cubit/cubit.dart';
 import 'network/cache_helper.dart';
-
 import 'package:get/instance_manager.dart';
 import 'package:get/route_manager.dart';
 
+BuildContext context= context;
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await Alarm.init();
   await CacheHelper.init();
   Bloc.observer = AppBlocObserver();
-  //CacheHelper.sharedPreferences!.clear();
-
-
   Widget? widget;
   idForUser = CacheHelper.getData(key:'id');
   darkMoodData=CacheHelper.getData(key:'darkMood')??false;
   themeData=CacheHelper.getData(key: 'theme')??'origin';
-  if (kDebugMode) {
-    print(idForUser);
-    print(themeData);
-  }
 
   if (idForUser != null){
     widget =  const HomeLayout();}
@@ -57,7 +51,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (BuildContext context) => LoginCubit()),
         BlocProvider(create: (BuildContext context) => RegisterCubit()),
-        BlocProvider(create: (BuildContext context) => HomeCubit()..getUserData()..getPosts()),
+        BlocProvider(create: (BuildContext context) => HomeCubit()..getUserData()..getPosts().. getReminder()..reminderChange()),
       ],
       child: BlocConsumer<LoginCubit,LoginStates>(
         listener: (context, state) {},
@@ -76,15 +70,8 @@ class MyApp extends StatelessWidget {
                   CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
             ),
             darkTheme: FlexThemeData.dark(
-              scheme: themeData == 'origin'
-                  ? FlexScheme.mango
-                  : themeData == 'blue'
-                      ? FlexScheme.ebonyClay
-                      : themeData == 'pink'
-                          ? FlexScheme.sakura
-                          : FlexScheme.mango,
-              fontFamily:
-                  CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
+              scheme: FlexScheme.mango,
+              fontFamily: CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
             ),
             themeMode: darkMoodData! ? ThemeMode.dark : ThemeMode.light,
             title: "Note with us",

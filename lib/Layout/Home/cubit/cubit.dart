@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 import 'dart:io';
 import 'package:alarm/alarm.dart';
@@ -6,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -15,6 +17,7 @@ import 'package:mahdeko/models/message_model.dart';
 import 'package:mahdeko/models/post_data.dart';
 import 'package:mahdeko/models/user_data_model.dart';
 import 'package:age_calculator/age_calculator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeCubit extends Cubit<HomeStates> {
   HomeCubit() : super(HomeInitialState());
@@ -95,12 +98,12 @@ class HomeCubit extends Cubit<HomeStates> {
   }
 
 
-  Future<void> updateUserData(updateData, controller) async {
+  Future<void> updateUserData(String updateData,String controller) async {
     emit(UserUpdateDataLoading());
     FirebaseFirestore.instance
         .collection('users')
         .doc(FirebaseAuth.instance.currentUser!.uid).update(
-        {"$updateData": controller}).then((value) {
+        {updateData: controller}).then((value) {
       FirebaseFirestore.instance
           .collection('users')
           .doc(FirebaseAuth.instance.currentUser!.uid).get().then((value) {
@@ -186,8 +189,6 @@ class HomeCubit extends Cubit<HomeStates> {
             .last}')
         .putFile(profileImageForUser!)
         .then((file) {
-      debugPrint(file.state.name);
-
       file.ref.getDownloadURL().then((value) {
         FirebaseFirestore.instance
             .collection('users')
@@ -227,7 +228,7 @@ class HomeCubit extends Cubit<HomeStates> {
     }
   }
 
-  void removePostImage(index) {
+  void removePostImage(int index) {
     imageFileListFromGallery?.removeAt(index);
     emit(UserRemovePostImage());
   }
@@ -259,9 +260,7 @@ Future<void> createPost() async {
           imagesForPost.add(value);
         });
       });
-     print("=============================================================$i====================");
     }
-    print(imagesForPost);
 
     PostDataModel model = PostDataModel(
       image: imagesForPost,
@@ -271,7 +270,6 @@ Future<void> createPost() async {
       ownerName:  user!.username!,
       text: textPostController.text,
       time: dateFormat(nowTime),
-      reminder: [],
       numOfImages: 3-imagesForPost.length,
     );
 
@@ -307,7 +305,6 @@ Future<void> createPost() async {
       ownerName:  user!.username!,
       text: textPostController.text,
       time: dateFormat(nowTime),
-      reminder: [],
       numOfImages: 3,
     );
     if(selectedTypeNoteValue=="SHARE")
@@ -355,10 +352,12 @@ Future<void> createPost() async {
   }
 
   List<Map<String,PostDataModel>> postsListOnlyMe = [];
-  List <TimeOfDay?> selectedTime=[];
-  bool showNotif = true;
-  List <bool> isRinging = [];
+  TimeOfDay? selectedTime;
+  bool showNotifOnRing = true;
+  bool showNotifOnKill = true;
+  bool isRinging = false;
   bool loopAudio = true;
+
 
   Future<void> getPostsOnlyMe() async {
     emit(UserGetPostOnlyMeLoading());
@@ -374,20 +373,8 @@ Future<void> createPost() async {
         postsListOnlyMe.add(
             {element.reference.id: PostDataModel.fromJson(element.data())});
       }
-          selectedTime=[];
-      for (int i = 0; i < postsListOnlyMe.length; i++) {
-        selectedTime.add(value.docs[i].data()["reminder"].isEmpty?null:TimeOfDay.fromDateTime(DateTime.parse(postsListOnlyMe[i].values.single.reminder.single.selectedTime!)));
-      }
-          isRinging = [];
-      for (int i = 0; i < postsListOnlyMe.length; i++) {
-        isRinging.add(false);
-      }
-       print(selectedTime);
-        print(isRinging);
-
       emit(UserGetPostOnlyMeSuccess());
     }).catchError((onError){
-      print(onError);
       emit(UserGetPostOnlyMeError());
     });
   }
@@ -395,7 +382,6 @@ Future<void> createPost() async {
 
   void updatePostLikes(Map<String, PostDataModel> post) {
     if (post.values.single.likes.any((element) => element.ownerName == user!.username)) {
-      debugPrint('exist and remove');
 
       post.values.single.likes.removeWhere((element) => element.ownerName == user!.username);
     } else {
@@ -404,7 +390,6 @@ Future<void> createPost() async {
         ownerName: user!.username!,
         ownerImage: user!.image!,
       );
-      debugPrint('not exist and add');
 
       post.values.single.likes.add(likeDataModel);
     }
@@ -415,7 +400,6 @@ Future<void> createPost() async {
         .then((value) {
       emit(UserLikeSuccess());
     }).catchError((error) {
-      debugPrint(error.toString());
 
       emit(UserLikeError());
     });
@@ -457,30 +441,9 @@ Future<void> createPost() async {
     });
   }
 
-  Future<void> postReminder(Map<String, PostDataModel> post,selectedTime,isRinging)async {
+  Future<void> addReminder()async {
     emit(UserReminderLoading());
-    if(post.values.single.reminder.isNotEmpty)
-      {
-        post.values.single.reminder.removeLast();
-        final now = DateTime.now();
-
-        ReminderDataModel reminderDataModel = ReminderDataModel(
-          selectedTime: DateTime(
-            now.year,
-            now.month,
-            now.day,
-            selectedTime!.hour,
-            selectedTime!.minute,
-          ).toString(),
-          isRinging: isRinging,
-        );
-        post.values.single.reminder.add(reminderDataModel);
-      }
-    else {
-      print(selectedTime);
-      print(isRinging);
-      final now = DateTime.now();
-
+     final now = DateTime.now();
       ReminderDataModel reminderDataModel = ReminderDataModel(
         selectedTime: DateTime(
           now.year,
@@ -491,89 +454,120 @@ Future<void> createPost() async {
         ).toString(),
         isRinging: isRinging,
       );
-      post.values.single.reminder.add(reminderDataModel);
-    }
     FirebaseFirestore.instance
-        .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
-        .doc(post.keys.single)
-        .update(post.values.single.toJson())
+        .collection('reminder')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .set(reminderDataModel.toJson())
         .then((value) {
       emit(UserReminderSuccess());
     }).catchError((error) {
-      debugPrint(error.toString());
 
       emit(UserReminderError());
     });
   }
 
-  Future<void> updatePostReminder(Map<String, PostDataModel> post)async {
+  Future<void> deleteReminder()async {
 
-    post.values.single.reminder.removeLast();
-    FirebaseFirestore.instance
-        .collection('postsOnlyMe').doc(FirebaseAuth.instance.currentUser!.uid).collection("myPost")
-        .doc(post.keys.single)
-        .update(post.values.single.toJson())
+    emit(UserReminderLoading());
+
+    await FirebaseFirestore.instance
+        .collection('reminder')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .delete()
         .then((value) {
       emit(UserReminderSuccess());
+
     }).catchError((error) {
-      debugPrint(error.toString());
+
       emit(UserReminderError());
+
     });
   }
 
+  Future<void> getReminder()async {
+    ReminderDataModel? reminderGetDataModel;
 
-  Future<void> pickTime(context,index) async {
+    emit(UserReminderLoading());
+
+    await FirebaseFirestore.instance
+        .collection('reminder')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get()
+        .then((value) {
+      reminderGetDataModel=ReminderDataModel.fromJson(value.data()!);
+      selectedTime=TimeOfDay.fromDateTime(DateTime.parse(reminderGetDataModel!.selectedTime!));
+      isRinging=reminderGetDataModel!.isRinging;
+      emit(UserReminderSuccess());
+
+    }).catchError((error) {
+
+      emit(UserReminderError());
+
+    });
+  }
+
+  StreamSubscription? subscription;
+  Future<void>reminderChange()async{
+    subscription = Alarm.ringStream.stream.listen((onData) {
+      isRinging= true;
+      selectedTime=null;
+      emit(UserChangeReminder());
+    });
+  }
+
+  Future<void> pickTime(context) async {
+    final now = DateTime.now();
+
     final res = await showTimePicker(
       initialTime: TimeOfDay(
-        hour: TimeOfDay.now().hour,
-        minute: TimeOfDay.now().minute + 1,
+        hour: now.hour,
+        minute: now.add(const Duration(minutes: 1)).minute,
       ),
       context: context,
       confirmText: 'SET ALARM',
     );
 
     if (res == null) return;
-    selectedTime[index] = res;
+    selectedTime = res;
 
-    final now = DateTime.now();
     DateTime dt = DateTime(
       now.year,
       now.month,
       now.day,
-      selectedTime[index]!.hour,
-      selectedTime[index]!.minute,
+      selectedTime!.hour,
+      selectedTime!.minute,
     );
 
-    if (ringDay(index) == 'tomorrow') dt = dt.add(const Duration(days: 1));
+    if (ringDay() == 'tomorrow') dt = dt.add(const Duration(days: 1));
 
-    setAlarm(index,dt);
+    setAlarm(dt);
+
   }
 
-  String ringDay(index) {
+  String ringDay() {
     final now = TimeOfDay.now();
 
-    if (selectedTime[index]!.hour > now.hour) return 'today';
-    if (selectedTime[index]!.hour < now.hour) return 'tomorrow';
+    if (selectedTime!.hour > now.hour) return 'today';
+    if (selectedTime!.hour < now.hour) return 'tomorrow';
 
-    if (selectedTime[index]!.minute > now.minute) return 'today';
-    if (selectedTime[index]!.minute < now.minute) return 'tomorrow';
+    if (selectedTime!.minute > now.minute) return 'today';
+    if (selectedTime!.minute < now.minute) return 'tomorrow';
 
     return 'tomorrow';
   }
 
-  Future<void> setAlarm(index,DateTime dateTime, [bool enableNotif = true]) async {
-    await Alarm.set(
-      alarmDateTime: dateTime,
-      assetAudio: 'assets/sample.mp3',
+  Future<void> setAlarm(DateTime dateTime, [bool enableNotif = true]) async {
+    final alarmSettings = AlarmSettings(
+      dateTime: dateTime,
+      assetAudioPath: 'assets/sample.mp3',
       loopAudio: loopAudio,
-      onRing: () {
-          isRinging[index] = true;
-          selectedTime[index] = null;
-          emit(UserRingingSuccess());
-      },
-      notifTitle: showNotif && enableNotif ? 'Now is the time' : null,
-      notifBody: showNotif && enableNotif ? 'You have to do this note' : null,
+      notificationTitle:
+      showNotifOnRing && enableNotif ? 'Now is the time' : null,
+      notificationBody:
+      showNotifOnRing && enableNotif ? 'You have to do this note' : null,
+      enableNotificationOnKill:selectedTime==null? false:true,
     );
+    await Alarm.set(settings: alarmSettings);
   }
 
   List<UserDataModel> usersList = [];
@@ -596,10 +590,6 @@ Future<void> createPost() async {
           UserDataModel.fromJson(element.data())
         });
       }
-
-      debugPrint(usersList.length.toString());
-      print(usersList);
-      print(usersMap);
 
       emit(UserGetUsersSuccess());
 
@@ -638,7 +628,6 @@ Future<void> createPost() async {
             .set(chatDataModel.toJson())
             .then((value) {})
             .catchError((error) {
-          debugPrint(error.toString());
 
           emit(UserChatError());
 
@@ -652,7 +641,6 @@ Future<void> createPost() async {
             .set(chatDataModel.toJson())
             .then((value) {})
             .catchError((error) {
-          debugPrint(error.toString());
 
           emit(UserChatError());
 
@@ -669,7 +657,6 @@ Future<void> createPost() async {
             .then((value) {
           messageController.clear();
         }).catchError((error) {
-          debugPrint(error.toString());
 
           emit(UserChatError());
 
@@ -685,7 +672,6 @@ Future<void> createPost() async {
             .then((value) {
           messageController.clear();
         }).catchError((error) {
-          debugPrint(error.toString());
 
           emit(UserChatError());
 
@@ -714,14 +700,30 @@ Future<void> createPost() async {
         messagesList.add(MessageDataModel.fromJson(element.data()));
       }
 
-      debugPrint(messagesList.length.toString());
 
       emit(UserGetMessagesSuccess());
     });
   }
+  Future<void> launchURLBrowser(url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      emit(UserLaunchURLBrowserError());
+    }
+  }
 
-
-
+  Future<void> saveImageInGallery(List listOfImage) async {
+    emit(UserSaveImageInGalleryLoading());
+    for (int i=0;i<listOfImage.length;i++) {
+      try {
+        await GallerySaver.saveImage(listOfImage[i],albumName: 'Note with us');
+      } catch (error) {
+       emit(UserSaveImageInGalleryError());
+      }
+    }
+    emit(UserSaveImageInGallerySuccess());
+  }
 
 }
 

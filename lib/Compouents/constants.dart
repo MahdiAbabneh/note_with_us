@@ -72,7 +72,7 @@ const String homepage="Home";
 
 const String createNoteText="Create a note";
 
-const String personalPage="Personal";
+const String personalPage="My Notes";
 
 const String usersText="Users";
 
@@ -133,6 +133,40 @@ const String themeText="Theme";
 const String thePhoneInfo="Your phone number is shown to everyone.";
 
 const String theThemeInfo="The Dark Mode is enabled for Origin.";
+
+const String toast8="This user does not set his phone number";
+
+const String onlyInfo="Shown for you just.";
+
+const String shareInfo="Shown to everyone.";
+
+const String searchText="Search";
+
+const String funText="For Fun";
+
+const String profileText="Profile";
+
+const String noteInfoText="No Notes for you";
+
+const String noteInfoText2="Click in Create Note to add your own notes";
+
+const String deleteNotePostText="Are you sure to delete this note ?";
+
+const String yesText="Yes";
+
+const String copyText="Copied ...";
+
+const String saveText="Saving ...";
+
+const String okText="OK";
+
+const String copiedTextDone="Text Copied Successfully";
+
+const String saveImageDone="Images Saving Successfully";
+
+
+
+
 
 
 

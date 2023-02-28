@@ -34,7 +34,7 @@ class MyLocale implements Translations{
       "Create Account Failed Please Verify the Data Entered":"فشل إنشاء الحساب الرجاء التحقق من البيانات المدخلة",
       "Home":"الرئيسية",
       "Create a note":"إنشاء ملاحظة",
-      "Personal":"الشخصية",
+      "My Notes":"ملاحظاتي",
       "Users":"المستخدمين",
       "Notification":"الإشعارات",
       "Logout":"تسجيل خروج",
@@ -59,7 +59,7 @@ class MyLocale implements Translations{
       "Ringing...":"رنين...",
       "Stop":"أوقف",
       "Undo":"تراجع",
-      "ONLY ME":"لوحدي",
+      "ONLY ME":"شخصي",
       "SHARE":"مشاركة",
       "Origin":"الآصلي",
       "Blue":"الأزرق",
@@ -67,7 +67,24 @@ class MyLocale implements Translations{
       "Theme":"الألوان",
       "Name":"الأسم",
       "Your phone number is shown to everyone.":"يتم عرض رقم هاتفك للجميع.",
-      "The Dark Mode is enabled for Origin.":"تم تمكين الوضع المظلم لـ الآصلي فقط."
+      "The Dark Mode is enabled for Origin.":"تم تمكين الوضع المظلم لـ الآصلي فقط.",
+      "This user does not set his phone number":"هذا المستخدم لم يحدد رقم هاتفة",
+      "Shown for you just.":"تظهر لك فقط.",
+      "Shown to everyone.":"تظهر للجميع.",
+      "Search":"البحث",
+      "For Fun":"للمتعة",
+      "Profile":"الملف الشخصي",
+      "No Notes for you":"لا توجد ملاحظات لك",
+      "Click in Create Note to add your own notes":"انقر فوق إنشاء ملاحظة لإضافة ملاحظاتك الخاصة",
+      "Are you sure to delete this note ?":"هل أنت متأكد من حذف هذه الملاحظة ؟",
+      "Yes":"نعم",
+      "Copied ...":"نسخ ...",
+      "Saving ...":"حفظ ...",
+      "OK":"حسنا",
+      "Text Copied Successfully":"تم نسخ النص بنجاح",
+      "Images Saving Successfully":"تم حفظ الصور بنجاح"
+
+
 
     },
 

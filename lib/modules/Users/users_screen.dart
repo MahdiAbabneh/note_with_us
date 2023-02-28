@@ -6,10 +6,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/adaptive_indicator.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
+import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
-import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/modules/Users/users_info_screen.dart';
 
 
@@ -28,23 +28,22 @@ class _UsersScreenState extends State<UsersScreen> {
   Widget build(BuildContext context) {
 
     var cubit = HomeCubit.get(context);
-    MyLocaleController controllerLang= Get.find();
     return BlocConsumer<HomeCubit, HomeStates>(
       listener: (context, state) {},
       builder: (context, state) {
         return  Scaffold(
           appBar: AppBar(
-            title: const Text("المستخدمين"),
+            title:  Text(usersText.tr),
           ),
           body:ConditionalBuilder(
             condition: true,
             builder: (context) => SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Column(
                   children: [
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     TextFormField(
                       controller: searchControllerForUsers,
                       keyboardType: TextInputType.text,
@@ -58,7 +57,7 @@ class _UsersScreenState extends State<UsersScreen> {
                         labelStyle: TextStyle(
                             color: Colors.grey,
                             fontSize: responsive(context, 14.0, 18.0)),
-                        labelText: "Search",
+                        labelText: searchText.tr,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.0),
                           borderSide: BorderSide(color:  Theme.of(context).primaryColor),),
@@ -68,10 +67,10 @@ class _UsersScreenState extends State<UsersScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     ListView.builder(
                         shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
+                        physics: const NeverScrollableScrollPhysics(),
                         itemBuilder: (context, index) =>
                         cubit.usersList[index].username!.toLowerCase().contains(searchStringForUsers)?
                         InkWell(

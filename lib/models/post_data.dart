@@ -1,6 +1,4 @@
 
-import 'package:flutter/material.dart';
-
 class PostDataModel {
   PostDataModel({
     required this.text,
@@ -11,7 +9,6 @@ class PostDataModel {
     required this.ownerName,
     required this.ownerImage,
     required this.likes,
-    required this.reminder,
   });
 
   late final String text;
@@ -22,7 +19,6 @@ class PostDataModel {
   late final String ownerName;
   late final String ownerImage;
   late final List<LikeDataModel> likes;
-  late final List<ReminderDataModel> reminder;
 
   PostDataModel.fromJson(Map<String, dynamic> json) {
     text = json['text'] ?? '';
@@ -33,7 +29,6 @@ class PostDataModel {
     ownerName = json['ownerName'] ?? '';
     ownerImage = json['ownerImage'] ?? '';
     likes = List.from(json['likes']).map((e) => LikeDataModel.fromJson(e)).toList();
-    reminder = List.from(json['reminder']).map((e) => ReminderDataModel.fromJson(e)).toList();
 
   }
 
@@ -47,7 +42,6 @@ class PostDataModel {
       'ownerName': ownerName,
       'ownerImage': ownerImage,
       'likes': likes.map((element) => element.toJson()).toList(),
-      'reminder': reminder.map((element) => element.toJson()).toList(),
     };
   }
 }
@@ -82,6 +76,7 @@ class ReminderDataModel {
     required this.selectedTime,
     required this.isRinging,
 
+
   });
   late final String? selectedTime;
   late final bool isRinging;
@@ -91,7 +86,7 @@ class ReminderDataModel {
 
   ReminderDataModel.fromJson(Map<String, dynamic> json) {
     selectedTime = json['selectedTime'] ?? '';
-    isRinging = json['isRinging'] ?? '';
+    isRinging = json['isRinging'] ?? false;
 
   }
 

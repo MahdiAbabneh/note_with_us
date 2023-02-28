@@ -78,4 +78,16 @@ class UserGetMessagesSuccess extends HomeStates {}
 
 class UserChatError extends HomeStates {}
 
+class UserLaunchURLBrowserError extends HomeStates {}
+
+class UserSaveImageInGalleryLoading extends HomeStates {}
+
+class UserSaveImageInGallerySuccess extends HomeStates {}
+
+class UserSaveImageInGalleryError extends HomeStates {}
+
+class UserChangeReminder extends HomeStates {}
+
+
+
 

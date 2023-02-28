@@ -15,7 +15,6 @@ import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
-import 'package:mahdeko/models/user_data_model.dart';
 import 'package:mahdeko/modules/Login/login_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
 import 'package:toggle_switch/toggle_switch.dart';
@@ -38,7 +37,7 @@ class ProfileScreen extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
-              title:  Text(homepage.tr)),
+              title:  Text(profileText.tr)),
           body:Padding(
             padding: const EdgeInsets.all(10.0),
             child: SingleChildScrollView(
@@ -46,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   if(state is  UserProfileImageUploadLoading||state is UserUpdateDataLoading)
                      LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
-                  SizedBox(height: 10,),
+                  const SizedBox(height: 10,),
                   Center(
                     child: ToggleSwitch(
                       minWidth: double.infinity,
@@ -69,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10,),
-                  Divider(),
+                  const Divider(),
                   Stack(alignment: Alignment.center,
                       children:[
 
@@ -90,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                                       radius:  responsive(context, 90.0, 180.0),
                                       backgroundImage:CachedNetworkImageProvider(profileImage!),
                                     )),
-                                SizedBox(height: 20,),
+                                const SizedBox(height: 20,),
                                 Column(children: [
                                   Container(
                                     width: double.infinity,
@@ -136,14 +135,14 @@ class ProfileScreen extends StatelessWidget {
                             IconButton(
                                 onPressed: (){
                                   AwesomeDialog(
-                                    customHeader: Icon(FontAwesomeIcons.circleInfo,size: responsive(context, 50.0, 150.0),color: Theme.of(context).primaryColor,),
+                                    customHeader: Icon(FontAwesomeIcons.circleInfo,size: responsive(context, 50.0, 100.0),color: Theme.of(context).primaryColor,),
                                     showCloseIcon: true,
                                     btnCancel: null,
                                     btnOk: null,
                                     body:Column(children: [
                                        Text(
                                         selectImageText.tr,
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: responsive(context, 18.0, 28)),
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: responsive(context, 18.0, 28.0)),
                                       ),
                                       const SizedBox(
                                         height: 20,
@@ -190,7 +189,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ]
                   ),
-                  Divider(),
+                  const Divider(),
                   const SizedBox(height: 5,),
                   Container(
                     decoration: BoxDecoration(
@@ -234,8 +233,14 @@ class ProfileScreen extends StatelessWidget {
                                     children:  [
                                       Padding(
                                         padding: const EdgeInsets.all(10.0),
-                                        child: Text(userNameText.tr,style: TextStyle(fontSize: responsive(context, 16.0, 22.0),),),
-                                      ),
+                                              child: Text(
+                                                userNameText.tr,
+                                                style: TextStyle(
+                                                  fontSize: responsive(
+                                                      context, 16.0, 22.0),
+                                                ),
+                                              ),
+                                            ),
                                       const Divider(),
                                       const SizedBox(height: 30,),
                                       Padding(
@@ -243,6 +248,7 @@ class ProfileScreen extends StatelessWidget {
                                             right: 10,left: 10),
                                         child:  Form(key: JosKeys.formKeyUserNameProfile,
                                           child: TextFormField(
+                                            maxLength: 15,
                                             controller: userNameProfileController,
                                             validator: (value) {
                                               if(value!.length < 3 || value.length > 15){
@@ -297,6 +303,10 @@ class ProfileScreen extends StatelessWidget {
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -304,8 +314,7 @@ class ProfileScreen extends StatelessWidget {
                                                       right:
                                                       3,
                                                       left:
-                                                      3),
-                                                  primary: Theme.of(
+                                                      3), backgroundColor: Theme.of(
                                                       context)
                                                       .primaryColor,
                                                 ),
@@ -333,6 +342,10 @@ class ProfileScreen extends StatelessWidget {
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -340,8 +353,7 @@ class ProfileScreen extends StatelessWidget {
                                                       right:
                                                       3,
                                                       left:
-                                                      3),
-                                                  primary: Colors
+                                                      3), backgroundColor: Colors
                                                       .white,
                                                 ),
                                                 child:  Text(
@@ -494,11 +506,15 @@ class ProfileScreen extends StatelessWidget {
                                                       if(JosKeys.formKeyPhoneNumberProfile.currentState!.validate())
                                                       {
                                                         Navigator.pop(context);
-                                                        cubit.updateUserData("phoneNumber", userPhoneProfileController.text??"");
+                                                        cubit.updateUserData("phoneNumber", userPhoneProfileController.text);
                                                       }
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -506,8 +522,7 @@ class ProfileScreen extends StatelessWidget {
                                                       right:
                                                       3,
                                                       left:
-                                                      3),
-                                                  primary: Theme.of(
+                                                      3), backgroundColor: Theme.of(
                                                       context)
                                                       .primaryColor,
                                                 ),
@@ -535,6 +550,10 @@ class ProfileScreen extends StatelessWidget {
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -636,7 +655,7 @@ class ProfileScreen extends StatelessWidget {
                                               exclude: <String>['IL'],
                                               showSearch:false,
                                               countryListTheme: CountryListThemeData(
-                                                borderRadius: BorderRadius.all(Radius.circular(1)),
+                                                borderRadius: const BorderRadius.all(Radius.circular(1)),
                                                 bottomSheetHeight: MediaQuery.of(context).size.width,
                                               ),
                                               context: context,
@@ -685,11 +704,15 @@ class ProfileScreen extends StatelessWidget {
                                                     () {
 
                                                         Navigator.pop(context);
-                                                        cubit.updateUserData("location", userAddressProfileController.text??"");
+                                                        cubit.updateUserData("location", userAddressProfileController.text);
 
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -725,6 +748,10 @@ class ProfileScreen extends StatelessWidget {
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -732,8 +759,7 @@ class ProfileScreen extends StatelessWidget {
                                                       right:
                                                       3,
                                                       left:
-                                                      3),
-                                                  primary: Colors
+                                                      3), backgroundColor: Colors
                                                       .white,
                                                 ),
                                                 child:  Text(
@@ -899,6 +925,10 @@ class ProfileScreen extends StatelessWidget {
                                                 },
                                                 style: ElevatedButton
                                                     .styleFrom(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.all(
+                                                        Radius.circular(15.0),
+                                                      )),
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -906,8 +936,7 @@ class ProfileScreen extends StatelessWidget {
                                                       right:
                                                       3,
                                                       left:
-                                                      3),
-                                                  primary: Colors
+                                                      3), backgroundColor: Colors
                                                       .white,
                                                 ),
                                                 child:  Text(
@@ -961,7 +990,7 @@ class ProfileScreen extends StatelessWidget {
 
                           ),
                         ),
-                       Spacer(),
+                       const Spacer(),
                         IconButton(onPressed: (){
                           FirebaseAuth.instance.signOut().whenComplete(() => {
                             CacheHelper.sharedPreferences?.remove("id"),
