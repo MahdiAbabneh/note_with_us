@@ -7,16 +7,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
 import 'package:mahdeko/models/chat_model.dart';
+import 'package:mahdeko/models/images_user_model.dart';
 import 'package:mahdeko/models/message_model.dart';
 import 'package:mahdeko/models/post_data.dart';
 import 'package:mahdeko/models/user_data_model.dart';
 import 'package:age_calculator/age_calculator.dart';
+import 'package:story_viewer/models/story_item.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomeCubit extends Cubit<HomeStates> {
@@ -730,6 +733,126 @@ Future<void> createPost() async {
     }
     emit(UserSaveImageInGallerySuccess());
   }
+
+  List<XFile>? imagesUserProfile = [];
+
+  final ImagePicker imagePickerUserProfile = ImagePicker();
+
+  void selectImagesUserProfile() async {
+    emit(UserSelectImageLoading());
+    final List<XFile> selectedImages = await imagePickerUserProfile.pickMultiImage();
+    if (selectedImages.isNotEmpty &&
+        selectedImages.length + imagesUserProfile!.length <=3) {
+      imagesUserProfile!.addAll(selectedImages);
+      emit(UserSelectImageSuccess());
+    } else {
+      emit(UserSelectImageError());
+    }
+  }
+
+  void removeImagesUserProfile(int index) {
+    imagesUserProfile?.removeAt(index);
+    emit(UserRemoveImage());
+  }
+
+  List<String> imagesForStoryProfile=[];
+  Future<void> addImageStory() async {
+    imagesForStoryProfile=[];
+    emit(UserAddImageStoryLoading());
+    if(imagesUserProfile!.isEmpty)
+      {
+        await FirebaseFirestore.instance.collection('imagesUser').doc(FirebaseAuth.instance.currentUser!.uid).delete();
+        emit(UserAddImageStorySuccess());
+      }
+    else {
+      await FirebaseFirestore.instance.collection('imagesUser').doc(FirebaseAuth.instance.currentUser!.uid).delete();
+      for (int i = 0; i < imagesUserProfile!.length; i++) {
+        await FirebaseStorage.instance
+            .ref(
+            'uploadsImageStory/${imagesUserProfile![i].path
+                .split('/')
+                .last}')
+            .putFile(File(imagesUserProfile![i].path)).then((p0) async {
+          await p0.ref.getDownloadURL().then((value) async {
+            imagesForStoryProfile.add(value);
+          });
+        });
+      }
+      ImagesUserModel model = ImagesUserModel(
+          image: imagesForStoryProfile
+      );
+      await FirebaseFirestore.instance
+          .collection('imagesUser').doc(FirebaseAuth.instance.currentUser!.uid)
+          .set(model.toJson())
+          .then((value) {
+        emit(UserAddImageStorySuccess());
+      }).catchError((error) {
+        emit(UserAddImageStoryError());
+      });
+    }
+   await getImageStory();
+  }
+
+  ImagesUserModel ?imagesUserModel;
+  Future<void> getImageStory() async {
+    albumImages=[];
+    imagesUserProfile=[];
+    storiesImages=[];
+    emit(UserGetImageStoryLoading());
+    await FirebaseFirestore.instance
+        .collection('imagesUser')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get()
+        .then((value)async {
+      imagesUserModel =ImagesUserModel.fromJson(value.data()!);
+      albumImages=imagesUserModel!.image;
+      for(int i=0;i<albumImages.length;i++)
+        {
+          storiesImages.add(StoryItemModel(
+          imageProvider: NetworkImage(albumImages[i]),
+        ),);
+        }
+      await getImageXFileByUrl(albumImages);
+      emit(UserGetImageStorySuccess());
+    }).catchError((error) {
+      emit(UserGetImageStoryError());
+    });
+  }
+
+  Future<void>  getImageXFileByUrl(List<String> url) async {
+    for(int i=0;i<albumImages.length;i++)
+      {
+        var file = await DefaultCacheManager().getSingleFile(url[i]);
+        XFile result = XFile(file.path);
+        imagesUserProfile!.add(result);
+      }
+  }
+
+  Future<void> getImageUserStory() async {
+    albumUserImages=[];
+    storiesUserImages=[];
+    emit(UserGetImageStoryUsersLoading());
+   await FirebaseFirestore.instance
+        .collection('imagesUser')
+        .doc(usersList[indexUser!].uId!)
+        .get()
+        .then((value)async {
+      ImagesUserModel ?imagesUserModel;
+      imagesUserModel =ImagesUserModel.fromJson(value.data()!);
+      albumUserImages=imagesUserModel.image;
+      for(int i=0;i<albumUserImages.length;i++)
+      {
+        storiesUserImages.add(StoryItemModel(
+          imageProvider: NetworkImage(albumUserImages[i]),
+        ),);
+      }
+      emit(UserGetImageStoryUsersSuccess());
+   }).catchError((error) {
+     emit(UserGetImageStoryUsersError());
+    });
+  }
+
+
 
 }
 

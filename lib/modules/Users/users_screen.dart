@@ -74,10 +74,11 @@ class _UsersScreenState extends State<UsersScreen> {
                         itemBuilder: (context, index) =>
                         cubit.usersList[index].username!.toLowerCase().contains(searchStringForUsers)?
                         InkWell(
-                          onTap: (){
+                          onTap: ()async{
                             indexUser = index;
                             cubit.ageCalculatorUsers(cubit.usersList[indexUser!].dateOfBirth!);
-                            navigateTo(context, const UsersInfoScreen());
+                            await cubit.getImageUserStory();
+                            navigateTo(context,  UsersInfoScreen());
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),

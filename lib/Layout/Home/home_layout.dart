@@ -91,6 +91,7 @@ class HomeLayout extends StatelessWidget {
                 }
                 if(i==4)
                 {
+                  cubit. getImageStory();
                   navigateTo(context, const ProfileScreen());
                 }
               }

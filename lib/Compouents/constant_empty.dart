@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:story_viewer/models/story_item.dart';
 
 String ?idForUser;
 int ? tokenForUser;
@@ -17,6 +18,10 @@ String? addressData;
 String? profileImage;
 String? themeData;
 bool? darkMoodData;
+List<String> albumImages=[];
+List<StoryItemModel> storiesImages=[];
+List<StoryItemModel> storiesUserImages=[];
+List<String> albumUserImages=[];
 
 
 //Register

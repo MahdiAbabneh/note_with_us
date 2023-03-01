@@ -82,7 +82,8 @@ class MyLocale implements Translations{
       "Saving ...":"حفظ ...",
       "OK":"حسنا",
       "Text Copied Successfully":"تم نسخ النص بنجاح",
-      "Images Saving Successfully":"تم حفظ الصور بنجاح"
+      "Images Saving Successfully":"تم حفظ الصور بنجاح",
+      "Add more image":"أضافة المزيد من الصور",
 
 
 

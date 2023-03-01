@@ -178,8 +178,8 @@ class CreateNoteScreen extends StatelessWidget {
                                       children: [
                                         Container(
                                           width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(5),
+                                          decoration: BoxDecoration(border:Border.all(color: Theme.of(context).primaryColor,width: 3) ,
+                                            borderRadius: BorderRadius.circular(15),
                                             image:
                                             DecorationImage(
                                               image: FileImage(File(cubit.imageFileListFromGallery![index].path)) ,

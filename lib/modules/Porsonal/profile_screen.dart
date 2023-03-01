@@ -17,7 +17,10 @@ import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
 import 'package:mahdeko/Locale/locale_controller.dart';
 import 'package:mahdeko/modules/Login/login_screen.dart';
+import 'package:mahdeko/modules/Porsonal/story_image_screen.dart';
+import 'package:mahdeko/modules/Porsonal/story_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
+import 'package:status_view/status_view.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
 
@@ -44,7 +47,7 @@ class ProfileScreen extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if(state is  UserProfileImageUploadLoading||state is UserUpdateDataLoading)
+                  if(state is  UserProfileImageUploadLoading||state is UserUpdateDataLoading||state is UserGetImageStoryLoading)
                      LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
                   const SizedBox(height: 10,),
                   Center(
@@ -82,14 +85,40 @@ class ProfileScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
+                                if(albumImages.isEmpty)
                                 CircleAvatar(
-                                    backgroundColor:Theme.of(context).primaryColor,
-                                    minRadius:responsive(context, 93.0, 190.0),
-                                    child:CircleAvatar(
-                                      backgroundColor: Theme.of(context).primaryColor,
-                                      radius:  responsive(context, 90.0, 180.0),
-                                      backgroundImage:CachedNetworkImageProvider(profileImage!),
-                                    )),
+                                  backgroundColor:Colors.grey,
+                                  minRadius:responsive(context, 93.0, 190.0),
+                                  child:CircleAvatar(
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                    radius:  responsive(context, 90.0, 180.0),
+                                    backgroundImage:CachedNetworkImageProvider(profileImage!),
+                                  )),
+                                if(albumImages.isNotEmpty)
+                                Container(  decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Colors.white,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                ),
+                                  child: InkWell(onTap: (){
+                                    navigateTo(context, StoryScreen());
+                                  },
+                                    child: StatusView(
+                                      radius: 90,
+                                      spacing: 15,
+                                      strokeWidth: 2,
+                                      numberOfStatus: albumImages.length,
+                                      padding: 4,
+                                      centerImageUrl: profileImage!,
+                                      seenColor: Colors.grey,
+                                      unSeenColor:Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(height: 20,),
                                 Column(children: [
                                   Container(
@@ -133,59 +162,69 @@ class ProfileScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                            IconButton(
-                                onPressed: (){
-                                  AwesomeDialog(
-                                    customHeader: Icon(FontAwesomeIcons.circleInfo,size:100,color: Theme.of(context).primaryColor,),
-                                    showCloseIcon: true,
-                                    btnCancel: null,
-                                    btnOk: null,
-                                    body:Column(children: [
-                                       Text(
-                                        selectImageText.tr,
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: responsive(context, 18.0, 28.0)),
-                                      ),
-                                      const SizedBox(
-                                        height: 20,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          IconButton(
-                                              onPressed: () {
-                                               cubit.selectProfileImageFromCamera();
-                                                Navigator.of(context).pop();
-                                              },
-                                              icon:  Icon(
-                                                FontAwesomeIcons.cameraRetro,color: Theme.of(context).primaryColor,
-                                                size: responsive(context, 35.0, 70.0),
-                                              )),
-                                          const SizedBox(
-                                            width: 50,
+                            Row(
+                              children: [
+                                IconButton(
+                                    onPressed: (){
+                                      AwesomeDialog(
+                                        customHeader: Icon(FontAwesomeIcons.circleInfo,size:100,color: Theme.of(context).primaryColor,),
+                                        showCloseIcon: true,
+                                        btnCancel: null,
+                                        btnOk: null,
+                                        body:Column(children: [
+                                           Text(
+                                            selectImageText.tr,
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: responsive(context, 18.0, 28.0)),
                                           ),
-                                          IconButton(
-                                              onPressed: () {
-                                               cubit.selectProfileImageFromGallery();
-                                                Navigator.of(context).pop();
-                                              },
-                                              icon:  Icon(
-                                                FontAwesomeIcons.image,
-                                                color: Theme.of(context).primaryColor,
-                                                size: responsive(context, 35.0, 70.0),
-                                              )),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 40,
-                                      ),
-                                    ]),
-                                      context: context,
-                                      dialogType: DialogType.question,
-                                      animType: AnimType.scale,
-                                      title:selectImageText.tr,
-                                  ).show();
-                                },
-                                icon: Icon( FontAwesomeIcons.camera,color: Theme.of(context).primaryColor,size:  responsive(context, 35.0, 70.0),)),
+                                          const SizedBox(
+                                            height: 20,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              IconButton(
+                                                  onPressed: () {
+                                                   cubit.selectProfileImageFromCamera();
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon:  Icon(
+                                                    FontAwesomeIcons.cameraRetro,color: Theme.of(context).primaryColor,
+                                                    size: responsive(context, 35.0, 70.0),
+                                                  )),
+                                              const SizedBox(
+                                                width: 50,
+                                              ),
+                                              IconButton(
+                                                  onPressed: () {
+                                                   cubit.selectProfileImageFromGallery();
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon:  Icon(
+                                                    FontAwesomeIcons.image,
+                                                    color: Theme.of(context).primaryColor,
+                                                    size: responsive(context, 35.0, 70.0),
+                                                  )),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 40,
+                                          ),
+                                        ]),
+                                          context: context,
+                                          dialogType: DialogType.question,
+                                          animType: AnimType.scale,
+                                          title:selectImageText.tr,
+                                      ).show();
+                                    },
+                                    icon: Icon( FontAwesomeIcons.camera,color: Theme.of(context).primaryColor,size:35)),
+                                Spacer(),
+                                IconButton(onPressed: (){
+                                  navigateTo(context, StoryImageScreen());
+                                }, icon: Icon(FontAwesomeIcons.solidImages,color: Theme.of(context).primaryColor,size:35),)
+
+                              ],
+                            ),
+
                           ]
                         ),
                       ]

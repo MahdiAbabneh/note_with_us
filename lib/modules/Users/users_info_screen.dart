@@ -9,8 +9,10 @@ import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
+import 'package:mahdeko/modules/Porsonal/story_user_screen.dart';
 import 'package:mahdeko/modules/Users/chat_screen.dart';
 import 'package:mahdeko/network/cache_helper.dart';
+import 'package:status_view/status_view.dart';
 
 class UsersInfoScreen extends StatelessWidget {
   const UsersInfoScreen({super.key});
@@ -29,7 +31,9 @@ class UsersInfoScreen extends StatelessWidget {
             ),
             body: ListView(
               children: <Widget>[
-                const SizedBox(height: 8,),
+                if(state is UserGetImageStoryUsersLoading)
+                  LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
+                const SizedBox(height: 20,),
                 Stack(alignment: Alignment.center,
                     children:[
                       Stack(alignment:CacheHelper.getData(key:"lang")=="ar"?Alignment.topRight:Alignment.topLeft ,
@@ -41,14 +45,40 @@ class UsersInfoScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
-                                  CircleAvatar(
-                                      backgroundColor:Theme.of(context).primaryColor,
-                                      minRadius:responsive(context, 93.0, 190.0),
-                                      child:CircleAvatar(
-                                        backgroundColor: Theme.of(context).primaryColor,
-                                        radius:  responsive(context, 90.0, 180.0),
-                                        backgroundImage:CachedNetworkImageProvider('${cubit.usersList[indexUser!].image}'),
-                                      )),
+                                  if(albumUserImages.isEmpty)
+                                    CircleAvatar(
+                                        backgroundColor:Colors.grey,
+                                        minRadius:responsive(context, 93.0, 190.0),
+                                        child:CircleAvatar(
+                                          backgroundColor: Theme.of(context).primaryColor,
+                                          radius:  responsive(context, 90.0, 180.0),
+                                          backgroundImage:CachedNetworkImageProvider('${cubit.usersList[indexUser!].image}'),
+                                        )),
+                                  if(albumUserImages.isNotEmpty)
+                                    Container(decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.white,
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                    ),
+                                      child: InkWell(onTap: (){
+                                        navigateTo(context, const StoryUserScreen());
+                                      },
+                                        child: StatusView(
+                                          radius: 90,
+                                          spacing: 15,
+                                          strokeWidth: 2,
+                                          numberOfStatus: albumUserImages.length,
+                                          padding: 4,
+                                          centerImageUrl: '${cubit.usersList[indexUser!].image}',
+                                          seenColor: Colors.grey,
+                                          unSeenColor:Theme.of(context).primaryColor,
+                                        ),
+                                      ),
+                                    ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(children: [

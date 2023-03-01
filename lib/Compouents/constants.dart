@@ -148,6 +148,9 @@ const String copiedTextDone="Text Copied Successfully";
 
 const String saveImageDone="Images Saving Successfully";
 
+const String imagesScreen="Add more image";
+
+
 
 
 

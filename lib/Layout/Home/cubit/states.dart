@@ -32,6 +32,14 @@ class UserSelectImagePostSuccess extends HomeStates {}
 
 class UserSelectImagePostError extends HomeStates {}
 
+class UserSelectImageLoading extends HomeStates {}
+
+class UserSelectImageSuccess extends HomeStates {}
+
+class UserSelectImageError extends HomeStates {}
+
+class UserRemoveImage extends HomeStates {}
+
 class UserRemovePostImage extends HomeStates {}
 
 class UserCreatePostLoading extends HomeStates {}
@@ -86,6 +94,23 @@ class UserSaveImageInGalleryError extends HomeStates {}
 
 class UserChangeReminder extends HomeStates {}
 
+class UserAddImageStoryLoading extends HomeStates {}
+
+class UserAddImageStorySuccess extends HomeStates {}
+
+class UserAddImageStoryError extends HomeStates {}
+
+class UserGetImageStoryLoading extends HomeStates {}
+
+class UserGetImageStorySuccess extends HomeStates {}
+
+class UserGetImageStoryError extends HomeStates {}
+
+class UserGetImageStoryUsersLoading extends HomeStates {}
+
+class UserGetImageStoryUsersSuccess extends HomeStates {}
+
+class UserGetImageStoryUsersError extends HomeStates {}
 
 
 
