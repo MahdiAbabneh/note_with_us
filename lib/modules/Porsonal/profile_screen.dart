@@ -1,4 +1,3 @@
-
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -593,7 +591,8 @@ class ProfileScreen extends StatelessWidget {
                                                   shape: const RoundedRectangleBorder(
                                                       borderRadius: BorderRadius.all(
                                                         Radius.circular(15.0),
-                                                      )),
+                                                      )), backgroundColor: Colors
+                                                      .white,
                                                   padding: const EdgeInsets
                                                       .only(
                                                       top:
@@ -602,8 +601,6 @@ class ProfileScreen extends StatelessWidget {
                                                       3,
                                                       left:
                                                       3),
-                                                  primary: Colors
-                                                      .white,
                                                 ),
                                                 child:  Text(
                                                   back.tr,
