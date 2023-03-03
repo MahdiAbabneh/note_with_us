@@ -22,9 +22,15 @@ import 'package:status_view/status_view.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+
+class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
@@ -1044,6 +1050,10 @@ class ProfileScreen extends StatelessWidget {
       });
   }
 
-
+  @override
+  void initState() {
+    super.initState();
+    HomeCubit.get(context).getImageStory();
+  }
 }
 

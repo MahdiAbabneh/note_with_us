@@ -53,42 +53,44 @@ class StoryImageScreen extends StatelessWidget {
                   children: [
                     if(state is  UserAddImageStoryLoading||state is UserGetImageStoryLoading)
                       LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
-                    Column(
-                      children: [
-                        const Divider(),
-                        Row(
-                          children: [
-                            StatusView(
-                              radius: 40,
-                              spacing: 15,
-                              strokeWidth: 2,
-                              indexOfSeenStatus: cubit.imagesUserProfile!.isEmpty?3:3-cubit.imagesUserProfile!.length,
-                              numberOfStatus: 3,
-                              padding: 4,
-                              centerImageUrl: profileImage!,
-                              seenColor: Colors.grey,
-                              unSeenColor: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(width: 10,),
-                            Text(
-                              usernameData!,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor
+                    Expanded(flex: 1,
+                      child: Column(
+                        children: [
+                          const Divider(),
+                          Row(
+                            children: [
+                              StatusView(
+                                radius: 40,
+                                spacing: 15,
+                                strokeWidth: 2,
+                                indexOfSeenStatus: cubit.imagesUserProfile!.isEmpty?3:3-cubit.imagesUserProfile!.length,
+                                numberOfStatus: 3,
+                                padding: 4,
+                                centerImageUrl: profileImage!,
+                                seenColor: Colors.grey,
+                                unSeenColor: Theme.of(context).primaryColor,
                               ),
-                            ),
-                            const Spacer(),
-                            IconButton(onPressed:cubit.imagesUserProfile!.length==3?null: (){
-                              cubit.selectImagesUserProfile();
-                            }, icon: Icon(FontAwesomeIcons.images,color:cubit.imagesUserProfile!.length==3?Colors.grey: Theme.of(context).primaryColor, )),
-                          ],
-                        ),
-                        const Divider(),
-                        const SizedBox(height: 20,),
-
-                      ],
+                              const SizedBox(width: 10,),
+                              Text(
+                                usernameData!,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).primaryColor
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(onPressed:cubit.imagesUserProfile!.length==3?null: (){
+                                cubit.selectImagesUserProfile();
+                              }, icon: Icon(FontAwesomeIcons.images,color:cubit.imagesUserProfile!.length==3?Colors.grey: Theme.of(context).primaryColor, )),
+                            ],
+                          ),
+                          const Divider(),
+                          const SizedBox(height: 20,),
+                        ],
+                      ),
                     ),
                     Expanded(
+                      flex: 4,
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
@@ -98,8 +100,7 @@ class StoryImageScreen extends StatelessWidget {
                               shrinkWrap: true,
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 1,
-
-                                  mainAxisSpacing: 10,
+                                  mainAxisSpacing: 0,
                                   mainAxisExtent: 300),
                               itemBuilder: (context, index) =>
                                   Center(

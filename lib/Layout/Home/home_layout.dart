@@ -35,12 +35,7 @@ class HomeLayout extends StatelessWidget {
 
     var cubit = HomeCubit.get(context);
     return BlocConsumer<HomeCubit, HomeStates>(
-      listener: (context, state) {
-        if(state is UserGetPostSuccess)
-          {
-            cubit.getUsers();
-          }
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
@@ -91,7 +86,6 @@ class HomeLayout extends StatelessWidget {
                 }
                 if(i==4)
                 {
-                  cubit. getImageStory();
                   navigateTo(context, const ProfileScreen());
                 }
               }
