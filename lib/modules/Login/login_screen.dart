@@ -48,13 +48,8 @@ class LoginScreen extends StatelessWidget {
           }
         if(state is UserLoginGoogleSuccess)
         {
-              CacheHelper.sharedPreferences?.setString("id", FirebaseAuth.instance.currentUser!.uid.toString())
-              .whenComplete(() => {
-            idForUser = CacheHelper.getData(key:'id'),
-          })
-              .whenComplete(() => {
-            navigatePushReplacement(context, const LoginGoogleScreen())
-          });
+            navigatePushReplacement(context, const LoginGoogleScreen());
+
         }
       },
       builder: (context, state) {

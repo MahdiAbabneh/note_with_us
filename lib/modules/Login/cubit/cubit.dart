@@ -59,7 +59,6 @@ class LoginCubit extends Cubit<LoginStates> {
         FirebaseFirestore.instance
             .collection('users')
             .doc(FirebaseAuth.instance.currentUser!.uid).get().then((value) {
-          //user = UserDataModel.fromJson(value.data()!);
           if(value.data()==null)
           {
             emit(UserLoginGoogleSuccess());

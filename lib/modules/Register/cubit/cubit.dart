@@ -26,7 +26,6 @@ class RegisterCubit extends Cubit<RegisterStates> {
       await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password)
           .then((value) {
-            //FirebaseAuth.instance.currentUser!.sendEmailVerification();
         FirebaseMessaging.instance.getToken().then((userValue) {
           UserDataModel model = UserDataModel(
             uId: value.user!.uid,
