@@ -55,33 +55,24 @@ class UsersInfoScreen extends StatelessWidget {
                                           backgroundImage:CachedNetworkImageProvider('${cubit.usersList[indexUser!].image}'),
                                         )),
                                   if(albumUserImages.isNotEmpty)
-                                    Container(decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: Colors.white,
-                                          width: 1.0,
-                                        ),
-                                      ),
-                                    ),
-                                      child: InkWell(onTap: (){
-                                        navigateTo(context, const StoryUserScreen());
-                                      },
-                                        child: StatusView(
-                                          radius: 90,
-                                          spacing: 15,
-                                          strokeWidth: 2,
-                                          numberOfStatus: albumUserImages.length,
-                                          padding: 4,
-                                          centerImageUrl: '${cubit.usersList[indexUser!].image}',
-                                          seenColor: Colors.grey,
-                                          unSeenColor:Theme.of(context).primaryColor,
-                                        ),
+                                    GestureDetector(onTap: (){
+                                      navigateTo(context, const StoryUserScreen());
+                                    },
+                                      child: StatusView(
+                                        radius: 90,
+                                        spacing: 15,
+                                        strokeWidth: 2,
+                                        numberOfStatus: albumUserImages.length,
+                                        padding: 4,
+                                        centerImageUrl: '${cubit.usersList[indexUser!].image}',
+                                        seenColor: Colors.grey,
+                                        unSeenColor:Theme.of(context).primaryColor,
                                       ),
                                     ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(children: [
+                                      SizedBox(height: 20,),
                                       Container(
                                         width: double.infinity,
                                         padding: const EdgeInsets.all(5),

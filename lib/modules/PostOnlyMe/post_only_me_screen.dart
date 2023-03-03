@@ -71,12 +71,16 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                       children: [
                         if (cubit.selectedTime!= null)
                           Text(
-                            'Alarm will ring ${cubit.ringDay()} at ${cubit.selectedTime!.format(context)}',
+                            'Ring ${cubit.ringDay()} at ${cubit.selectedTime!.format(context)}',
                           ),
                         if (cubit.isRinging) Text("🔔 ${ringing.tr} 🔔"),
                         const Spacer(),
                         if (cubit.isRinging)
                           RawMaterialButton(
+                            shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(15.0),
+                                )),
                             onPressed: () async {
                               final stop = await Alarm.stop();
                               if (stop && cubit.isRinging) setState(() => cubit.isRinging = false);
@@ -87,6 +91,10 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                           ),
                         if (cubit.selectedTime!= null)
                           RawMaterialButton(
+                            shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(15.0),
+                                )),
                             onPressed: () async {
                               await Alarm.stop();
                               setState((){

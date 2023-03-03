@@ -93,28 +93,18 @@ class ProfileScreen extends StatelessWidget {
                                     backgroundImage:CachedNetworkImageProvider(profileImage!),
                                   )),
                                 if(albumImages.isNotEmpty)
-                                Container(  decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Colors.white,
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                ),
-                                  child: InkWell(onTap: (){
-                                    navigateTo(context, StoryScreen());
-                                  },
-                                    child: StatusView(
-                                      radius: 90,
-                                      spacing: 15,
-                                      strokeWidth: 2,
-                                      numberOfStatus: albumImages.length,
-                                      padding: 4,
-                                      centerImageUrl: profileImage!,
-                                      seenColor: Colors.grey,
-                                      unSeenColor:Theme.of(context).primaryColor,
-                                    ),
+                                GestureDetector(onTap: (){
+                                  navigateTo(context, StoryScreen());
+                                },
+                                  child: StatusView(
+                                    radius: 90,
+                                    spacing: 15,
+                                    strokeWidth: 2,
+                                    numberOfStatus: albumImages.length,
+                                    padding: 4,
+                                    centerImageUrl: profileImage!,
+                                    seenColor: Colors.grey,
+                                    unSeenColor:Theme.of(context).primaryColor,
                                   ),
                                 ),
                                 const SizedBox(height: 20,),

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -29,7 +30,18 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     HomeCubit.get(context).getMessages(widget.userDataModel);
-
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+  @override
+  void dispose() {
+    super.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
   }
   @override
   Widget build(BuildContext context) {
@@ -127,7 +139,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             textInputAction: TextInputAction.newline,
                             onChanged: (value){
                               setState(() {
-                                chatUser = cubit.messageController.text;
+                                chatUser = cubit.messageController.text.trim();
                               });
                             },
                             decoration:  InputDecoration(
@@ -146,14 +158,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       Visibility(
                         visible: chatUser.isNotEmpty,
-                        child: MaterialButton(
-                          minWidth: 1,
+                        child: IconButton(
                           onPressed: () {
                             cubit.sendMessage(widget.userDataModel);
                             chatUser ="";
                           },
-                          child:  Icon(
-                            Icons.send,
+                          icon:  Icon(
+                            FontAwesomeIcons.paperPlane,
                             color: Theme.of(context).primaryColor,
                           ),
                         ),

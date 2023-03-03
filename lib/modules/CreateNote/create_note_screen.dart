@@ -27,7 +27,7 @@ class CreateNoteScreen extends StatelessWidget {
       listener: (context, state) {
         if(state is UserSelectImagePostError)
           {
-            showToastFailed(toast5, context);
+            showToastFailed(toast5.tr, context);
           }
         if(state is UserCreatePostSuccess)
           {
@@ -165,6 +165,8 @@ class CreateNoteScreen extends StatelessWidget {
                             const SizedBox(height: 20,),
                             SizedBox(height: 200,
                               child: GridView.builder(
+                                primary: false,
+                                shrinkWrap: true,
                                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 3,
                                     childAspectRatio: 2,
@@ -172,38 +174,40 @@ class CreateNoteScreen extends StatelessWidget {
                                     crossAxisSpacing: 20,
                                     mainAxisExtent: 150),
                                 itemBuilder: (context, index) =>
-                                    Stack(
-                                      alignment:
-                                      AlignmentDirectional.topStart,
-                                      children: [
-                                        Container(
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(border:Border.all(color: Theme.of(context).primaryColor,width: 3) ,
-                                            borderRadius: BorderRadius.circular(15),
-                                            image:
-                                            DecorationImage(
-                                              image: FileImage(File(cubit.imageFileListFromGallery![index].path)) ,
-                                              fit: BoxFit.cover,
+                                    Center(
+                                      child: Stack(
+                                        alignment:
+                                        AlignmentDirectional.topStart,
+                                        children: [
+                                          Container(
+                                            width: double.infinity,
+                                            decoration: BoxDecoration(border:Border.all(color: Theme.of(context).primaryColor,width: 3) ,
+                                              borderRadius: BorderRadius.circular(15),
+                                              image:
+                                              DecorationImage(
+                                                image: FileImage(File(cubit.imageFileListFromGallery![index].path)) ,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        IconButton(
-                                          icon: CircleAvatar(
-                                            backgroundColor:
-                                            Theme.of(context)
-                                                .primaryColor,
-                                            radius: 20.0,
-                                            child: const Icon(
-                                              Icons.close,
-                                              size: 16.0,color: Colors.white,
+                                          IconButton(
+                                            icon: CircleAvatar(
+                                              backgroundColor:
+                                              Theme.of(context)
+                                                  .primaryColor,
+                                              radius: 20.0,
+                                              child: const Icon(
+                                                Icons.close,
+                                                size: 16.0,color: Colors.white,
+                                              ),
                                             ),
+                                            onPressed: () {
+                                              cubit.removePostImage(index);
+                                            },
                                           ),
-                                          onPressed: () {
-                                            cubit.removePostImage(index);
-                                          },
-                                        ),
-                                      ],
+                                        ],
 
+                                      ),
                                     ),
                                 itemCount: cubit.imageFileListFromGallery!.length,
                               ),

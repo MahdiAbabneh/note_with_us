@@ -23,7 +23,7 @@ class StoryImageScreen extends StatelessWidget {
       listener: (context, state) {
         if(state is UserSelectImageError)
           {
-            showToastFailed(toast5, context);
+            showToastFailed(toast5.tr, context);
           }
         if(state is UserAddImageStorySuccess)
           {
@@ -35,8 +35,12 @@ class StoryImageScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             actions: [Padding(
-              padding: const EdgeInsets.only(left: 10.0,right: 10),
-              child: ElevatedButton(onPressed: (){
+              padding: const EdgeInsets.all(8),
+              child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor:  Theme.of(context).primaryColor,
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(15.0),
+                      ))),onPressed: (){
                 cubit.addImageStory();
               }, child: Text(save.tr)),
             )],
@@ -49,56 +53,64 @@ class StoryImageScreen extends StatelessWidget {
                   children: [
                     if(state is  UserAddImageStoryLoading||state is UserGetImageStoryLoading)
                       LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
+                    Column(
+                      children: [
+                        const Divider(),
+                        Row(
+                          children: [
+                            StatusView(
+                              radius: 40,
+                              spacing: 15,
+                              strokeWidth: 2,
+                              indexOfSeenStatus: cubit.imagesUserProfile!.isEmpty?3:3-cubit.imagesUserProfile!.length,
+                              numberOfStatus: 3,
+                              padding: 4,
+                              centerImageUrl: profileImage!,
+                              seenColor: Colors.grey,
+                              unSeenColor: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 10,),
+                            Text(
+                              usernameData!,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor
+                              ),
+                            ),
+                            const Spacer(),
+                            IconButton(onPressed:cubit.imagesUserProfile!.length==3?null: (){
+                              cubit.selectImagesUserProfile();
+                            }, icon: Icon(FontAwesomeIcons.images,color:cubit.imagesUserProfile!.length==3?Colors.grey: Theme.of(context).primaryColor, )),
+                          ],
+                        ),
+                        const Divider(),
+                        const SizedBox(height: 20,),
+
+                      ],
+                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
-                            const Divider(),
-                            Row(
-                              children: [
-                                StatusView(
-                                  radius: 40,
-                                  spacing: 15,
-                                  strokeWidth: 2,
-                                  indexOfSeenStatus: cubit.imagesUserProfile!.isEmpty?3:3-cubit.imagesUserProfile!.length,
-                                  numberOfStatus: 3,
-                                  padding: 4,
-                                  centerImageUrl: profileImage!,
-                                  seenColor: Colors.grey,
-                                  unSeenColor: Theme.of(context).primaryColor,
-                                ),
-                                const SizedBox(width: 10,),
-                                Text(
-                                  usernameData!,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).primaryColor
-                                  ),
-                                ),
-                                const Spacer(),
-                                IconButton(onPressed:cubit.imagesUserProfile!.length==3?null: (){
-                                  cubit.selectImagesUserProfile();
-                                }, icon: Icon(FontAwesomeIcons.images,color:cubit.imagesUserProfile!.length==3?Colors.grey: Theme.of(context).primaryColor, )),
-                              ],
-                            ),
-                            const Divider(),
-                            const SizedBox(height: 20,),
-                            SizedBox(height: MediaQuery.of(context).size.height,
-                              child: GridView.builder(
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 1,
-                                    childAspectRatio: 2,
-                                    mainAxisSpacing: 0,
-                                    crossAxisSpacing: 20,
-                                    mainAxisExtent: 200),
-                                itemBuilder: (context, index) =>
-                                    Stack(
+                            GridView.builder(
+                              primary: false,
+                              scrollDirection: Axis.vertical,
+                              shrinkWrap: true,
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 1,
+
+                                  mainAxisSpacing: 10,
+                                  mainAxisExtent: 300),
+                              itemBuilder: (context, index) =>
+                                  Center(
+                                    child: Stack(
                                       alignment:
                                       AlignmentDirectional.topStart,
                                       children: [
+
                                         Container(
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(border:Border.all(color: Theme.of(context).primaryColor,width: 2) ,
+                                          width:250,
+                                          decoration: BoxDecoration(border:Border.all(color: Theme.of(context).primaryColor,width: 3) ,
                                             borderRadius: BorderRadius.circular(15),
                                             image:
                                             DecorationImage(
@@ -125,9 +137,10 @@ class StoryImageScreen extends StatelessWidget {
                                       ],
 
                                     ),
-                                itemCount: cubit.imagesUserProfile!.length,
-                              ),
+                                  ),
+                              itemCount: cubit.imagesUserProfile!.length,
                             ),
+                            const SizedBox(height: 40,),
                           ],
                         ),
                       ),
