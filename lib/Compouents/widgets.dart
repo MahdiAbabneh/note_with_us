@@ -24,14 +24,21 @@ void navigatePushReplacement(context, widget) => Navigator.pushReplacement(
 SnackBar? showToastSuccess(msg,context)
 {
   final snackBar = SnackBar(
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(topLeft: Radius.circular(15),topRight: Radius.circular(15)),
+    ),
+    padding:const EdgeInsets.only(
+      bottom:40,top: 10),
     dismissDirection: DismissDirection.up,
     duration: const Duration(seconds: 3),
-    content: Text(
-      msg,
-      style: TextStyle(fontFamily: CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: responsive(context, 16.0, 24.0)),
+    content: Center(
+      child: Text(
+        msg,
+        style: TextStyle(fontFamily: CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: responsive(context, 16.0, 24.0)),
+      ),
     ),
     backgroundColor: Theme.of(context).primaryColor,
   );
@@ -41,14 +48,21 @@ SnackBar? showToastSuccess(msg,context)
 
 SnackBar? showToastFailed(msg,context) {
   final snackBar = SnackBar(
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(topLeft: Radius.circular(15),topRight: Radius.circular(15)),
+    ),
+    padding:const EdgeInsets.only(
+        bottom:40,top: 10),
     dismissDirection: DismissDirection.up,
     duration: const Duration(seconds: 3),
-    content: Text(
-      msg,
-      style: TextStyle(fontFamily: CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: responsive(context, 16.0, 24.0)),
+    content: Center(
+      child: Text(
+        msg,
+        style: TextStyle(fontFamily: CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: responsive(context, 16.0, 24.0)),
+      ),
     ),
     backgroundColor: Colors.red,
   );

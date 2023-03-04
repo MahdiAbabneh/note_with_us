@@ -465,12 +465,7 @@ class HomeLayout extends StatelessWidget {
               if(imagePosts.isNotEmpty)
               IconButton(
                   onPressed: (){
-                    final snackBar = SnackBar(dismissDirection: DismissDirection.up,
-                      duration: const Duration(seconds: 2),
-                      content:  Text(saveText.tr,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                      backgroundColor: Theme.of(context).primaryColor,
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    showToastSuccess(saveText.tr, context);
                     HomeCubit.get(context).saveImageInGallery(imagePosts).whenComplete((){
                       AwesomeDialog(
                         customHeader: Icon(FontAwesomeIcons.circleCheck,size:100,color: Theme.of(context).primaryColor,),

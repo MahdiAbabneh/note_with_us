@@ -593,7 +593,12 @@ Future<void> createPost() async {
 
       for (var element in value.docs) {
         if (UserDataModel.fromJson(element.data()).uId != user!.uId) {
-          usersList.add(UserDataModel.fromJson(element.data()));
+          try {
+            usersList.add(UserDataModel.fromJson(element.data()));
+          }
+          catch (error) {
+           print(error);
+          }
         }
       }
       for (var element in value.docs) {
