@@ -576,7 +576,7 @@ Future<void> createPost() async {
       notificationTitle:
       showNotifOnRing && enableNotif ? 'Now is the time' : null,
       notificationBody:
-      showNotifOnRing && enableNotif ? 'You have to do this note' : null,
+      showNotifOnRing && enableNotif ? 'You have to do some note' : null,
       enableNotificationOnKill:selectedTime==null? false:true,
     );
     await Alarm.set(settings: alarmSettings);
