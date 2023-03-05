@@ -82,8 +82,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     errorWidget: (context, url, error) => const Icon(Icons.error),
                   ),
                   const SizedBox(width: 10,),
-                  Text(
-                    widget.userDataModel.username!,
+                  Expanded(
+                    child: Text(
+                      widget.userDataModel.username!,
+                    ),
                   ),
                 ],
               ),
@@ -125,7 +127,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: CircleAvatar(
                             radius: 27,
                             backgroundImage: NetworkImage(
-                                cubit.user!.image!)),
+                              profileImage!)),
                       ),
 
                       const SizedBox(width: 5,),

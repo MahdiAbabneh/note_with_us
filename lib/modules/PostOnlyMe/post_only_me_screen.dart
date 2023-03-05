@@ -12,6 +12,7 @@ import 'package:mahdeko/Compouents/constants.dart';
 import 'package:mahdeko/Compouents/widgets.dart';
 import 'package:mahdeko/Layout/Home/cubit/cubit.dart';
 import 'package:mahdeko/Layout/Home/cubit/states.dart';
+import 'package:mahdeko/network/cache_helper.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:readmore/readmore.dart';
@@ -57,139 +58,145 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
 
             ),],
               title:  Text(personalPage.tr)),
-          body: ConditionalBuilder(
-            condition:state is! UserGetPostOnlyMeLoading,
-            builder: (context) => SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
+          body:  Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                if(state is  UserSaveImageInGalleryLoading)
+                  LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
+                Row(
                   children: [
-                    if(state is  UserSaveImageInGalleryLoading)
-                      LinearProgressIndicator(color: Theme.of(context).primaryColor,backgroundColor:Colors.white ),
-                    Row(
-                      children: [
-                        if (cubit.selectedTime!= null)
-                          Text(
-                            'Ring ${cubit.ringDay()} at ${cubit.selectedTime!.format(context)}',
-                          ),
-                        if (cubit.isRinging) Text("🔔 ${ringing.tr} 🔔"),
-                        const Spacer(),
-                        if (cubit.isRinging)
-                          RawMaterialButton(
-                            shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(15.0),
-                                )),
-                            onPressed: () async {
-                              final stop = await Alarm.stop();
-                              if (stop && cubit.isRinging) setState(() => cubit.isRinging = false);
-                              cubit.deleteReminder();
-                            },
-                            fillColor: Theme.of(context).primaryColor,
-                            child:  Text(stop.tr,style: const TextStyle(color: Colors.white),),
-                          ),
-                        if (cubit.selectedTime!= null)
-                          RawMaterialButton(
-                            shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(15.0),
-                                )),
-                            onPressed: () async {
-                              await Alarm.stop();
-                              setState((){
-                                cubit.isRinging= false;
-                                cubit.selectedTime=null;
-                              });
-                              cubit.deleteReminder();
-
-                            },
-                            fillColor: Theme.of(context).primaryColor,
-                            child: Text(undo.tr,style: const TextStyle(color: Colors.white),),
-                          ),
-
-                      ],
-                    ),
                     if (cubit.selectedTime!= null)
-                      const Divider(),
+                      Text(
+                        'Ring ${cubit.ringDay()} at ${cubit.selectedTime!.format(context)}',
+                      ),
+                    if (cubit.isRinging) Text("🔔 ${ringing.tr} 🔔"),
+                    const Spacer(),
+                    if (cubit.isRinging)
+                      RawMaterialButton(
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(15.0),
+                            )),
+                        onPressed: () async {
+                          final stop = await Alarm.stop();
+                          if (stop && cubit.isRinging) setState(() => cubit.isRinging = false);
+                          cubit.deleteReminder();
+                        },
+                        fillColor: Theme.of(context).primaryColor,
+                        child:  Text(stop.tr,style: const TextStyle(color: Colors.white),),
+                      ),
                     if (cubit.selectedTime!= null)
-                      const SizedBox(height: 10,),
-                    if(cubit.postsListOnlyMe.isEmpty)
-                  Center(
-                    child: EmptyWidget(
-                      hideBackgroundAnimation: true,
-                    image: null,
-                    packageImage: PackageImage.Image_3,
-                    title: noteInfoText.tr,
-                    subTitle: noteInfoText2.tr,
-                    titleTextStyle: const TextStyle(
-                      fontSize: 22,
-                      color: Color(0xff9da9c7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    subtitleTextStyle: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xffabb8d6),
-                    ),
-                ),
-                  ),
-                    const SizedBox(height: 20,),
-                    if(cubit.postsListOnlyMe.isNotEmpty)
-                    ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemBuilder: (context, index,) =>
-                            buildPostItem(
-                              context,
-                                index,
-                              cubit
-                                  .usersMap[cubit
-                                  .postsListOnlyMe[index]
-                                  .values
-                                  .single
-                                  .ownerId].image!,
-                              cubit
-                                  .usersMap[cubit
-                                  .postsListOnlyMe[index]
-                                  .values
-                                  .single
-                                  .ownerId].username!,
-                              cubit.postsListOnlyMe[index]
-                                  .values
-                                  .single.time,
-                              cubit.postsListOnlyMe[index]
-                                  .values
-                                  .single
-                                  .text,
-                                cubit
-                                .postsListOnlyMe[index]
-                                .values
-                                .single
-                                .image,
-                                    cubit.postsListOnlyMe[index]
-                                .values
-                                .single
-                                .numOfImages,
-                                cubit.postsListOnlyMe[index]
-                                    .values
-                                    .single
-                                    .likes,
-                                cubit.postsListOnlyMe[index],
-                              cubit,
-                            ),
-                        separatorBuilder: (context, index) => const SizedBox(
-                          height: 8.0,
-                        ),
+                      RawMaterialButton(
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(15.0),
+                            )),
+                        onPressed: () async {
+                          await Alarm.stop();
+                          setState((){
+                            cubit.isRinging= false;
+                            cubit.selectedTime=null;
+                          });
+                          cubit.deleteReminder();
 
-                        itemCount:cubit.postsListOnlyMe.length
-                    ),
-                    const SizedBox(height: 40,),
+                        },
+                        fillColor: Theme.of(context).primaryColor,
+                        child: Text(undo.tr,style: const TextStyle(color: Colors.white),),
+                      ),
+
                   ],
                 ),
-              ),
+                if (cubit.selectedTime!= null)
+                  const Divider(),
+                if (cubit.selectedTime!= null)
+                  const SizedBox(height: 10,),
+                ConditionalBuilder(
+                  condition:state is! UserGetPostOnlyMeLoading,
+                  builder: (context) => Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          if(cubit.postsListOnlyMe.isEmpty)
+                        Center(
+                          child: EmptyWidget(
+                            hideBackgroundAnimation: true,
+                          image: null,
+                          packageImage: PackageImage.Image_3,
+                          title: noteInfoText.tr,
+                          subTitle: noteInfoText2.tr,
+                          titleTextStyle: const TextStyle(
+                            fontSize: 22,
+                            color: Color(0xff9da9c7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          subtitleTextStyle: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xffabb8d6),
+                          ),
+                      ),
+                        ),
+                          const SizedBox(height: 20,),
+                          if(cubit.postsListOnlyMe.isNotEmpty)
+                          ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemBuilder: (context, index,) =>
+                                  buildPostItem(
+                                    context,
+                                      index,
+                                    cubit
+                                        .usersMap[cubit
+                                        .postsListOnlyMe[index]
+                                        .values
+                                        .single
+                                        .ownerId].image!,
+                                    cubit
+                                        .usersMap[cubit
+                                        .postsListOnlyMe[index]
+                                        .values
+                                        .single
+                                        .ownerId].username!,
+                                    cubit.postsListOnlyMe[index]
+                                        .values
+                                        .single.time,
+                                    cubit.postsListOnlyMe[index]
+                                        .values
+                                        .single
+                                        .text,
+                                      cubit
+                                      .postsListOnlyMe[index]
+                                      .values
+                                      .single
+                                      .image,
+                                          cubit.postsListOnlyMe[index]
+                                      .values
+                                      .single
+                                      .numOfImages,
+                                      cubit.postsListOnlyMe[index]
+                                          .values
+                                          .single
+                                          .likes,
+                                      cubit.postsListOnlyMe[index],
+                                    cubit,
+                                  ),
+                              separatorBuilder: (context, index) => const SizedBox(
+                                height: 8.0,
+                              ),
+
+                              itemCount:cubit.postsListOnlyMe.length
+                          ),
+                          const SizedBox(height: 40,),
+                        ],
+                      ),
+                    ),
+                  ),
+                  fallback: (BuildContext context) =>
+                      const Center(child:AdaptiveIndicator()),
+                ),
+              ],
             ),
-            fallback: (BuildContext context) =>
-                const Center(child:AdaptiveIndicator()),
           ),
         );
 
@@ -378,13 +385,14 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
 
                ReadMoreText(
                  text,
-                trimLines: 8,
+                trimLines: 6 ,
                 colorClickableText: Colors.pink,
                 trimMode: TrimMode.Line,
                 trimCollapsedText: showMore.tr,
-                trimExpandedText: showLess.tr,
+                trimExpandedText: "... ${showLess.tr}",
                 moreStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
+                 lessStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+               ),
               const SizedBox(height: 10,),
           SizedBox(height:imagePosts.length!=0? 300:0,
             child: PhotoViewGallery.builder(

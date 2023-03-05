@@ -112,5 +112,8 @@ class UserGetImageStoryUsersSuccess extends HomeStates {}
 
 class UserGetImageStoryUsersError extends HomeStates {}
 
+class UserGetGetUsers extends HomeStates {}
+
+
 
 

@@ -85,10 +85,10 @@ class StoryImageScreen extends StatelessWidget {
                             ],
                           ),
                           const Divider(),
-                          const SizedBox(height: 20,),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 20,),
                     Expanded(
                       flex: 4,
                       child: SingleChildScrollView(

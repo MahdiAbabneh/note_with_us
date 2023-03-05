@@ -592,7 +592,7 @@ Future<void> createPost() async {
       usersMap = {};
 
       for (var element in value.docs) {
-        if (UserDataModel.fromJson(element.data()).uId != user!.uId) {
+        if (UserDataModel.fromJson(element.data()).uId != idForUser) {
           try {
             usersList.add(UserDataModel.fromJson(element.data()));
           }
@@ -608,6 +608,7 @@ Future<void> createPost() async {
         });
       }
     });
+    emit(UserGetGetUsers());
   }
 
   TextEditingController messageController = TextEditingController();

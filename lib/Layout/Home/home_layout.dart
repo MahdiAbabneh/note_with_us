@@ -37,6 +37,10 @@ class HomeLayout extends StatelessWidget {
     return BlocConsumer<HomeCubit, HomeStates>(
       listener: (context, state) {},
       builder: (context, state) {
+        if(state is UserGetGetUsers)
+          {
+            cubit.getUserData().then((value) => cubit.getPosts());
+          }
         return Scaffold(
           appBar: AppBar(
               automaticallyImplyLeading: false,
@@ -143,7 +147,8 @@ class HomeLayout extends StatelessWidget {
                                         .values
                                         .single
                                         .likes,
-                                    cubit.postsList[index]
+                                    cubit.postsList[index],
+                                    cubit.postsList[index].values.single.ownerId,
                                 ),
                             separatorBuilder: (context, index) => const SizedBox(
                               height: 8.0,
@@ -167,7 +172,7 @@ class HomeLayout extends StatelessWidget {
   }
 
 
-  Widget buildPostItem(context,index,ownerImage,ownerName,time,text,imagePosts,numImages,likes,post)
+  Widget buildPostItem(context,index,ownerImage,ownerName,time,text,imagePosts,numImages,likes,post,ownerId)
 
   =>Card(
     shape: RoundedRectangleBorder(
@@ -211,7 +216,7 @@ class HomeLayout extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              Visibility(visible:HomeCubit.get(context).postsList[index].values.single.ownerId==idForUser ,child: IconButton(
+              Visibility(visible:ownerId==idForUser ,child: IconButton(
                   onPressed: (){
                     showModalBottomSheet(isScrollControlled: true,context: context, builder: (context) =>
                         SizedBox(
@@ -348,13 +353,13 @@ class HomeLayout extends StatelessWidget {
           ),
                ReadMoreText(
                  text,
-                trimLines: 8,
-                colorClickableText: Colors.pink,
+                trimLines: 6,
                 trimMode: TrimMode.Line,
                 trimCollapsedText: showMore.tr,
-                trimExpandedText: showLess.tr,
+                trimExpandedText:"... ${showLess.tr}",
                 moreStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
+                lessStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+               ),
               const SizedBox(height: 10,),
           SizedBox(height:imagePosts.length!=0? 300:0,
             child: PhotoViewGallery.builder(
@@ -429,9 +434,9 @@ class HomeLayout extends StatelessWidget {
                    HomeCubit.get(context).updatePostLikes(post);
                   },
                   icon:
-                  HomeCubit.get(context).postsList[index].values.single.likes
-                      .any((element) => element.ownerName ==
-                      HomeCubit.get(context).user!.username)
+                  likes
+                      .any((element) => element.ownerId ==
+                     idForUser)
                       ? Icon ( Icons.thumb_up_off_alt_rounded,color: Theme.of(context).primaryColor,)
                       :
                   const Icon ( Icons.thumb_up_off_alt_rounded,color: Colors.grey,)
