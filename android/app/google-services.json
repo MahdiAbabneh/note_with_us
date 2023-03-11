@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:129306287836:android:87dfddf84303d96c79de19",
         "android_client_info": {
-          "package_name": "com.example.mahdeko"
+          "package_name": "at.mahdi.notewithus"
         }
       },
       "oauth_client": [
@@ -17,12 +17,20 @@
           "client_id": "129306287836-fjaueu74de3qhme536glbdca1blqs8fs.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.mahdeko",
+            "package_name": "at.mahdi.notewithus",
             "certificate_hash": "e350331eeff852bfd7f18235820db8b78ec2880b"
           }
         },
         {
-          "client_id": "129306287836-t91ubr9mh7muu8cmisrrrs77snac3cb8.apps.googleusercontent.com",
+          "client_id": "129306287836-j0iftsniab7vam3nfephg34nct2t10jo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "at.mahdi.notewithus",
+            "certificate_hash": "810a9f5a898b8b90e1e173e49e75f5e7ab821731"
+          }
+        },
+        {
+          "client_id": "129306287836-659cdeo67ussu0mgutdgm0qep7ba53o1.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -35,7 +43,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "129306287836-pv4ftoi4oa50ga4agp35ie8det6pkurn.apps.googleusercontent.com",
+              "client_id": "129306287836-659cdeo67ussu0mgutdgm0qep7ba53o1.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

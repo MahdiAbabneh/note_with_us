@@ -83,7 +83,7 @@ class CreateNoteScreen extends StatelessWidget {
                               ],
                             ),
                             const Divider(),
-                            const SizedBox(height: 5,),
+                            const SizedBox(height: 10,),
                             CustomRadioButton(spacing: 10,enableShape:true ,shapeRadius: 25,width: 150,
                               elevation: 0,
                               absoluteZeroSpacing: true,
@@ -109,30 +109,35 @@ class CreateNoteScreen extends StatelessWidget {
                             ),
                             const Divider(),
                             const SizedBox(height: 10,),
-                            if(selectedTypeNoteValue=="ONLYME")
+                            if(selectedTypeNoteValue==null||selectedTypeNoteValue=="ONLYME")
                               Row(
                                 children: [
                                   const Icon(FontAwesomeIcons.circleInfo,color: Colors.red,),
                                   const SizedBox(width: 10,),
-                                  Text(
-                                    onlyInfo.tr,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .primaryColor,
+                                  Expanded(
+                                    child: Text(
+                                      onlyInfoDis.tr,
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .primaryColor,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            if(selectedTypeNoteValue=="SHARE")
+                            const SizedBox(height: 5,),
+                            if(selectedTypeNoteValue==null||selectedTypeNoteValue=="SHARE")
                               Row(
                                 children: [
                                   const Icon(FontAwesomeIcons.circleInfo,color: Colors.red,),
                                   const SizedBox(width: 10,),
-                                  Text(
-                                    shareInfo.tr,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .primaryColor,
+                                  Expanded(
+                                    child: Text(
+                                      shareInfoDis.tr,
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .primaryColor,
+                                      ),
                                     ),
                                   ),
                                 ],

@@ -69,8 +69,8 @@ class MyLocale implements Translations{
       "Your phone number is shown to everyone.":"يتم عرض رقم هاتفك للجميع.",
       "The Dark Mode is enabled for Origin.":"تم تمكين الوضع المظلم لـ الآصلي فقط.",
       "This user does not set his phone number":"هذا المستخدم لم يحدد رقم هاتفة",
-      "Shown for you just.":"تظهر لك فقط.",
-      "Shown to everyone.":"تظهر للجميع.",
+      "ONLY MY: Show for you just as Archives, you can add a reminder.":"شخصي: تظهر لك فقط  كمحفوظات، يمكنك إضافة تذكير.",
+      "SHARE: Shown to everyone, anyone can put a like, or save the note.":"مشاركة: تظهر للجميع ، يمكن لأي شخص وضع إعجاب أو حفظ الملاحظة.",
       "Search":"البحث",
       "For Fun":"للمتعة",
       "Profile":"الملف الشخصي",
@@ -84,6 +84,12 @@ class MyLocale implements Translations{
       "Text Copied Successfully":"تم نسخ النص بنجاح",
       "Images Saving Successfully":"تم حفظ الصور بنجاح",
       "Add more image":"أضافة المزيد من الصور",
+      "By clicking Create Account, you agree to our :":"بالنقر فوق إنشاء حساب ، فإنك توافق على:",
+      "Terms of use.":"شروط الاستخدام.",
+      "Data Policy,":"سياسة البيانات",
+      "Report potential violating content !":"الإبلاغ عن المحتوى المخالف المحتمل !",
+      "Are you sure to report this User ?":"هل أنت متأكد من الإبلاغ عن هذا المستخدم ؟",
+      "The report was submitted successfully. Thank you for your help in trying to limit the posting of infringing content.":"تم تقديم التقرير بنجاح. شكرًا لك على مساعدتك في محاولة الحد من نشر المحتوى المخالف."
 
 
 

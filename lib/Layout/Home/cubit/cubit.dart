@@ -858,6 +858,28 @@ Future<void> createPost() async {
     });
   }
 
+  Future<void> reportPostUser(Map<String, PostDataModel> post)async {
+    ReportDataModel model = ReportDataModel(
+      reportUser: FirebaseAuth.instance.currentUser!.uid,);
+    await FirebaseFirestore.instance
+        .collection('reportPostUser')
+        .doc(post.values.single.ownerId).collection('report').add(model.toJson())
+        .then((value) {
+    }).catchError((error) {
+    });
+  }
+
+  Future<void> reportUser(String userId)async {
+    ReportDataModel model = ReportDataModel(
+      reportUser: FirebaseAuth.instance.currentUser!.uid,);
+    await FirebaseFirestore.instance
+        .collection('reportUser')
+        .doc(userId).collection('report').add(model.toJson())
+        .then((value) {
+    }).catchError((error) {
+    });
+  }
+
 
 
 }

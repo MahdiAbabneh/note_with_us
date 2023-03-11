@@ -338,7 +338,154 @@ class HomeLayout extends StatelessWidget {
                         ));
 
 
-              }, icon:const  Icon(FontAwesomeIcons.trash)))
+              }, icon:const  Icon(FontAwesomeIcons.trash))),
+              Visibility(visible:ownerId!=idForUser ,child: IconButton(
+                  onPressed: (){
+                    showModalBottomSheet(isScrollControlled: true,context: context, builder: (context) =>
+                        SizedBox(
+                          width: double.infinity,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children:  [
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Text(
+                                    reportText.tr,
+                                    style: TextStyle(
+                                      fontSize: responsive(
+                                          context, 16.0, 22.0),
+                                    ),
+                                  ),
+                                ),
+                                const Divider(),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10,left: 10),
+                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        reportNotePost.tr,
+                                        style: TextStyle(
+                                          fontSize: responsive(
+                                              context, 16.0, 22.0),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10,),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child:
+                                            ElevatedButton(
+                                              onPressed:
+                                                  () {
+                                                HomeCubit.get(context)
+                                                  .reportPostUser(post)
+                                                  .whenComplete(() {
+                                                AwesomeDialog(
+                                                  customHeader: Icon(FontAwesomeIcons.circleCheck,size:100,color: Theme.of(context).primaryColor,),
+                                                  btnOkColor: Theme.of(context).primaryColor,
+                                                  btnOkText: okText.tr,
+                                                  context: context,
+                                                  animType: AnimType.leftSlide,
+                                                  headerAnimationLoop: false,
+                                                  dialogType: DialogType.success,
+                                                  title: reportUserDone.tr,
+                                                  btnOkOnPress: () {},
+                                                  btnOkIcon: Icons.check_circle,
+                                                  onDismissCallback: (type) {},
+                                                ).show().whenComplete(() =>Navigator.pop(context)
+                                                );
+
+                                              });
+                                              },
+                                              style: ElevatedButton
+                                                  .styleFrom(
+                                                shape: const RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.all(
+                                                      Radius.circular(15.0),
+                                                    )),
+                                                padding: const EdgeInsets
+                                                    .only(
+                                                    top:
+                                                    3,
+                                                    right:
+                                                    3,
+                                                    left:
+                                                    3), backgroundColor: Theme.of(
+                                                  context)
+                                                  .primaryColor,
+                                              ),
+                                              child:  Text(
+                                                yesText.tr,
+                                                style: const TextStyle(
+                                                    color: Colors
+                                                        .white,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .bold,
+                                                    fontSize:
+                                                    20),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            width: 20,
+                                          ),
+                                          Expanded(
+                                            child:
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              style: ElevatedButton
+                                                  .styleFrom(
+                                                shape: const RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.all(
+                                                      Radius.circular(15.0),
+                                                    )),
+                                                padding: const EdgeInsets
+                                                    .only(
+                                                    top:
+                                                    3,
+                                                    right:
+                                                    3,
+                                                    left:
+                                                    3), backgroundColor: Colors
+                                                  .white,
+                                              ),
+                                              child:  Text(
+                                                back.tr,
+                                                style: const TextStyle(
+                                                    color: Colors
+                                                        .black,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .bold,
+                                                    fontSize:
+                                                    20),
+                                              ),
+                                            ),
+                                          ),
+
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding:  EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom,),
+                                  child: const SizedBox(height: 20,),
+                                ),
+
+
+                              ],
+                            ),
+                          ),
+                        ));
+
+
+                  }, icon:const  Icon(FontAwesomeIcons.circleExclamation)))
             ],
           ),
           Padding(

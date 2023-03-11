@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
               fontFamily: CacheHelper.getData(key: "lang") == "ar" ? "Almarai" : "mali",
             ),
             themeMode: darkMoodData! ? ThemeMode.dark : ThemeMode.light,
-            title: "Note with us",
+            title: "Note With Us",
             debugShowCheckedModeBanner: false,
             locale: controllerLang.initialLang,
             translations:MyLocale(),

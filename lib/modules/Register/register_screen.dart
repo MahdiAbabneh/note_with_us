@@ -49,7 +49,8 @@ class RegisterScreen extends StatelessWidget {
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(10.0),
-              child: Column(children: [
+              child: Column(
+              children: [
                 const SizedBox(height: 10,),
                 Container(
                   height: responsive(context, 120.0, 240.0),
@@ -247,7 +248,7 @@ class RegisterScreen extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 20.0,
                         ),
-                      ),//
+                      ),
                       const SizedBox(height: 20,),
                       TextFormField(
                         controller: passwordController,
@@ -292,7 +293,7 @@ class RegisterScreen extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 20.0,
                            ),
-                      ),//
+                      ),
                       const SizedBox(height: 20,),
                       TextFormField(
                         controller: confirmPasswordController,
@@ -337,7 +338,46 @@ class RegisterScreen extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 20.0,
                             ),
-                      ),//
+                      ),
+                      const SizedBox(height: 20,),
+                      Text(
+                        byClick.tr,
+                      ),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          InkWell(
+                            onTap: (){
+                              cubit.launchURLBrowserSignUp("https://github.com/MahdiAbabneh/note-privacy/blob/main/prvacy-policy.md");
+                            },
+                            child: Text(
+                              dataPolicy.tr,style: TextStyle(
+                              decoration: TextDecoration.underline,
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 2,
+                          ),
+                          InkWell(
+                            onTap: (){
+                              cubit.launchURLBrowserSignUp("https://github.com/MahdiAbabneh/Terms-of-Use/blob/main/Note%20app%20Terms%20of%20Use");
+                            },
+                            child:  Text(
+                              terms.tr,style: TextStyle(
+                              decoration: TextDecoration.underline,
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 40,),
                       SizedBox(width: double.infinity,child: SizedBox(
                         height: 50,

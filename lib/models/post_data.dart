@@ -97,3 +97,27 @@ class ReminderDataModel {
     };
   }
 }
+
+class ReportDataModel {
+  ReportDataModel({
+    required this.reportUser,
+
+
+  });
+  late final String reportUser;
+
+
+
+
+  ReportDataModel.fromJson(Map<String, dynamic> json) {
+    reportUser = json['reportUser'] ?? '';
+
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'reportUser': reportUser,
+    };
+  }
+}
+

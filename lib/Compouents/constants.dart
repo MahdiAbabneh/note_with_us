@@ -150,6 +150,21 @@ const String saveImageDone="Images Saving Successfully";
 
 const String imagesScreen="Add more image";
 
+const String byClick = "By clicking Create Account, you agree to our :" ;
+
+const String terms = "Terms of use." ;
+
+const String dataPolicy = "Data Policy," ;
+
+const String onlyInfoDis="ONLY MY: Show for you just as Archives, you can add a reminder.";
+
+const String shareInfoDis="SHARE: Shown to everyone, anyone can put a like, or save the note.";
+
+const String reportText="Report potential violating content !";
+
+const String reportNotePost="Are you sure to report this User ?";
+
+const String reportUserDone="The report was submitted successfully. Thank you for your help in trying to limit the posting of infringing content.";
 
 
 

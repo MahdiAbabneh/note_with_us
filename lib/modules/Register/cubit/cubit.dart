@@ -11,6 +11,7 @@ import 'package:mahdeko/Compouents/constant_empty.dart';
 import 'package:mahdeko/models/user_data_model.dart';
 import 'package:mahdeko/modules/Register/cubit/states.dart';
 import 'package:mahdeko/network/cache_helper.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
 
@@ -103,6 +104,13 @@ class RegisterCubit extends Cubit<RegisterStates> {
     );
     if (newDateTime != null) {
       dateOfBirthRegisterController.text =Jiffy(newDateTime).format("yMd").toString();
+    }
+  }
+
+  Future<void> launchURLBrowserSignUp(url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 

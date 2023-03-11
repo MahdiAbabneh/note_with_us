@@ -70,6 +70,7 @@ class LoginCubit extends Cubit<LoginStates> {
       });
     }catch(e){
       emit(UserLoginError());
+      print(e);
     }
     return  null;
 }
