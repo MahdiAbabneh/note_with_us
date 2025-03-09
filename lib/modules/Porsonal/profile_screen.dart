@@ -100,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   )),
                                 if(albumImages.isNotEmpty)
                                 GestureDetector(onTap: (){
-                                  navigateTo(context, StoryScreen());
+                                //  navigateTo(context, StoryScreen());
                                 },
                                   child: StatusView(
                                     radius: 90,
@@ -1053,7 +1053,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    HomeCubit.get(context).getImageStory();
+   // HomeCubit.get(context).getImageStory();
   }
 }
 

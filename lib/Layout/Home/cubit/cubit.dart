@@ -19,7 +19,6 @@ import 'package:mahdeko/models/message_model.dart';
 import 'package:mahdeko/models/post_data.dart';
 import 'package:mahdeko/models/user_data_model.dart';
 import 'package:age_calculator/age_calculator.dart';
-import 'package:story_viewer/models/story_item.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomeCubit extends Cubit<HomeStates> {
@@ -796,34 +795,34 @@ Future<void> createPost() async {
         emit(UserAddImageStoryError());
       });
     }
-   await getImageStory();
+  // await getImageStory();
   }
 
   ImagesUserModel ?imagesUserModel;
-  Future<void> getImageStory() async {
-    albumImages=[];
-    imagesUserProfile=[];
-    storiesImages=[];
-    emit(UserGetImageStoryLoading());
-    await FirebaseFirestore.instance
-        .collection('imagesUser')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .get()
-        .then((value)async {
-      imagesUserModel =ImagesUserModel.fromJson(value.data()!);
-      albumImages=imagesUserModel!.image;
-      for(int i=0;i<albumImages.length;i++)
-        {
-          storiesImages.add(StoryItemModel(
-          imageProvider: NetworkImage(albumImages[i]),
-        ),);
-        }
-      await getImageXFileByUrl(albumImages);
-      emit(UserGetImageStorySuccess());
-    }).catchError((error) {
-      emit(UserGetImageStoryError());
-    });
-  }
+  // Future<void> getImageStory() async {
+  //   albumImages=[];
+  //   imagesUserProfile=[];
+  //   storiesImages=[];
+  //   emit(UserGetImageStoryLoading());
+  //   await FirebaseFirestore.instance
+  //       .collection('imagesUser')
+  //       .doc(FirebaseAuth.instance.currentUser!.uid)
+  //       .get()
+  //       .then((value)async {
+  //     imagesUserModel =ImagesUserModel.fromJson(value.data()!);
+  //     albumImages=imagesUserModel!.image;
+  //     for(int i=0;i<albumImages.length;i++)
+  //       {
+  //         storiesImages.add(StoryItemModel(
+  //         imageProvider: NetworkImage(albumImages[i]),
+  //       ),);
+  //       }
+  //     await getImageXFileByUrl(albumImages);
+  //     emit(UserGetImageStorySuccess());
+  //   }).catchError((error) {
+  //     emit(UserGetImageStoryError());
+  //   });
+  // }
 
   Future<void>  getImageXFileByUrl(List<String> url) async {
     for(int i=0;i<albumImages.length;i++)
@@ -834,29 +833,29 @@ Future<void> createPost() async {
       }
   }
 
-  Future<void> getImageUserStory() async {
-    albumUserImages=[];
-    storiesUserImages=[];
-    emit(UserGetImageStoryUsersLoading());
-   await FirebaseFirestore.instance
-        .collection('imagesUser')
-        .doc(usersList[indexUser!].uId!)
-        .get()
-        .then((value)async {
-      ImagesUserModel ?imagesUserModel;
-      imagesUserModel =ImagesUserModel.fromJson(value.data()!);
-      albumUserImages=imagesUserModel.image;
-      for(int i=0;i<albumUserImages.length;i++)
-      {
-        storiesUserImages.add(StoryItemModel(
-          imageProvider: NetworkImage(albumUserImages[i]),
-        ),);
-      }
-      emit(UserGetImageStoryUsersSuccess());
-   }).catchError((error) {
-     emit(UserGetImageStoryUsersError());
-    });
-  }
+  // Future<void> getImageUserStory() async {
+  //   albumUserImages=[];
+  //   storiesUserImages=[];
+  //   emit(UserGetImageStoryUsersLoading());
+  //  await FirebaseFirestore.instance
+  //       .collection('imagesUser')
+  //       .doc(usersList[indexUser!].uId!)
+  //       .get()
+  //       .then((value)async {
+  //     ImagesUserModel ?imagesUserModel;
+  //     imagesUserModel =ImagesUserModel.fromJson(value.data()!);
+  //     albumUserImages=imagesUserModel.image;
+  //     for(int i=0;i<albumUserImages.length;i++)
+  //     {
+  //       storiesUserImages.add(StoryItemModel(
+  //         imageProvider: NetworkImage(albumUserImages[i]),
+  //       ),);
+  //     }
+  //     emit(UserGetImageStoryUsersSuccess());
+  //  }).catchError((error) {
+  //    emit(UserGetImageStoryUsersError());
+  //   });
+  // }
 
   Future<void> reportPostUser(Map<String, PostDataModel> post)async {
     ReportDataModel model = ReportDataModel(

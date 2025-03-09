@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mahdeko/network/cache_helper.dart';
-import 'package:story_viewer/customizer.dart';
-import 'package:story_viewer/models/story_item.dart';
-import 'package:story_viewer/models/user.dart';
-import 'package:story_viewer/viewer.dart';
-import 'package:story_viewer/viewer_controller.dart';
+// import 'package:story_viewer/customizer.dart';
+// import 'package:story_viewer/models/story_item.dart';
+// import 'package:story_viewer/models/user.dart';
+// import 'package:story_viewer/viewer.dart';
+// import 'package:story_viewer/viewer_controller.dart';
 
 double responsive(context,mobile,tab){
   return  MediaQuery.of(context).size.height < 430 || MediaQuery.of(context).size.width< 490 ? mobile : tab;
@@ -70,23 +70,23 @@ SnackBar? showToastFailed(msg,context) {
   return null;
 }
 
-Widget customStoryViewer(List<StoryItemModel> stories,String name,String image,context) {
-  StoryViewerController controller = StoryViewerController();
-  return StoryViewer(
-    progressColor:Theme.of(context).primaryColor ,
-    padding: const EdgeInsets.all(20),
-    viewerController: controller,
-    hasReply: false,
-    customValues: Customizer(
-      sendIcon: CupertinoIcons.right_chevron,
-      closeIcon: CupertinoIcons.down_arrow,
-    ),
-    stories:stories,
-    userModel: UserModel(
-      username: name,
-      profilePicture: NetworkImage(
-        image,
-      ),
-    ),
-  );
-}
+// Widget customStoryViewer(List<StoryItemModel> stories,String name,String image,context) {
+//   StoryViewerController controller = StoryViewerController();
+//   return StoryViewer(
+//     progressColor:Theme.of(context).primaryColor ,
+//     padding: const EdgeInsets.all(20),
+//     viewerController: controller,
+//     hasReply: false,
+//     customValues: Customizer(
+//       sendIcon: CupertinoIcons.right_chevron,
+//       closeIcon: CupertinoIcons.down_arrow,
+//     ),
+//     stories:stories,
+//     userModel: UserModel(
+//       username: name,
+//       profilePicture: NetworkImage(
+//         image,
+//       ),
+//     ),
+//   );
+// }

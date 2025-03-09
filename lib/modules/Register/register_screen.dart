@@ -87,17 +87,6 @@ class RegisterScreen extends StatelessWidget {
                           ),
                         ),
                         isExpanded: true,
-                        icon:  Padding(
-                          padding: const EdgeInsets.only(left: 10.0),
-                          child: Icon(
-                            FontAwesomeIcons.caretDown,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                        buttonHeight: 50,
-                        dropdownDecoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
                         items: [
                           male.toString().tr,
                           female.toString().tr,

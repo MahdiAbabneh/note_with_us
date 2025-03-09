@@ -78,7 +78,7 @@ class _UsersScreenState extends State<UsersScreen> {
                             indexUser = index;
                             cubit.ageCalculatorUsers(cubit.usersList[indexUser!].dateOfBirth!);
                             navigateTo(context,const UsersInfoScreen());
-                            await cubit.getImageUserStory();
+                           // await cubit.getImageUserStory();
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(4.0),

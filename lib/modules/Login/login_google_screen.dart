@@ -83,17 +83,6 @@ class LoginGoogleScreen extends StatelessWidget {
                               ),
                             ),
                             isExpanded: true,
-                            icon:  Padding(
-                              padding: const EdgeInsets.only(left: 10.0),
-                              child: Icon(
-                                Icons.arrow_drop_down,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                            buttonHeight: 50,
-                            dropdownDecoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
                             items: [
                               male.toString().tr,
                               female.toString().tr,

@@ -2,7 +2,6 @@ import 'package:alarm/alarm.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
-import 'package:empty_widget/empty_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -118,25 +117,25 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                       physics: const BouncingScrollPhysics(),
                       child: Column(
                         children: [
-                          if(cubit.postsListOnlyMe.isEmpty)
-                        Center(
-                          child: EmptyWidget(
-                            hideBackgroundAnimation: true,
-                          image: null,
-                          packageImage: PackageImage.Image_3,
-                          title: noteInfoText.tr,
-                          subTitle: noteInfoText2.tr,
-                          titleTextStyle: const TextStyle(
-                            fontSize: 22,
-                            color: Color(0xff9da9c7),
-                            fontWeight: FontWeight.w500,
-                          ),
-                          subtitleTextStyle: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xffabb8d6),
-                          ),
-                      ),
-                        ),
+                      //     if(cubit.postsListOnlyMe.isEmpty)
+                      //   Center(
+                      //     child: EmptyWidget(
+                      //       hideBackgroundAnimation: true,
+                      //     image: null,
+                      //     packageImage: PackageImage.Image_3,
+                      //     title: noteInfoText.tr,
+                      //     subTitle: noteInfoText2.tr,
+                      //     titleTextStyle: const TextStyle(
+                      //       fontSize: 22,
+                      //       color: Color(0xff9da9c7),
+                      //       fontWeight: FontWeight.w500,
+                      //     ),
+                      //     subtitleTextStyle: const TextStyle(
+                      //       fontSize: 14,
+                      //       color: Color(0xffabb8d6),
+                      //     ),
+                      // ),
+                      //   ),
                           const SizedBox(height: 20,),
                           if(cubit.postsListOnlyMe.isNotEmpty)
                           ListView.separated(

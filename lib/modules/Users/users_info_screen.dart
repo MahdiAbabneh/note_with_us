@@ -203,7 +203,7 @@ class UsersInfoScreen extends StatelessWidget {
                                         )),
                                   if(albumUserImages.isNotEmpty)
                                     GestureDetector(onTap: (){
-                                      navigateTo(context, const StoryUserScreen());
+                                   //   navigateTo(context, const StoryUserScreen());
                                     },
                                       child: StatusView(
                                         radius: 90,
