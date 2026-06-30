@@ -1,4 +1,4 @@
-import 'package:alarm/alarm.dart';
+// import 'package:alarm/alarm.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +22,7 @@ BuildContext context= context;
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await Alarm.init();
+  // await Alarm.init();
   await CacheHelper.init();
   Bloc.observer = AppBlocObserver();
   Widget? widget;

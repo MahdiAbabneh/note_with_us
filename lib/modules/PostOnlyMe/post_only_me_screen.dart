@@ -1,4 +1,4 @@
-import 'package:alarm/alarm.dart';
+// import 'package:alarm/alarm.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
@@ -78,10 +78,10 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                               Radius.circular(15.0),
                             )),
                         onPressed: () async {
-                          final stop = await Alarm.stop();
-                          if (stop && cubit.isRinging) setState(() => cubit.isRinging = false);
-                          cubit.deleteReminder();
-                        },
+                        //   final stop = await Alarm.stop();
+                        //   if (stop && cubit.isRinging) setState(() => cubit.isRinging = false);
+                        //   cubit.deleteReminder();
+                         },
                         fillColor: Theme.of(context).primaryColor,
                         child:  Text(stop.tr,style: const TextStyle(color: Colors.white),),
                       ),
@@ -92,7 +92,7 @@ class _PostOnlyMeScreenState extends State<PostOnlyMeScreen> {
                               Radius.circular(15.0),
                             )),
                         onPressed: () async {
-                          await Alarm.stop();
+                          // await Alarm.stop();
                           setState((){
                             cubit.isRinging= false;
                             cubit.selectedTime=null;

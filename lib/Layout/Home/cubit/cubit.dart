@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:core';
 import 'dart:io';
-import 'package:alarm/alarm.dart';
+// import 'package:alarm/alarm.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:gallery_saver/gallery_saver.dart';
+// import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mahdeko/Compouents/constant_empty.dart';
@@ -134,13 +134,13 @@ class HomeCubit extends Cubit<HomeStates> {
       profileImageForUser = File(selectImage.path);
       croppedProfileImageFile = await ImageCropper().cropImage(
         sourcePath: profileImageForUser!.path,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ],
+        // aspectRatioPresets: [
+        //   CropAspectRatioPreset.square,
+        //   CropAspectRatioPreset.ratio3x2,
+        //   CropAspectRatioPreset.original,
+        //   CropAspectRatioPreset.ratio4x3,
+        //   CropAspectRatioPreset.ratio16x9
+        // ],
       );
 
       if (croppedProfileImageFile != null) {
@@ -161,13 +161,13 @@ class HomeCubit extends Cubit<HomeStates> {
       profileImageForUser = File(pickedFile.path);
       croppedProfileImageFile = await ImageCropper().cropImage(
         sourcePath: profileImageForUser!.path,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ],
+        // aspectRatioPresets: [
+        //   CropAspectRatioPreset.square,
+        //   CropAspectRatioPreset.ratio3x2,
+        //   CropAspectRatioPreset.original,
+        //   CropAspectRatioPreset.ratio4x3,
+        //   CropAspectRatioPreset.ratio16x9
+        // ],
       );
 
       if (croppedProfileImageFile != null) {
@@ -515,11 +515,11 @@ Future<void> createPost() async {
   StreamSubscription? subscription;
   Future<void>reminderChange()async{
     try {
-      subscription = Alarm.ringStream.stream.listen((onData) {
-        isRinging = true;
-        selectedTime = null;
-        emit(UserChangeReminder());
-      });
+      // subscription = Alarm.ringStream.stream.listen((onData) {
+      //   isRinging = true;
+      //   selectedTime = null;
+      //   emit(UserChangeReminder());
+      // });
     }
     catch (error) {
       emit(UserReminderError());
@@ -568,17 +568,17 @@ Future<void> createPost() async {
   }
 
   Future<void> setAlarm(DateTime dateTime, [bool enableNotif = true]) async {
-    final alarmSettings = AlarmSettings(
-      dateTime: dateTime,
-      assetAudioPath: 'assets/sample.mp3',
-      loopAudio: loopAudio,
-      notificationTitle:
-      showNotifOnRing && enableNotif ? 'Now is the time' : null,
-      notificationBody:
-      showNotifOnRing && enableNotif ? 'You have to do some note' : null,
-      enableNotificationOnKill:selectedTime==null? false:true,
-    );
-    await Alarm.set(settings: alarmSettings);
+    // final alarmSettings = AlarmSettings(
+    //   dateTime: dateTime,
+    //   assetAudioPath: 'assets/sample.mp3',
+    //   loopAudio: loopAudio,
+    //   notificationTitle:
+    //   showNotifOnRing && enableNotif ? 'Now is the time' : null,
+    //   notificationBody:
+    //   showNotifOnRing && enableNotif ? 'You have to do some note' : null,
+    //   enableNotificationOnKill:selectedTime==null? false:true,
+    // );
+    // await Alarm.set(settings: alarmSettings);
   }
 
   List<UserDataModel> usersList = [];
@@ -731,7 +731,7 @@ Future<void> createPost() async {
     emit(UserSaveImageInGalleryLoading());
     for (int i=0;i<listOfImage.length;i++) {
       try {
-        await GallerySaver.saveImage(listOfImage[i],albumName: 'Note with us');
+        // await GallerySaver.saveImage(listOfImage[i],albumName: 'Note with us');
       } catch (error) {
        emit(UserSaveImageInGalleryError());
       }
