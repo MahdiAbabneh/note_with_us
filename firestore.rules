@@ -1,0 +1,255 @@
+rules_version = '2';
+
+// Security rules for Note With Us.
+//
+// They cover every collection the current app uses and the ones the
+// older Play Store version still uses, so both keep working:
+//   users (+ chats/messages), postsMain, postsOnlyMe, imagesUser,
+//   reminder, reportPostUser, reportUser          (original app)
+//   circlePosts, capsules, circles, circleRequests,
+//   blocks                                         (redesign)
+// Signed-out guests can only read notes shared with everyone and their
+// replies. Anything not listed here is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    // True when an update only touches the given top-level fields.
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // True when the caller only adds, changes or removes their own
+    // entry in the `reactions` map.
+    function onlyOwnReaction() {
+      return request.resource.data.get('reactions', {})
+          .diff(resource.data.get('reactions', {}))
+          .affectedKeys().hasOnly([uid()]);
+    }
+
+    // True when [owner] has the caller in their circle.
+    function inCircleOf(owner) {
+      let circle = /databases/$(database)/documents/circles/$(owner);
+      return exists(circle) && uid() in get(circle).data.get('members', []);
+    }
+
+    // True unless [owner] has blocked the caller.
+    function notBlockedBy(owner) {
+      let blocks = /databases/$(database)/documents/blocks/$(owner);
+      return !exists(blocks) || !(uid() in get(blocks).data.get('blocked', []));
+    }
+
+    // ---------------------------------------------------------------
+    // Profiles and direct messages
+    // ---------------------------------------------------------------
+    match /users/{userId} {
+      // Everyone signed in can see profiles (people search, names and
+      // avatars on notes).
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && uid() == userId;
+
+      // Saved notes: just pointers to notes, private to their owner. Reading
+      // the note itself still goes through that note's own rules.
+      match /favorites/{favoriteId} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
+
+      // Each side of a conversation keeps its own copy, so the sender
+      // writes into the other person's tree too. Messages are only for
+      // people in each other's circle, and never from someone blocked.
+      match /chats/{otherId} {
+        function mayMessage() {
+          return uid() == otherId && inCircleOf(userId) && notBlockedBy(userId);
+        }
+
+        allow read, delete: if signedIn() && uid() == userId;
+        allow create, update: if signedIn()
+            && (uid() == userId || mayMessage());
+
+        match /messages/{messageId} {
+          allow read, delete: if signedIn() && uid() == userId;
+          allow create: if signedIn()
+              && request.resource.data.senderId == uid()
+              && (uid() == userId || mayMessage());
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Public notes
+    // ---------------------------------------------------------------
+    // Notes shared with everyone are public, so guests can look around
+    // before creating an account. Everything else still needs one.
+    match /postsMain/{postId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.ownerId == uid();
+      allow delete: if signedIn() && resource.data.ownerId == uid();
+      // The author can edit anything. Others may only react (each
+      // person only their own reaction), like (old app) or bump the
+      // reply counter.
+      allow update: if signedIn() && (
+          resource.data.ownerId == uid()
+          || (onlyChanges(['likes', 'reactions', 'commentCount']) && onlyOwnReaction()));
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn() && request.resource.data.ownerId == uid();
+        allow delete: if signedIn() && (
+            resource.data.ownerId == uid()
+            || get(/databases/$(database)/documents/postsMain/$(postId)).data.ownerId == uid());
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Circle notes: readable only by the people listed in `audience`
+    // ---------------------------------------------------------------
+    match /circlePosts/{postId} {
+      function post() {
+        return get(/databases/$(database)/documents/circlePosts/$(postId)).data;
+      }
+
+      allow read: if signedIn() && uid() in resource.data.audience;
+      allow create: if signedIn()
+          && request.resource.data.ownerId == uid()
+          && uid() in request.resource.data.audience;
+      allow delete: if signedIn() && resource.data.ownerId == uid();
+      allow update: if signedIn() && (
+          resource.data.ownerId == uid()
+          || (uid() in resource.data.audience
+              && onlyChanges(['reactions', 'commentCount'])
+              && onlyOwnReaction()));
+
+      match /comments/{commentId} {
+        allow read: if signedIn() && uid() in post().audience;
+        allow create: if signedIn()
+            && uid() in post().audience
+            && request.resource.data.ownerId == uid();
+        allow delete: if signedIn() && (
+            resource.data.ownerId == uid() || post().ownerId == uid());
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Private journal
+    // ---------------------------------------------------------------
+    match /postsOnlyMe/{userId}/myPost/{postId} {
+      allow read, write: if signedIn() && uid() == userId;
+    }
+
+    // ---------------------------------------------------------------
+    // Time capsules
+    //
+    // The capsule document holds only who, when and the mood. The text
+    // lives in capsules/{id}/sealed/content and the recipient can't
+    // read it before `unlockAt`.
+    // ---------------------------------------------------------------
+    match /capsules/{capsuleId} {
+      allow read: if signedIn()
+          && (resource.data.ownerId == uid() || resource.data.recipientId == uid());
+      // Capsules go to yourself or to someone whose circle you're in.
+      allow create: if signedIn()
+          && request.resource.data.ownerId == uid()
+          && (request.resource.data.recipientId == uid()
+              || (inCircleOf(request.resource.data.recipientId)
+                  && notBlockedBy(request.resource.data.recipientId)))
+          && request.resource.data.text == ''
+          && request.resource.data.opened == false
+          && request.resource.data.unlockAt is timestamp;
+      allow delete: if signedIn()
+          && (resource.data.ownerId == uid() || resource.data.recipientId == uid());
+      // After it unlocks, the recipient marks it opened and caches the
+      // real text on the capsule so it can be previewed.
+      allow update: if signedIn()
+          && resource.data.recipientId == uid()
+          && request.time >= resource.data.unlockAt
+          && onlyChanges(['opened', 'text'])
+          && request.resource.data.text == get(/databases/$(database)/documents/capsules/$(capsuleId)/sealed/content).data.text;
+
+      match /sealed/{docId} {
+        function capsule() {
+          return get(/databases/$(database)/documents/capsules/$(capsuleId)).data;
+        }
+
+        allow read: if signedIn() && (
+            capsule().ownerId == uid()
+            || (capsule().recipientId == uid() && request.time >= capsule().unlockAt));
+        // Written in the same batch as the capsule itself.
+        allow create: if signedIn()
+            && getAfter(/databases/$(database)/documents/capsules/$(capsuleId)).data.ownerId == uid();
+        allow delete: if signedIn()
+            && (capsule().ownerId == uid() || capsule().recipientId == uid());
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Circles and blocks: private to their owner
+    // ---------------------------------------------------------------
+    // Circles are mutual and need consent: someone else may add themselves
+    // only after this owner sent them a request, and may always leave.
+    match /circles/{userId} {
+      function oldMembers() {
+        return resource == null ? [] : resource.data.get('members', []);
+      }
+      function newMembers() {
+        return request.resource.data.get('members', []);
+      }
+      function joiningAfterRequest() {
+        return newMembers().toSet() == oldMembers().toSet().union([uid()].toSet())
+            && exists(/databases/$(database)/documents/circleRequests/$(userId + '_' + uid()));
+      }
+      function leaving() {
+        return newMembers().toSet() == oldMembers().toSet().difference([uid()].toSet());
+      }
+
+      allow read, write: if signedIn() && uid() == userId;
+      allow create, update: if signedIn() && uid() != userId
+          && request.resource.data.keys().hasOnly(['members'])
+          && (joiningAfterRequest() || leaving());
+    }
+
+    // Circle invitations, stored as {from}_{to}. Only the two people
+    // involved can see one; either can withdraw or decline it.
+    match /circleRequests/{requestId} {
+      allow read, delete: if signedIn()
+          && (resource.data.from == uid() || resource.data.to == uid());
+      allow create: if signedIn()
+          && request.resource.data.from == uid()
+          && request.resource.data.to != uid()
+          && requestId == uid() + '_' + request.resource.data.to
+          && request.resource.data.keys().hasOnly(['from', 'to', 'fromName', 'fromImage', 'createdAt'])
+          && notBlockedBy(request.resource.data.to);
+    }
+
+    match /blocks/{userId} {
+      allow read, write: if signedIn() && uid() == userId;
+    }
+
+    // ---------------------------------------------------------------
+    // Original app features
+    // ---------------------------------------------------------------
+    match /imagesUser/{userId} {
+      allow read: if signedIn();
+      allow write: if signedIn() && uid() == userId;
+    }
+
+    match /reminder/{userId} {
+      allow read, write: if signedIn() && uid() == userId;
+    }
+
+    // Reports can be filed but never read from the app.
+    match /reportPostUser/{ownerId}/report/{reportId} {
+      allow create: if signedIn() && request.resource.data.reportUser == uid();
+    }
+
+    match /reportUser/{userId}/report/{reportId} {
+      allow create: if signedIn() && request.resource.data.reportUser == uid();
+    }
+  }
+}

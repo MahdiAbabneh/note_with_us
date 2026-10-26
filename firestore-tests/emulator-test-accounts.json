@@ -1,0 +1,17 @@
+{
+  "_note": "Local Firebase emulator accounts only. They do not exist in the live project.",
+  "accounts": [
+    {
+      "name": "Test Alice",
+      "email": "alice.emulator@example.test",
+      "password": "Emu-A-d4tFxLh4cV",
+      "gender": "Female"
+    },
+    {
+      "name": "Test Bob",
+      "email": "bob.emulator@example.test",
+      "password": "Emu-rmX8_777nTHR",
+      "gender": "Male"
+    }
+  ]
+}
