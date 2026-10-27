@@ -148,11 +148,14 @@ class Reminders extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setCapsuleAlerts(bool on) async {
-    if (on && !await requestPermission()) return;
+  /// Turns capsule alerts on or off. Returns false if permission was
+  /// refused, leaving them as they were.
+  Future<bool> setCapsuleAlerts(bool on) async {
+    if (on && !await requestPermission()) return false;
     await Prefs.setBool('capsuleAlerts', on);
     if (!on) await clearCapsuleAlerts();
     notifyListeners();
+    return true;
   }
 
   /// Re-applies the daily reminder, e.g. after a language change.

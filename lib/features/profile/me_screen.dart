@@ -628,6 +628,13 @@ class _NotificationSettings extends StatelessWidget {
     }
   }
 
+  Future<void> _toggleCapsules(BuildContext context, bool on) async {
+    final ok = await Reminders.instance.setCapsuleAlerts(on);
+    if (!ok && context.mounted) {
+      showToast(context, 'Allow notifications in Settings'.tr, error: true);
+    }
+  }
+
   Future<void> _pickTime(BuildContext context) async {
     final reminders = Reminders.instance;
     final now = DateTime.now();
@@ -682,7 +689,6 @@ class _NotificationSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reminders = Reminders.instance;
-    final c = context.colors;
     final t = reminders.time;
     return GroupedList(
       children: [
@@ -690,9 +696,8 @@ class _NotificationSettings extends StatelessWidget {
           icon: CupertinoIcons.bell,
           title: 'Daily writing reminder'.tr,
           subtitle: 'A gentle nudge to write, once a day'.tr,
-          trailing: CupertinoSwitch(
+          trailing: _PermissionSwitch(
             value: reminders.dailyEnabled,
-            activeTrackColor: c.accent,
             onChanged: (on) => _toggleDaily(context, on),
           ),
         ),
@@ -714,15 +719,47 @@ class _NotificationSettings extends StatelessWidget {
           icon: CupertinoIcons.hourglass,
           title: 'Capsule alerts'.tr,
           subtitle: 'When a capsule sent to you unlocks'.tr,
-          trailing: CupertinoSwitch(
+          trailing: _PermissionSwitch(
             value: reminders.capsuleAlerts,
-            activeTrackColor: c.accent,
-            onChanged: (on) => reminders.setCapsuleAlerts(on),
+            onChanged: (on) => _toggleCapsules(context, on),
           ),
         ),
       ],
     );
   }
+}
+
+/// A switch that moves the instant it is tapped, even though turning it
+/// on may wait on the OS permission prompt. It snaps back to [value] if
+/// the action is refused.
+class _PermissionSwitch extends StatefulWidget {
+  const _PermissionSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final Future<void> Function(bool on) onChanged;
+
+  @override
+  State<_PermissionSwitch> createState() => _PermissionSwitchState();
+}
+
+class _PermissionSwitchState extends State<_PermissionSwitch> {
+  bool? _pending;
+
+  Future<void> _change(bool on) async {
+    setState(() => _pending = on);
+    try {
+      await widget.onChanged(on);
+    } finally {
+      if (mounted) setState(() => _pending = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => CupertinoSwitch(
+    value: _pending ?? widget.value,
+    activeTrackColor: context.colors.accent,
+    onChanged: _pending == null ? _change : null,
+  );
 }
 
 /// Short weekday name for 1 (Monday) … 7 (Sunday) in the app language.
