@@ -421,6 +421,29 @@ const Map<String, String> arabicStrings = {
   'Reminder on. Change the time in Me.':
       'تم تفعيل التذكير. يمكنك تغيير الوقت من «أنا».',
   'Not now': 'ليس الآن',
+  // Capsule templates and the circle question
+  'Start from a template': 'ابدأ من قالب',
+  'Letter to me in 30 days': 'رسالة لنفسي بعد 30 يومًا',
+  'Letter to me in 1 year': 'رسالة لنفسي بعد سنة',
+  'Happy New Year': 'سنة جديدة سعيدة',
+  'For a hard day': 'ليوم صعب',
+  'Dear future me,\n\nToday I feel…\n\nBy the time you read this, I hope…':
+      'عزيزي أنا في المستقبل،\n\nاليوم أشعر بـ…\n\nعندما تقرأ هذه الرسالة، آمل أن…',
+  'Dear me, one year from now,\n\nThis is what my life looks like today…\n\nWhat I hope for you…':
+      'عزيزي أنا بعد سنة من الآن،\n\nهكذا تبدو حياتي اليوم…\n\nوما أتمناه لك…',
+  'Happy New Year!\n\nLast year I…\n\nThis year I want…':
+      'سنة جديدة سعيدة!\n\nفي السنة الماضية…\n\nوفي هذه السنة أريد…',
+  'Hey you,\n\nIf you are reading this on a hard day, remember…\n\nYou have gotten through hard days before.':
+      'مرحبًا بك،\n\nإن كنت تقرأ هذا في يوم صعب، فتذكّر…\n\nلقد تجاوزت أيامًا صعبة من قبل.',
+  'Circle question': 'سؤال الدائرة',
+  'Answer': 'أجب',
+  'Be the first to answer.': 'كن أول من يجيب.',
+  'You answered. Waiting for your circle.': 'أجبت. بانتظار دائرتك.',
+  '1 friend answered': 'أجاب صديق واحد',
+  '{n} friends answered': 'أجاب {n} من الأصدقاء',
+  '1 friend answered. Answer to see it.': 'أجاب صديق واحد. أجب لتراه.',
+  '{n} friends answered. Answer to see them.':
+      'أجاب {n} من الأصدقاء. أجب لتراهم.',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

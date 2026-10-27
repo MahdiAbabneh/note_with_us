@@ -85,6 +85,7 @@ class Note {
     this.legacyLikes = const {},
     this.mood = Mood.plain,
     this.prompt = '',
+    this.promptDay = '',
     this.commentCount = 0,
     this.pinned = false,
     this.archived = false,
@@ -114,6 +115,7 @@ class Note {
       legacyLikes: likes,
       mood: Mood.fromId(map['mood'] as String?),
       prompt: map['prompt'] as String? ?? '',
+      promptDay: map['promptDay'] as String? ?? '',
       commentCount: (map['commentCount'] as num?)?.toInt() ?? 0,
       pinned: map['pinned'] as bool? ?? false,
       archived: map['archived'] as bool? ?? false,
@@ -138,6 +140,10 @@ class Note {
   final Set<String> legacyLikes;
   final Mood mood;
   final String prompt;
+
+  /// [dayKey] of the day this note answered the daily question, so a
+  /// circle can answer the same one whatever language each person uses.
+  final String promptDay;
   final int commentCount;
 
   /// Pinned to the top of the owner's journal (private notes only).

@@ -77,6 +77,8 @@ class _TodayScreenState extends State<TodayScreen> {
         slivers: [
           if (_session.isGuest) const SliverToBoxAdapter(child: _GuestBanner()),
           const SliverToBoxAdapter(child: _PromptCard()),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            SliverToBoxAdapter(child: _CircleQuestion(stream: _circle)),
           const SliverToBoxAdapter(child: _MoodRow()),
           SliverToBoxAdapter(child: _MineSection(stream: _mine)),
           const SliverToBoxAdapter(child: _DraftCard()),
@@ -309,6 +311,128 @@ class _PromptCard extends StatelessWidget {
         child: child,
       ),
     ).animate().fadeIn(duration: Motion.slow).slideY(begin: 0.05);
+  }
+}
+
+/// Today's question, answered together with your circle. Friends' answers
+/// stay hidden until you have answered yours.
+class _CircleQuestion extends StatelessWidget {
+  const _CircleQuestion({required this.stream});
+
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Session.instance;
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        final notes = (snap.data ?? const <Note>[]).where(
+          (n) => session.isVisible(n.ownerId),
+        );
+        final question = circleQuestionFor(notes, session.uid, DateTime.now());
+        final c = context.colors;
+        final prompt = PromptState.instance.today;
+        void answer() =>
+            openComposer(context, prompt: prompt, target: ComposeTarget.circle);
+
+        final waiting = question.others.length;
+        final String status;
+        if (question.answered) {
+          status = waiting == 0
+              ? 'You answered. Waiting for your circle.'.tr
+              : (waiting == 1 ? '1 friend answered' : '{n} friends answered').tr
+                    .replaceAll('{n}', '$waiting');
+        } else {
+          status = waiting == 0
+              ? 'Be the first to answer.'.tr
+              : (waiting == 1
+                        ? '1 friend answered. Answer to see it.'
+                        : '{n} friends answered. Answer to see them.')
+                    .tr
+                    .replaceAll('{n}', '$waiting');
+        }
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.md,
+            Space.gutter,
+            0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Pressable(
+                onTap: question.answered ? null : answer,
+                semanticLabel: '${'Circle question'.tr}: $prompt',
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(Space.md),
+                  decoration: BoxDecoration(
+                    color: c.raised,
+                    borderRadius: BorderRadius.circular(Radii.lg),
+                    border: Border.all(color: c.accent.withValues(alpha: 0.35)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.circle_grid_hex_fill,
+                            size: 14,
+                            color: c.accent,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Circle question'.tr.toUpperCase(),
+                            style: context.text.overline.copyWith(
+                              color: c.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        prompt,
+                        style: context.text.noteBody.copyWith(fontSize: 17),
+                      ),
+                      const SizedBox(height: Space.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              status,
+                              style: context.text.caption.copyWith(
+                                color: c.inkSoft,
+                              ),
+                            ),
+                          ),
+                          if (!question.answered)
+                            NwuButton(
+                              label: 'Answer'.tr,
+                              tone: ButtonTone.accent,
+                              compact: true,
+                              expand: false,
+                              onPressed: answer,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (question.answered)
+                for (final note in question.others.take(3))
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.sm),
+                    child: NoteCard(note: note),
+                  ),
+            ],
+          ),
+        ).animate().fadeIn(duration: Motion.base);
+      },
+    );
   }
 }
 
@@ -935,11 +1059,24 @@ class _FeedList extends StatelessWidget {
             children: List.generate(3, (_) => const NoteSkeleton()),
           );
         }
-        final notes = snap.data!
+        final visible = snap.data!
             .where((n) => session.isVisible(n.ownerId))
             // Discover only shows notes from the new app, which have a feeling.
             .where((n) => isCircle || !n.fromOldApp)
             .toList();
+        // Friends' answers to today's circle question wait until you have
+        // answered it yourself.
+        final today = dayKey(DateTime.now());
+        final hideAnswers =
+            isCircle &&
+            !circleQuestionFor(visible, session.uid, DateTime.now()).answered;
+        final notes = hideAnswers
+            ? visible
+                  .where(
+                    (n) => n.promptDay != today || n.ownerId == session.uid,
+                  )
+                  .toList()
+            : visible;
         if (notes.isEmpty) {
           return SliverToBoxAdapter(
             child: isCircle

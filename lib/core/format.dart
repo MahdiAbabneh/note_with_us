@@ -21,6 +21,11 @@ String fullDate(DateTime time) => DateFormat('d MMMM y', _locale).format(time);
 /// "October 2026".
 String monthYear(DateTime time) => DateFormat('MMMM y', _locale).format(time);
 
+/// "2026-10-27": a language-independent key for a calendar day.
+String dayKey(DateTime time) =>
+    '${time.year}-${time.month.toString().padLeft(2, '0')}-'
+    '${time.day.toString().padLeft(2, '0')}';
+
 /// "9:41".
 String clockTime(DateTime time) => DateFormat('H:mm', _locale).format(time);
 

@@ -212,6 +212,42 @@ void main() {
       );
     });
 
+    test('circle answers stay hidden until you have answered', () {
+      Note answer(String owner, DateTime time, {String day = '2026-10-27'}) =>
+          Note(
+            id: '$owner-${time.millisecondsSinceEpoch}',
+            audience: Audience.circle,
+            text: 'answer',
+            images: const [],
+            time: time,
+            ownerId: owner,
+            ownerName: owner,
+            ownerImage: '',
+            promptDay: day,
+          );
+      final friend = answer('sam', DateTime(2026, 10, 27, 9));
+      final friend2 = answer('lee', DateTime(2026, 10, 27, 11));
+      final yesterday = answer(
+        'sam',
+        DateTime(2026, 10, 26, 9),
+        day: '2026-10-26',
+      );
+      final mine = answer('me', DateTime(2026, 10, 27, 10));
+
+      final before = circleQuestionFor([friend, friend2, yesterday], 'me', now);
+      expect(before.answered, isFalse);
+      expect(before.others.length, 2);
+
+      final after = circleQuestionFor(
+        [friend, mine, friend2, yesterday],
+        'me',
+        now,
+      );
+      expect(after.answered, isTrue);
+      expect(after.others, [friend2, friend]);
+      expect(dayKey(DateTime(2026, 3, 5)), '2026-03-05');
+    });
+
     test('note of the day skips recent and archived notes', () {
       expect(
         noteOfTheDay([note(DateTime(2026, 10, 26), Mood.calm)], now),

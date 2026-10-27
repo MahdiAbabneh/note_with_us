@@ -1,5 +1,6 @@
 import '../data/models.dart';
 import '../design/tokens.dart';
+import 'format.dart';
 
 /// One calendar day in the weekly view.
 class DayEntry {
@@ -268,4 +269,31 @@ List<Milestone> milestonesFor(Iterable<Note> notes) {
         reached: total >= count,
       ),
   ];
+}
+
+/// Today's answers to the daily question from the people in a circle.
+class CircleQuestion {
+  const CircleQuestion({required this.answered, required this.others});
+
+  /// Whether the signed-in user has answered it to their circle.
+  final bool answered;
+
+  /// Other people's answers, newest first.
+  final List<Note> others;
+}
+
+/// Picks out today's circle answers from [circleNotes]. Answers from
+/// others stay hidden until the user has answered themselves.
+CircleQuestion circleQuestionFor(
+  Iterable<Note> circleNotes,
+  String uid,
+  DateTime now,
+) {
+  final today = dayKey(now);
+  final todays = circleNotes.where((n) => n.promptDay == today).toList()
+    ..sort((a, b) => b.time.compareTo(a.time));
+  return CircleQuestion(
+    answered: todays.any((n) => n.ownerId == uid),
+    others: todays.where((n) => n.ownerId != uid).toList(),
+  );
 }

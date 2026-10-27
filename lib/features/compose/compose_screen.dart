@@ -131,6 +131,22 @@ class _ComposeScreenState extends State<ComposeScreen> {
     _saveDraft();
   }
 
+  /// Fills a capsule with a starting letter, date and feeling; the writer
+  /// can change any of it.
+  void _applyTemplate(_CapsuleTemplate template) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _recipient = _session.me;
+      _unlockAt = template.unlockAt(DateTime.now());
+      _mood = template.mood;
+    });
+    final body = template.body.tr;
+    _text.value = TextEditingValue(
+      text: body,
+      selection: TextSelection.collapsed(offset: body.length),
+    );
+  }
+
   void _setMood(Mood mood) {
     setState(() => _mood = mood);
     _saveDraft();
@@ -245,6 +261,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
           text: _text.text.trim(),
           mood: _mood,
           prompt: _prompt,
+          // A circle answer to today's question lets friends answer the
+          // same one together, in whichever language they use.
+          promptDay:
+              _target == ComposeTarget.circle &&
+                  _prompt == PromptState.instance.today
+              ? dayKey(DateTime.now())
+              : '',
           circle: _session.circle.toList(),
         );
       }
@@ -320,6 +343,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       onRecipient: (u) => setState(() => _recipient = u),
                       onUnlockAt: (d) => setState(() => _unlockAt = d),
                     ),
+                  if (_isCapsule && _text.text.isEmpty)
+                    _CapsuleTemplates(onPick: _applyTemplate),
                   if (_prompt.isNotEmpty && !_isCapsule)
                     _PromptChip(
                       prompt: _prompt,
@@ -551,6 +576,112 @@ class _IdeaButton extends StatelessWidget {
           ),
         ),
       ),
+    ).animate().fadeIn(duration: Motion.base);
+  }
+}
+
+/// A ready-made letter for a time capsule. English text is the key for
+/// the Arabic translation.
+class _CapsuleTemplate {
+  const _CapsuleTemplate({
+    required this.emoji,
+    required this.title,
+    required this.body,
+    required this.mood,
+    required this.unlockAt,
+  });
+
+  final String emoji;
+  final String title;
+  final String body;
+  final Mood mood;
+  final DateTime Function(DateTime now) unlockAt;
+}
+
+final _capsuleTemplates = <_CapsuleTemplate>[
+  _CapsuleTemplate(
+    emoji: '💌',
+    title: 'Letter to me in 30 days',
+    body:
+        'Dear future me,\n\nToday I feel…\n\nBy the time you read this, I hope…',
+    mood: Mood.calm,
+    unlockAt: (now) => now.add(const Duration(days: 30)),
+  ),
+  _CapsuleTemplate(
+    emoji: '🌅',
+    title: 'Letter to me in 1 year',
+    body:
+        'Dear me, one year from now,\n\nThis is what my life looks like today…\n\nWhat I hope for you…',
+    mood: Mood.dreamy,
+    unlockAt: (now) => DateTime(now.year + 1, now.month, now.day, now.hour),
+  ),
+  _CapsuleTemplate(
+    emoji: '🎆',
+    title: 'Happy New Year',
+    body: 'Happy New Year!\n\nLast year I…\n\nThis year I want…',
+    mood: Mood.joy,
+    unlockAt: (now) => DateTime(now.year + 1, 1, 1, 9),
+  ),
+  _CapsuleTemplate(
+    emoji: '🫂',
+    title: 'For a hard day',
+    body:
+        'Hey you,\n\nIf you are reading this on a hard day, remember…\n\nYou have gotten through hard days before.',
+    mood: Mood.blue,
+    unlockAt: (now) => now.add(const Duration(days: 90)),
+  ),
+];
+
+/// Quick starts for an empty capsule.
+class _CapsuleTemplates extends StatelessWidget {
+  const _CapsuleTemplates({required this.onPick});
+
+  final ValueChanged<_CapsuleTemplate> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.sm,
+            Space.gutter,
+            Space.xs,
+          ),
+          child: Text('Start from a template'.tr, style: context.text.caption),
+        ),
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+            children: [
+              for (final template in _capsuleTemplates)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: Space.xs),
+                  child: Pressable(
+                    onTap: () => onPick(template),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: c.accentSoft,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                      ),
+                      child: Text(
+                        '${template.emoji}  ${template.title.tr}',
+                        style: context.text.label.copyWith(color: c.ink),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     ).animate().fadeIn(duration: Motion.base);
   }
 }

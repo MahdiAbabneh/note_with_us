@@ -88,6 +88,7 @@ class NotesRepository {
     required String text,
     required Mood mood,
     String prompt = '',
+    String promptDay = '',
     List<String> circle = const [],
   }) async {
     await _collection(audience, author.uid).add({
@@ -104,6 +105,7 @@ class NotesRepository {
       'reactions': {},
       'mood': mood.id,
       'prompt': prompt,
+      if (promptDay.isNotEmpty) 'promptDay': promptDay,
       'commentCount': 0,
       if (audience == Audience.circle)
         'audience': {author.uid, ...circle}.toList(),
