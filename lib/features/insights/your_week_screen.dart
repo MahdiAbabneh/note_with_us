@@ -10,6 +10,7 @@ import '../../data/session.dart';
 import '../../design/design.dart';
 import '../compose/compose_screen.dart';
 import 'calendar_screen.dart';
+import 'garden_screen.dart';
 
 /// A calm look back at the last week: which days you wrote, how you felt,
 /// and your moods over the month. Computed on the phone from your notes.
@@ -69,6 +70,8 @@ class _YourWeekScreenState extends State<YourWeekScreen> {
                       _MoodMix(counts: insights.moodsThisMonth),
                       const SizedBox(height: Space.xl),
                       const _CalendarLink(),
+                      const SizedBox(height: Space.sm),
+                      const _GardenLink(),
                       const SizedBox(height: Space.xl),
                       _Milestones(milestones: milestonesFor(snap.data!)),
                     ]
@@ -330,18 +333,28 @@ class _MoodMix extends StatelessWidget {
   }
 }
 
-/// Opens the month calendar.
-class _CalendarLink extends StatelessWidget {
-  const _CalendarLink();
+/// A tappable card that opens another look at your writing.
+class _InsightLink extends StatelessWidget {
+  const _InsightLink({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.builder,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final WidgetBuilder builder;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     return Pressable(
-      semanticLabel: 'Calendar'.tr,
+      semanticLabel: title,
       onTap: () => Navigator.of(
         context,
-      ).push(CupertinoPageRoute<void>(builder: (_) => const CalendarScreen())),
+      ).push(CupertinoPageRoute<void>(builder: builder)),
       child: Container(
         padding: const EdgeInsets.all(Space.md),
         decoration: BoxDecoration(
@@ -351,18 +364,15 @@ class _CalendarLink extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(CupertinoIcons.calendar, color: c.accent, size: 22),
+            Icon(icon, color: c.accent, size: 22),
             const SizedBox(width: Space.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Calendar'.tr, style: context.text.label),
+                  Text(title, style: context.text.label),
                   const SizedBox(height: 2),
-                  Text(
-                    'See every month, day by day'.tr,
-                    style: context.text.caption,
-                  ),
+                  Text(subtitle, style: context.text.caption),
                 ],
               ),
             ),
@@ -378,6 +388,30 @@ class _CalendarLink extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CalendarLink extends StatelessWidget {
+  const _CalendarLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.calendar,
+    title: 'Calendar'.tr,
+    subtitle: 'See every month, day by day'.tr,
+    builder: (_) => const CalendarScreen(),
+  );
+}
+
+class _GardenLink extends StatelessWidget {
+  const _GardenLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.leaf_arrow_circlepath,
+    title: 'Your garden'.tr,
+    subtitle: 'Every note grows a plant'.tr,
+    builder: (_) => const GardenScreen(),
+  );
 }
 
 /// Streak and note-count milestones: reached ones are bright, the rest

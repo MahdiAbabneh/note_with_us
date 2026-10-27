@@ -26,6 +26,15 @@ String dayKey(DateTime time) =>
     '${time.year}-${time.month.toString().padLeft(2, '0')}-'
     '${time.day.toString().padLeft(2, '0')}';
 
+/// The coming 8:00 in the morning that is at least an hour away, so a
+/// "morning note" sent late at night arrives the next day.
+DateTime nextMorning(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day, 8);
+  return today.difference(now) >= const Duration(hours: 1)
+      ? today
+      : DateTime(now.year, now.month, now.day + 1, 8);
+}
+
 /// "9:41".
 String clockTime(DateTime time) => DateFormat('H:mm', _locale).format(time);
 

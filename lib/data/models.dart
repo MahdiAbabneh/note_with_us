@@ -213,6 +213,9 @@ class Comment {
   final DateTime time;
 }
 
+/// [Capsule.kind] of a surprise note that arrives the next morning.
+const morningKind = 'morning';
+
 /// A note sealed until [unlockAt].
 class Capsule {
   const Capsule({
@@ -227,6 +230,7 @@ class Capsule {
     required this.createdAt,
     required this.unlockAt,
     required this.opened,
+    this.kind = '',
   });
 
   factory Capsule.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -243,6 +247,7 @@ class Capsule {
       createdAt: _parseTime(map['createdAt']),
       unlockAt: _parseTime(map['unlockAt']),
       opened: map['opened'] as bool? ?? false,
+      kind: map['kind'] as String? ?? '',
     );
   }
 
@@ -257,6 +262,16 @@ class Capsule {
   final DateTime createdAt;
   final DateTime unlockAt;
   final bool opened;
+
+  /// `morning` for a surprise note from a friend, empty for a normal capsule.
+  final String kind;
+
+  bool get isMorningNote => kind == morningKind;
+
+  /// A morning note from someone else stays out of sight until it
+  /// arrives, so it is still a surprise.
+  bool isSurpriseFor(String uid) =>
+      isMorningNote && recipientId == uid && ownerId != uid && !isUnlocked;
 
   bool get isUnlocked => !DateTime.now().isBefore(unlockAt);
   bool get isToSelf => ownerId == recipientId;

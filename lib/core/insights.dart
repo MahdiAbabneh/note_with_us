@@ -297,3 +297,49 @@ CircleQuestion circleQuestionFor(
     others: todays.where((n) => n.ownerId != uid).toList(),
   );
 }
+
+/// Which 3-day stretch [now] falls in; a new past-self note is offered
+/// once per stretch.
+int pastSelfWindow(DateTime now) =>
+    DateTime.utc(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime.utc(2020)).inDays ~/
+    3;
+
+/// An older journal note to look back on with "do you still feel this
+/// way?": at least 30 days old and more than a passing line. The same
+/// note is offered all through a [pastSelfWindow].
+Note? pastSelfNote(Iterable<Note> journal, DateTime now) {
+  final cutoff = now.subtract(const Duration(days: 30));
+  final candidates =
+      journal
+          .where(
+            (n) =>
+                !n.archived &&
+                n.text.trim().length >= 20 &&
+                n.time.isBefore(cutoff),
+          )
+          .toList()
+        ..sort((a, b) => a.time.compareTo(b.time));
+  if (candidates.isEmpty) return null;
+  return candidates[pastSelfWindow(now) % candidates.length];
+}
+
+/// How grown a note's plant is, from a small sprout to full size over
+/// its first three days.
+double plantGrowth(DateTime written, DateTime now) {
+  final days = now.difference(written).inHours / 24;
+  if (days < 1) return 0.45;
+  if (days < 3) return 0.75;
+  return 1;
+}
+
+/// Notes of the last [days] days (plus today), oldest first: what the
+/// garden grows.
+List<Note> gardenNotes(Iterable<Note> notes, DateTime now, {int days = 30}) {
+  final start = DateTime(now.year, now.month, now.day - (days - 1));
+  return notes.where((n) => !n.archived && !n.time.isBefore(start)).toList()
+    ..sort((a, b) => a.time.compareTo(b.time));
+}

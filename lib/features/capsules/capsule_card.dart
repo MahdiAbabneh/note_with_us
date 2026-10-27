@@ -25,6 +25,8 @@ class CapsuleCard extends StatelessWidget {
 
     final who = capsule.isToSelf
         ? 'To future you'.tr
+        : capsule.isMorningNote && incoming
+        ? '☀️ ${'A morning note from {name}'.tr.replaceAll('{name}', capsule.ownerName)}'
         : incoming
         ? 'From {name}'.tr.replaceAll('{name}', capsule.ownerName)
         : 'To {name}'.tr.replaceAll('{name}', capsule.recipientName);

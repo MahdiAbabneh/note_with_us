@@ -248,6 +248,83 @@ void main() {
       expect(dayKey(DateTime(2026, 3, 5)), '2026-03-05');
     });
 
+    test('a morning note lands on the next 8:00 that is an hour away', () {
+      expect(
+        nextMorning(DateTime(2026, 10, 27, 22)),
+        DateTime(2026, 10, 28, 8),
+      );
+      expect(nextMorning(DateTime(2026, 10, 27, 5)), DateTime(2026, 10, 27, 8));
+      expect(
+        nextMorning(DateTime(2026, 10, 27, 7, 30)),
+        DateTime(2026, 10, 28, 8),
+      );
+      expect(nextMorning(DateTime(2026, 12, 31, 23)), DateTime(2027, 1, 1, 8));
+    });
+
+    test('a morning note stays a surprise until it arrives', () {
+      Capsule capsule({String kind = morningKind, String owner = 'sam'}) =>
+          Capsule(
+            id: 'c',
+            ownerId: owner,
+            ownerName: owner,
+            ownerImage: '',
+            recipientId: 'me',
+            recipientName: 'Me',
+            text: '',
+            mood: Mood.joy,
+            createdAt: DateTime.now(),
+            unlockAt: DateTime.now().add(const Duration(hours: 5)),
+            opened: false,
+            kind: kind,
+          );
+      expect(capsule().isSurpriseFor('me'), isTrue);
+      expect(capsule().isSurpriseFor('sam'), isFalse);
+      expect(capsule(kind: '').isSurpriseFor('me'), isFalse);
+      expect(capsule(owner: 'me').isSurpriseFor('me'), isFalse);
+    });
+
+    test('past-you note is old enough, long enough and steady for 3 days', () {
+      final old = note(DateTime(2026, 8, 1), Mood.blue);
+      final longEnough = Note(
+        id: 'long',
+        audience: Audience.private,
+        text: 'I wish things felt less heavy lately.',
+        images: const [],
+        time: DateTime(2026, 8, 1),
+        ownerId: 'me',
+        ownerName: 'Me',
+        ownerImage: '',
+      );
+      final recent = Note(
+        id: 'recent',
+        audience: Audience.private,
+        text: 'I wish things felt less heavy lately.',
+        images: const [],
+        time: DateTime(2026, 10, 20),
+        ownerId: 'me',
+        ownerName: 'Me',
+        ownerImage: '',
+      );
+      // `note()` has the 4-letter text "note": too short to reflect on.
+      expect(pastSelfNote([old, recent], now), isNull);
+      expect(pastSelfNote([old, longEnough, recent], now), same(longEnough));
+      final window = pastSelfWindow(now);
+      expect(pastSelfWindow(now.add(const Duration(days: 3))), window + 1);
+      expect(pastSelfNote(const [], now), isNull);
+    });
+
+    test('plants grow over three days; the garden holds the last 30 days', () {
+      expect(plantGrowth(now.subtract(const Duration(hours: 3)), now), 0.45);
+      expect(plantGrowth(now.subtract(const Duration(days: 2)), now), 0.75);
+      expect(plantGrowth(now.subtract(const Duration(days: 9)), now), 1);
+
+      final today = note(DateTime(2026, 10, 27, 8), Mood.joy);
+      final edge = note(DateTime(2026, 9, 28, 8), Mood.calm);
+      final tooOld = note(DateTime(2026, 9, 27, 8), Mood.calm);
+      final garden = gardenNotes([today, tooOld, edge], now);
+      expect(garden, [edge, today]);
+    });
+
     test('note of the day skips recent and archived notes', () {
       expect(
         noteOfTheDay([note(DateTime(2026, 10, 26), Mood.calm)], now),

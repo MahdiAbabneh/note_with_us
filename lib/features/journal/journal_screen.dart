@@ -407,7 +407,9 @@ class _CapsuleList extends StatelessWidget {
               children: List.generate(2, (_) => const NoteSkeleton()),
             );
           }
-          final inbox = receivedSnap.data!;
+          final inbox = receivedSnap.data!
+              .where((c) => !c.isSurpriseFor(Session.instance.uid))
+              .toList();
           final outbox = sentSnap.data!;
           if (inbox.isEmpty && outbox.isEmpty) {
             return EmptyState(

@@ -444,6 +444,29 @@ const Map<String, String> arabicStrings = {
   '1 friend answered. Answer to see it.': 'أجاب صديق واحد. أجب لتراه.',
   '{n} friends answered. Answer to see them.':
       'أجاب {n} من الأصدقاء. أجب لتراهم.',
+  // Morning notes, past-you reflection and the garden
+  'A morning note is waiting ☀️': 'ملاحظة صباحية بانتظارك ☀️',
+  'A morning note from {name}': 'ملاحظة صباحية من {name}',
+  'Morning note scheduled ☀️': 'تمت جدولة الملاحظة الصباحية ☀️',
+  'A morning note for {name}': 'ملاحظة صباحية لـ {name}',
+  'It shows up on their Today tomorrow morning, as a surprise.':
+      'تظهر في شاشة «اليوم» لديه صباح الغد كمفاجأة.',
+  'Say something kind…': 'قل شيئًا لطيفًا…',
+  'Send for tomorrow morning': 'أرسلها لصباح الغد',
+  'Send a morning note': 'أرسل ملاحظة صباحية',
+  'A note from past you': 'ملاحظة من نفسك القديمة',
+  'Do you still feel this way?': 'هل ما زلت تشعر هكذا؟',
+  'You wrote this on {date}.': 'كتبت هذا في {date}.',
+  'Reflect': 'تأمّل',
+  'Your garden': 'حديقتك',
+  'Your garden is waiting': 'حديقتك بانتظارك',
+  'Write a note and your first plant will start to grow.':
+      'اكتب ملاحظة وستبدأ أول نبتة بالنمو.',
+  '1 plant in the last 30 days': 'نبتة واحدة في آخر 30 يومًا',
+  '{n} plants in the last 30 days': '{n} نبتات في آخر 30 يومًا',
+  'New plants start small and grow over three days.':
+      'النباتات الجديدة تبدأ صغيرة وتكبر خلال ثلاثة أيام.',
+  'Every note grows a plant': 'كل ملاحظة تُنمّي نبتة',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

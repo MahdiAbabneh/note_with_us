@@ -68,6 +68,7 @@ class _TodayScreenState extends State<TodayScreen> {
         _session,
         DraftStore.instance,
         PromptState.instance,
+        PastSelfState.instance,
         Reminders.instance,
       ]),
       builder: (context, _) => CustomScrollView(
@@ -84,6 +85,8 @@ class _TodayScreenState extends State<TodayScreen> {
           const SliverToBoxAdapter(child: _DraftCard()),
           SliverToBoxAdapter(child: _CapsuleSection(stream: _capsules)),
           SliverToBoxAdapter(child: _Memories(stream: _journal)),
+          if (!_session.isGuest)
+            SliverToBoxAdapter(child: _PastSelfCard(stream: _journal)),
           SliverPersistentHeader(
             pinned: true,
             delegate: _FeedSwitcher(
@@ -568,7 +571,9 @@ class _CapsuleSection extends StatelessWidget {
     return StreamBuilder<List<Capsule>>(
       stream: stream,
       builder: (context, snap) {
-        final all = snap.data ?? const <Capsule>[];
+        final all = (snap.data ?? const <Capsule>[])
+            .where((c) => !c.isSurpriseFor(Session.instance.uid))
+            .toList();
         final ready = all.where((c) => c.isUnlocked && !c.opened).toList();
         final upcoming = all.where((c) => !c.isUnlocked).toList();
         if (ready.isNotEmpty) {
@@ -850,6 +855,96 @@ class _Memories extends StatelessWidget {
             ),
           ],
         );
+      },
+    );
+  }
+}
+
+/// An old journal note brought back with a question: "do you still feel
+/// this way?". One at a time, and only until it is answered or put off.
+class _PastSelfCard extends StatelessWidget {
+  const _PastSelfCard({required this.stream});
+
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = PastSelfState.instance;
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        final now = DateTime.now();
+        final window = pastSelfWindow(now);
+        if (state.isDone(window)) return const SizedBox.shrink();
+        final note = pastSelfNote(snap.data ?? const <Note>[], now);
+        if (note == null) return const SizedBox.shrink();
+        final c = context.colors;
+        final question = 'Do you still feel this way?'.tr;
+        void reflect() {
+          state.markDone(window);
+          openComposer(
+            context,
+            prompt:
+                '${'You wrote this on {date}.'.tr.replaceAll('{date}', fullDate(note.time))} $question',
+            target: ComposeTarget.private,
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionLabel('A note from past you'.tr),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(Space.md),
+                decoration: BoxDecoration(
+                  color: c.paperTint(note.mood, note.colorSeed),
+                  borderRadius: BorderRadius.circular(Radii.lg),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${note.mood == Mood.plain ? '📔' : note.mood.emoji}  ${fullDate(note.time)}',
+                      style: context.text.caption.copyWith(color: c.inkSoft),
+                    ),
+                    const SizedBox(height: Space.xs),
+                    ContentText(
+                      note.text,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.text.noteBody.copyWith(fontSize: 16),
+                    ),
+                    const SizedBox(height: Space.sm),
+                    Text(question, style: context.text.label),
+                    const SizedBox(height: Space.sm),
+                    Row(
+                      children: [
+                        NwuButton(
+                          label: 'Reflect'.tr,
+                          tone: ButtonTone.accent,
+                          compact: true,
+                          expand: false,
+                          onPressed: reflect,
+                        ),
+                        const SizedBox(width: Space.xs),
+                        NwuButton(
+                          label: 'Not now'.tr,
+                          tone: ButtonTone.ghost,
+                          compact: true,
+                          expand: false,
+                          onPressed: () => state.markDone(window),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ).animate().fadeIn(duration: Motion.base);
       },
     );
   }

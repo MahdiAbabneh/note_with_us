@@ -47,7 +47,12 @@ class _HomeShellState extends State<HomeShell> {
     _capsules = session.capsules.received(session.uid).listen((list) {
       reminders.syncCapsules([
         for (final c in list.where((c) => !c.opened))
-          (id: c.id, unlockAt: c.unlockAt, from: c.isToSelf ? '' : c.ownerName),
+          (
+            id: c.id,
+            unlockAt: c.unlockAt,
+            from: c.isToSelf ? '' : c.ownerName,
+            morning: c.isMorningNote,
+          ),
       ]);
     }, onError: (_) {});
   }
