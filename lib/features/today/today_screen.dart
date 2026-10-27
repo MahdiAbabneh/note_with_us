@@ -825,6 +825,8 @@ class _FeedList extends StatelessWidget {
         }
         final notes = snap.data!
             .where((n) => session.isVisible(n.ownerId))
+            // Discover only shows notes from the new app, which have a feeling.
+            .where((n) => isCircle || !n.fromOldApp)
             .toList();
         if (notes.isEmpty) {
           return SliverToBoxAdapter(

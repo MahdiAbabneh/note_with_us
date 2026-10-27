@@ -88,6 +88,7 @@ class Note {
     this.commentCount = 0,
     this.pinned = false,
     this.archived = false,
+    this.fromOldApp = false,
   });
 
   factory Note.fromDoc(
@@ -116,6 +117,8 @@ class Note {
       commentCount: (map['commentCount'] as num?)?.toInt() ?? 0,
       pinned: map['pinned'] as bool? ?? false,
       archived: map['archived'] as bool? ?? false,
+      // The redesigned app always saves a mood, even "plain".
+      fromOldApp: !map.containsKey('mood'),
     );
   }
 
@@ -142,6 +145,10 @@ class Note {
 
   /// Hidden from the owner's journal without being deleted (private only).
   final bool archived;
+
+  /// Written by the old app, before notes had a feeling. Kept in the
+  /// database, but left out of public lists.
+  final bool fromOldApp;
 
   /// Identifies this note across its three collections; used as the id
   /// of a saved favorite.

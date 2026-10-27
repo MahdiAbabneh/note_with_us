@@ -112,7 +112,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       );
                     }
-                    final notes = snap.data ?? const <Note>[];
+                    final notes = (snap.data ?? const <Note>[])
+                        .where((n) => !n.fromOldApp)
+                        .toList();
                     if (snap.hasData && notes.isEmpty) {
                       return SliverToBoxAdapter(
                         child: Padding(

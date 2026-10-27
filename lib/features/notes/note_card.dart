@@ -135,6 +135,7 @@ class _Header extends StatelessWidget {
     final t = context.text;
     final session = Session.instance;
     final mine = note.ownerId == session.uid;
+    // Only a feeling the writer chose; plain notes get colour, not a label.
     final moodLabel = note.mood == Mood.plain
         ? ''
         : ' · ${note.mood.emoji} ${note.mood.label.tr}';

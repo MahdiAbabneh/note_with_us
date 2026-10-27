@@ -92,6 +92,15 @@ enum Mood {
 
   static Mood fromId(String? id) =>
       values.firstWhere((m) => m.id == id, orElse: () => plain);
+
+  /// Mood whose tint colours a note's paper. Plain notes pick a stable
+  /// tint from [seed] so the feed stays colourful.
+  static Mood forPaper(Mood mood, String seed) {
+    if (mood != plain) return mood;
+    const palette = [calm, joy, love, dreamy, blue, fired];
+    final hash = seed.codeUnits.fold(0, (h, u) => (h * 31 + u) & 0x7fffffff);
+    return palette[hash % palette.length];
+  }
 }
 
 /// Semantic colour tokens exposed through the theme.
@@ -228,19 +237,8 @@ class NwuColors extends ThemeExtension<NwuColors> {
   /// Paper colour for a note: its mood's tint, or, for a note without a
   /// mood, one of the same soft tints picked from [seed] so the feed stays
   /// colourful and a note always keeps its colour.
-  Color paperTint(Mood mood, String seed) {
-    if (mood != Mood.plain) return moodTint(mood);
-    const palette = [
-      Mood.calm,
-      Mood.joy,
-      Mood.love,
-      Mood.dreamy,
-      Mood.blue,
-      Mood.fired,
-    ];
-    final hash = seed.codeUnits.fold(0, (h, u) => (h * 31 + u) & 0x7fffffff);
-    return moodTint(palette[hash % palette.length]);
-  }
+  Color paperTint(Mood mood, String seed) =>
+      moodTint(Mood.forPaper(mood, seed));
 
   /// Saturated mood colour used for dots and selected states.
   Color moodInk(Mood mood) => switch (mood) {

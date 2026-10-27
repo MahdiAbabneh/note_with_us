@@ -145,7 +145,11 @@ class _JournalScreenState extends State<JournalScreen> {
                 ? const _FavoritesList(key: ValueKey('favorites'))
                 : _tab == 0
                 ? _NotesList(
-                    key: ValueKey('notes-$_archived'),
+                    // One key for both views: a new key would subscribe a
+                    // fresh StreamBuilder while the old one still listens,
+                    // and Firestore doesn't replay the last snapshot to it,
+                    // so it would wait forever. Toggling only re-filters.
+                    key: const ValueKey('notes'),
                     stream: _notes,
                     query: _query,
                     mood: _mood,
