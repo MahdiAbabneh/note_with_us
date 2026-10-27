@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../core/insights.dart';
 import '../../core/l10n.dart';
@@ -9,6 +9,7 @@ import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../compose/compose_screen.dart';
+import 'calendar_screen.dart';
 
 /// A calm look back at the last week: which days you wrote, how you felt,
 /// and your moods over the month. Computed on the phone from your notes.
@@ -66,6 +67,10 @@ class _YourWeekScreenState extends State<YourWeekScreen> {
                       _Stats(insights: insights),
                       const SizedBox(height: Space.xl),
                       _MoodMix(counts: insights.moodsThisMonth),
+                      const SizedBox(height: Space.xl),
+                      const _CalendarLink(),
+                      const SizedBox(height: Space.xl),
+                      _Milestones(milestones: milestonesFor(snap.data!)),
                     ]
                     .animate(interval: 60.ms)
                     .fadeIn(duration: Motion.slow)
@@ -320,6 +325,121 @@ class _MoodMix extends StatelessWidget {
                 ],
               ),
             ),
+      ],
+    );
+  }
+}
+
+/// Opens the month calendar.
+class _CalendarLink extends StatelessWidget {
+  const _CalendarLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      semanticLabel: 'Calendar'.tr,
+      onTap: () => Navigator.of(
+        context,
+      ).push(CupertinoPageRoute<void>(builder: (_) => const CalendarScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(Space.md),
+        decoration: BoxDecoration(
+          color: c.raised,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(color: c.line.withValues(alpha: 0.7)),
+        ),
+        child: Row(
+          children: [
+            Icon(CupertinoIcons.calendar, color: c.accent, size: 22),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Calendar'.tr, style: context.text.label),
+                  const SizedBox(height: 2),
+                  Text(
+                    'See every month, day by day'.tr,
+                    style: context.text.caption,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? CupertinoIcons.chevron_left
+                  : CupertinoIcons.chevron_right,
+              size: 16,
+              color: c.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Streak and note-count milestones: reached ones are bright, the rest
+/// are quiet outlines to look forward to.
+class _Milestones extends StatelessWidget {
+  const _Milestones({required this.milestones});
+
+  final List<Milestone> milestones;
+
+  static String _label(Milestone m) {
+    if (m.isStreak) {
+      return '{n} days in a row'.tr.replaceAll('{n}', '${m.target}');
+    }
+    return (m.target == 1 ? 'First note' : '{n} notes').tr.replaceAll(
+      '{n}',
+      '${m.target}',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('MILESTONES'.tr, style: context.text.overline),
+        const SizedBox(height: Space.sm),
+        Wrap(
+          spacing: Space.xs,
+          runSpacing: Space.xs,
+          children: [
+            for (final m in milestones)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.sm,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: m.reached ? c.accentSoft : null,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                  border: m.reached ? null : Border.all(color: c.line),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Opacity(
+                      opacity: m.reached ? 1 : 0.35,
+                      child: Text(m.emoji),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _label(m),
+                      style: context.text.caption.copyWith(
+                        color: m.reached ? c.ink : c.muted,
+                        fontWeight: m.reached ? FontWeight.w700 : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }

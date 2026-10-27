@@ -125,6 +125,93 @@ void main() {
       expect(WeekInsights.from(const [], now).streak, 0);
     });
 
+    test(
+      'memories surface 1, 3, 6 months and whole years back on this date',
+      () {
+        final month = note(DateTime(2026, 9, 27, 9), Mood.calm);
+        final threeMonths = note(DateTime(2026, 7, 27, 9), Mood.joy);
+        final twoMonths = note(DateTime(2026, 8, 27, 9), Mood.joy);
+        final year = note(DateTime(2025, 10, 27, 9), Mood.love);
+        final otherDay = note(DateTime(2026, 9, 26, 9), Mood.calm);
+        final today = note(DateTime(2026, 10, 27, 8), Mood.calm);
+        final archived = note(
+          DateTime(2026, 4, 27, 9),
+          Mood.calm,
+          archived: true,
+        );
+        final memories = memoriesFor([
+          year,
+          month,
+          twoMonths,
+          threeMonths,
+          otherDay,
+          today,
+          archived,
+        ], now);
+        expect(memories.map((m) => m.months), [1, 3, 12]);
+        expect(memories.first.note, same(month));
+      },
+    );
+
+    test('longest streak finds the best run, not the current one', () {
+      expect(longestStreak(const []), 0);
+      expect(
+        longestStreak([
+          DateTime(2026, 10, 1, 9),
+          DateTime(2026, 10, 1, 21),
+          DateTime(2026, 10, 2),
+          DateTime(2026, 10, 3),
+          DateTime(2026, 10, 10),
+          DateTime(2026, 10, 11),
+        ]),
+        3,
+      );
+    });
+
+    test('a month groups notes by day and ignores other months', () {
+      final notes = [
+        note(DateTime(2026, 10, 2, 9), Mood.plain),
+        note(DateTime(2026, 10, 2, 18), Mood.calm),
+        note(DateTime(2026, 10, 20, 9), Mood.calm),
+        note(DateTime(2026, 9, 30, 9), Mood.joy),
+      ];
+      final october = MonthInsights.from(notes, DateTime(2026, 10, 15));
+      expect(october.notes, 3);
+      expect(october.daysWritten, 2);
+      expect(october.topMood, Mood.calm);
+      // A day with a real mood takes that mood over a plain note.
+      expect(october.moodOf(DateTime(2026, 10, 2)), Mood.calm);
+      expect(october.moodOf(DateTime(2026, 10, 3)), isNull);
+      expect(MonthInsights.from(const [], now).topMood, isNull);
+    });
+
+    test('milestones are reached by streak length and note count', () {
+      final notes = [
+        for (var d = 1; d <= 7; d++) note(DateTime(2026, 10, d, 9), Mood.calm),
+      ];
+      final reached = {
+        for (final m in milestonesFor(notes))
+          if (m.reached) '${m.isStreak ? 'streak' : 'notes'}-${m.target}',
+      };
+      expect(reached, {'streak-3', 'streak-7', 'notes-1'});
+      expect(milestonesFor(const []).any((m) => m.reached), isFalse);
+    });
+
+    test('knows whether anything was written today', () {
+      expect(
+        WeekInsights.from([
+          note(DateTime(2026, 10, 27, 9), Mood.calm),
+        ], now).wroteToday,
+        isTrue,
+      );
+      expect(
+        WeekInsights.from([
+          note(DateTime(2026, 10, 26, 9), Mood.calm),
+        ], now).wroteToday,
+        isFalse,
+      );
+    });
+
     test('note of the day skips recent and archived notes', () {
       expect(
         noteOfTheDay([note(DateTime(2026, 10, 26), Mood.calm)], now),

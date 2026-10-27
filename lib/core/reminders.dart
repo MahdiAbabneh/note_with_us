@@ -40,6 +40,14 @@ class Reminders extends ChangeNotifier {
   bool get dailyEnabled => Prefs.getBool('reminderOn') ?? false;
   bool get capsuleAlerts => Prefs.getBool('capsuleAlerts') ?? true;
 
+  /// Whether the user waved away the one-time "make it a habit" card.
+  bool get nudgeDismissed => Prefs.getBool('reminderNudgeDismissed') ?? false;
+
+  Future<void> dismissNudge() async {
+    await Prefs.setBool('reminderNudgeDismissed', true);
+    notifyListeners();
+  }
+
   TimeOfDay get time {
     final parts = (Prefs.getString('reminderTime') ?? '20:30').split(':');
     return TimeOfDay(

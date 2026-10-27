@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/insights.dart';
 import '../../core/l10n.dart';
 import '../../core/prompts.dart';
+import '../../core/reminders.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
@@ -67,6 +68,7 @@ class _TodayScreenState extends State<TodayScreen> {
         _session,
         DraftStore.instance,
         PromptState.instance,
+        Reminders.instance,
       ]),
       builder: (context, _) => CustomScrollView(
         physics: const BouncingScrollPhysics(
@@ -77,6 +79,8 @@ class _TodayScreenState extends State<TodayScreen> {
           const SliverToBoxAdapter(child: _PromptCard()),
           const SliverToBoxAdapter(child: _MoodRow()),
           SliverToBoxAdapter(child: _WeekCard(stream: _mine)),
+          if (!_session.isGuest)
+            SliverToBoxAdapter(child: _ReminderNudge(stream: _mine)),
           const SliverToBoxAdapter(child: _DraftCard()),
           SliverToBoxAdapter(child: _CapsuleSection(stream: _capsules)),
           SliverToBoxAdapter(child: _Memories(stream: _journal)),
@@ -565,7 +569,10 @@ class _WeekCard extends StatelessWidget {
         if (notes == null || notes.isEmpty) return const SizedBox.shrink();
         final c = context.colors;
         final week = WeekInsights.from(notes, DateTime.now());
-        final line = week.streak >= 2
+        // Gentle by design: invite today's note, never count a loss.
+        final line = week.streak >= 2 && !week.wroteToday
+            ? '🌱 ${'Keep your {n}-day rhythm going today'.tr.replaceAll('{n}', '${week.streak}')}'
+            : week.streak >= 2
             ? '🌱 ${'{n} days in a row'.tr.replaceAll('{n}', '${week.streak}')}'
             : '{n} of 7 days'.tr.replaceAll('{n}', '${week.daysWritten}');
         return Padding(
@@ -671,14 +678,7 @@ class _Memories extends StatelessWidget {
         final journal = (snap.data ?? const <Note>[])
             .where((n) => !n.archived)
             .toList();
-        final memories = journal
-            .where(
-              (n) =>
-                  n.time.month == now.month &&
-                  n.time.day == now.day &&
-                  n.time.year < now.year,
-            )
-            .toList();
+        final memories = memoriesFor(journal, now);
         if (memories.isEmpty) {
           // No same-date memory: resurface one older note instead.
           final pick = noteOfTheDay(journal, now);
@@ -705,7 +705,7 @@ class _Memories extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
                 itemCount: memories.length,
                 separatorBuilder: (_, _) => const SizedBox(width: Space.sm),
-                itemBuilder: (context, i) => _MemoryCard(note: memories[i]),
+                itemBuilder: (context, i) => _MemoryCard(memory: memories[i]),
               ),
             ),
           ],
@@ -716,14 +716,30 @@ class _Memories extends StatelessWidget {
 }
 
 class _MemoryCard extends StatelessWidget {
-  const _MemoryCard({required this.note});
+  const _MemoryCard({required this.memory});
 
-  final Note note;
+  final Memory memory;
+
+  Note get note => memory.note;
+
+  /// "1 month ago", "6 months ago", "1 year ago", "2 years ago".
+  String get _label {
+    final m = memory.months;
+    if (m >= 12) {
+      return (m == 12 ? '1 year ago' : '{n} years ago').tr.replaceAll(
+        '{n}',
+        '${m ~/ 12}',
+      );
+    }
+    return (m == 1 ? '1 month ago' : '{n} months ago').tr.replaceAll(
+      '{n}',
+      '$m',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final years = DateTime.now().year - note.time.year;
     return Container(
       width: 240,
       padding: const EdgeInsets.all(Space.md),
@@ -734,13 +750,7 @@ class _MemoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            (years == 1 ? '1 year ago' : '{n} years ago').tr.replaceAll(
-              '{n}',
-              '$years',
-            ),
-            style: context.text.overline.copyWith(color: c.accent),
-          ),
+          Text(_label, style: context.text.overline.copyWith(color: c.accent)),
           const SizedBox(height: Space.xs),
           Expanded(
             child: ContentText(
@@ -751,6 +761,104 @@ class _MemoryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Offered once, right after the first note: a daily reminder is the
+/// single best nudge to keep writing. One tap turns it on at the default
+/// time; it can be changed in Me.
+class _ReminderNudge extends StatelessWidget {
+  const _ReminderNudge({required this.stream});
+
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final reminders = Reminders.instance;
+    if (reminders.dailyEnabled || reminders.nudgeDismissed) {
+      return const SizedBox.shrink();
+    }
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        if (snap.data == null || snap.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final c = context.colors;
+        final t = reminders.time;
+        final time = clockTime(DateTime(2000, 1, 1, t.hour, t.minute));
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.md,
+            Space.gutter,
+            0,
+          ),
+          child: Container(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              Space.md,
+              Space.md,
+              Space.xs,
+              Space.md,
+            ),
+            decoration: BoxDecoration(
+              color: c.accentSoft,
+              borderRadius: BorderRadius.circular(Radii.lg),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(CupertinoIcons.bell_fill, color: c.accent, size: 20),
+                const SizedBox(width: Space.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Make it a habit'.tr, style: context.text.label),
+                      const SizedBox(height: 2),
+                      Text(
+                        'A gentle reminder each evening helps you keep writing.'
+                            .tr,
+                        style: context.text.caption.copyWith(color: c.inkSoft),
+                      ),
+                      const SizedBox(height: Space.sm),
+                      NwuButton(
+                        label: 'Remind me at {time}'.tr.replaceAll(
+                          '{time}',
+                          time,
+                        ),
+                        tone: ButtonTone.accent,
+                        compact: true,
+                        expand: false,
+                        onPressed: () async {
+                          final ok = await reminders.setDaily(true);
+                          if (!context.mounted) return;
+                          showToast(
+                            context,
+                            ok
+                                ? 'Reminder on. Change the time in Me.'.tr
+                                : 'Allow notifications in Settings'.tr,
+                            error: !ok,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                CircleIconButton(
+                  icon: CupertinoIcons.xmark,
+                  size: 32,
+                  filled: false,
+                  iconColor: c.muted,
+                  semanticLabel: 'Not now'.tr,
+                  onPressed: reminders.dismissNudge,
+                ),
+              ],
+            ),
+          ),
+        ).animate().fadeIn(duration: Motion.base);
+      },
     );
   }
 }

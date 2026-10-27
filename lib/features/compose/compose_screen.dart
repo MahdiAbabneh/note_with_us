@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/drafts.dart';
 import '../../core/format.dart';
+import '../../core/insights.dart';
 import '../../core/prompts.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
@@ -187,6 +188,26 @@ class _ComposeScreenState extends State<ComposeScreen> {
     super.dispose();
   }
 
+  /// Days in a row including the note just posted. Best effort: a slow
+  /// or failed read just means the plain "Note posted" toast.
+  Future<int> _currentStreak(String uid) async {
+    try {
+      final notes = await _session.notes
+          .mine(uid)
+          .first
+          .timeout(const Duration(seconds: 2));
+      return WeekInsights.from(notes, DateTime.now()).streak;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  String _postedMessage(int streak) {
+    if (streak < 2) return 'Note posted'.tr;
+    final days = '{n} days in a row'.tr.replaceAll('{n}', '$streak');
+    return '${const {3, 7, 14, 30, 100}.contains(streak) ? '🎉' : '🌱'} $days';
+  }
+
   Future<void> _post() async {
     if (!_canPost || _posting) return;
     // Public posts are the one irreversible-feeling choice; ask first so a
@@ -231,9 +252,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
       _posted = true;
       DraftStore.instance.clear();
       if (!_isCapsule) PromptState.instance.noteAnswered(_prompt);
+      final streak = _isCapsule ? 0 : await _currentStreak(me.uid);
+      if (!mounted) return;
       HapticFeedback.mediumImpact();
       Navigator.pop(context);
-      showToast(context, _isCapsule ? 'Capsule sealed ⏳'.tr : 'Note posted'.tr);
+      showToast(
+        context,
+        _isCapsule ? 'Capsule sealed ⏳'.tr : _postedMessage(streak),
+      );
     } catch (_) {
       if (mounted) showToast(context, 'Something went wrong'.tr, error: true);
     } finally {
