@@ -22,6 +22,7 @@ import '../comfort/comfort_sheet.dart';
 import '../islamic/occasion_card.dart';
 import '../messages/chat_screen.dart';
 import '../notes/note_card.dart';
+import '../together/ask_circle_screen.dart';
 import '../together/group_capsules_screen.dart';
 import '../together/notebooks_screen.dart';
 
@@ -43,6 +44,7 @@ class _TodayScreenState extends State<TodayScreen> {
   late Stream<List<Note>> _mine;
   late Stream<List<GroupCapsule>> _groups;
   late Stream<List<SharedNotebook>> _notebooks;
+  late Stream<List<CircleAsk>> _asksForMe;
 
   /// 0 = Discover (shown first, and the default), 1 = My circle.
   int _feed = 0;
@@ -62,6 +64,7 @@ class _TodayScreenState extends State<TodayScreen> {
       _capsules = const Stream.empty();
       _groups = const Stream.empty();
       _notebooks = const Stream.empty();
+      _asksForMe = const Stream.empty();
       return;
     }
     _circle = _session.notes.circleFeed(_session.uid);
@@ -70,6 +73,7 @@ class _TodayScreenState extends State<TodayScreen> {
     _mine = _session.notes.mine(_session.uid);
     _groups = _session.groupCapsules.mine(_session.uid);
     _notebooks = _session.notebooks.mine(_session.uid);
+    _asksForMe = _session.asks.forMe(_session.uid);
   }
 
   void _retry() => setState(_subscribe);
@@ -101,7 +105,11 @@ class _TodayScreenState extends State<TodayScreen> {
             const SliverToBoxAdapter(child: _BirthdayCard()),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(
-              child: _TogetherCard(groups: _groups, notebooks: _notebooks),
+              child: _TogetherCard(
+                groups: _groups,
+                notebooks: _notebooks,
+                asks: _asksForMe,
+              ),
             ),
           const SliverToBoxAdapter(child: _MoodRow()),
           SliverToBoxAdapter(child: _MineSection(stream: _mine)),
@@ -535,10 +543,15 @@ class _BirthdayCard extends StatelessWidget {
 
 /// Two ways to write with others: circle capsules and shared notebooks.
 class _TogetherCard extends StatelessWidget {
-  const _TogetherCard({required this.groups, required this.notebooks});
+  const _TogetherCard({
+    required this.groups,
+    required this.notebooks,
+    required this.asks,
+  });
 
   final Stream<List<GroupCapsule>> groups;
   final Stream<List<SharedNotebook>> notebooks;
+  final Stream<List<CircleAsk>> asks;
 
   @override
   Widget build(BuildContext context) {
@@ -622,6 +635,33 @@ class _TogetherCard extends StatelessWidget {
                   onTap: () => Navigator.of(context).push(
                     CupertinoPageRoute<void>(
                       builder: (_) => const NotebooksScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Container(height: 1, color: c.line),
+            StreamBuilder<List<CircleAsk>>(
+              stream: asks,
+              builder: (context, snap) {
+                final waiting = (snap.data ?? const <CircleAsk>[])
+                    .where((a) => !a.hasAnswered(uid))
+                    .length;
+                final subtitle = waiting == 0
+                    ? 'Ask a question, read answers only you see'.tr
+                    : (waiting == 1
+                              ? '1 question waiting for you'
+                              : '{n} questions waiting for you')
+                          .tr
+                          .replaceAll('{n}', '$waiting');
+                return _TogetherRow(
+                  emoji: '💬',
+                  title: 'Ask your circle'.tr,
+                  subtitle: subtitle,
+                  highlight: waiting > 0,
+                  onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute<void>(
+                      builder: (_) => const AskCircleScreen(),
                     ),
                   ),
                 );

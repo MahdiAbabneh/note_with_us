@@ -37,6 +37,7 @@ class Session extends ChangeNotifier {
   final chats = ChatRepository();
   final groupCapsules = GroupCapsulesRepository();
   final notebooks = NotebooksRepository();
+  final asks = AsksRepository();
 
   SessionStatus status = SessionStatus.loading;
   AppUser? _me;

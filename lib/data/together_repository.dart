@@ -182,3 +182,92 @@ class NotebooksRepository {
     await batch.commit();
   }
 }
+
+/// Questions to some of your circle, with private answers.
+///
+/// `circleAsks/{id}` holds the question and who has answered; each
+/// answer is `answers/{uid}`, readable only by its writer and by whoever
+/// asked.
+class AsksRepository {
+  FirebaseFirestore get _db => FirebaseFirestore.instance;
+  CollectionReference<Map<String, dynamic>> get _asks =>
+      _db.collection('circleAsks');
+
+  DocumentReference<Map<String, dynamic>> _answer(String id, String uid) =>
+      _asks.doc(id).collection('answers').doc(uid);
+
+  List<CircleAsk> _parse(QuerySnapshot<Map<String, dynamic>> s) =>
+      s.docs.map(CircleAsk.fromDoc).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  /// Questions [uid] asked, newest first.
+  Stream<List<CircleAsk>> asked(String uid) =>
+      _asks.where('ownerId', isEqualTo: uid).snapshots().map(_parse);
+
+  /// Questions asked of [uid], newest first.
+  Stream<List<CircleAsk>> forMe(String uid) =>
+      _asks.where('members', arrayContains: uid).snapshots().map(_parse);
+
+  Stream<CircleAsk?> watch(String id) => _asks
+      .doc(id)
+      .snapshots()
+      .map((d) => d.exists ? CircleAsk.fromDoc(d) : null);
+
+  Future<void> create({
+    required AppUser author,
+    required String text,
+    required Iterable<String> members,
+  }) => _asks.add({
+    'ownerId': author.uid,
+    'ownerName': author.username,
+    'text': text,
+    'createdAt': Timestamp.now(),
+    'members': members.toList(),
+    'answered': <String>[],
+  });
+
+  /// Your own answer, if you gave one.
+  Future<AskAnswer?> myAnswer(String id, String uid) async {
+    final doc = await _answer(id, uid).get();
+    return doc.exists ? AskAnswer.fromDoc(doc) : null;
+  }
+
+  /// Saves (or rewrites) your answer and ticks you off as answered.
+  Future<void> saveAnswer({
+    required CircleAsk ask,
+    required AppUser author,
+    required String text,
+  }) {
+    final batch = _db.batch()
+      ..set(_answer(ask.id, author.uid), {
+        'ownerId': author.uid,
+        'ownerName': author.username,
+        'ownerImage': author.image,
+        'text': text,
+        'time': Timestamp.now(),
+      });
+    if (!ask.hasAnswered(author.uid)) {
+      batch.update(_asks.doc(ask.id), {
+        'answered': FieldValue.arrayUnion([author.uid]),
+      });
+    }
+    return batch.commit();
+  }
+
+  /// Everyone's answers; only the person who asked may read them.
+  Future<List<AskAnswer>> answers(String id) async {
+    final snap = await _asks.doc(id).collection('answers').get();
+    return snap.docs.map(AskAnswer.fromDoc).toList()
+      ..sort((a, b) => a.time.compareTo(b.time));
+  }
+
+  Future<void> delete(CircleAsk ask) async {
+    final answers = await _asks.doc(ask.id).collection('answers').get();
+    final batch = _db.batch();
+    for (final doc in answers.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.delete(_asks.doc(ask.id));
+    await batch.commit();
+  }
+}

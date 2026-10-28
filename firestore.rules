@@ -6,7 +6,7 @@ rules_version = '2';
 // older Play Store version still uses, so both keep working:
 //   users (+ chats/messages), postsMain, postsOnlyMe, imagesUser,
 //   reminder, reportPostUser, reportUser          (original app)
-//   circlePosts, capsules, groupCapsules, sharedNotebooks,
+//   circlePosts, capsules, groupCapsules, sharedNotebooks, circleAsks,
 //   circles, circleRequests, blocks                (redesign)
 // Signed-out guests can only read notes shared with everyone and their
 // replies. Anything not listed here is denied.
@@ -247,6 +247,62 @@ service cloud.firestore {
         // You can take back your own letter; the creator can clear all.
         allow delete: if signedIn()
             && (memberId == uid() || capsule().ownerId == uid());
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Ask my circle: a question for some of your circle, answered in
+    // private.
+    //
+    // Only the person who asked can read the answers; each person can
+    // read just their own.
+    // ---------------------------------------------------------------
+    match /circleAsks/{askId} {
+      function myCircle() {
+        let circle = /databases/$(database)/documents/circles/$(uid());
+        return exists(circle) ? get(circle).data.get('members', []) : [];
+      }
+      function members() {
+        return request.resource.data.members;
+      }
+
+      allow read: if signedIn()
+          && (resource.data.ownerId == uid() || uid() in resource.data.members);
+      allow create: if signedIn()
+          && request.resource.data.ownerId == uid()
+          && members() is list
+          && members().size() >= 1
+          && members().size() <= 30
+          && !(uid() in members())
+          && members().toSet().difference(myCircle().toSet()).size() == 0
+          && request.resource.data.answered == []
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 200;
+      allow delete: if signedIn() && resource.data.ownerId == uid();
+      // People tick themselves off as having answered.
+      allow update: if signedIn()
+          && uid() in resource.data.members
+          && onlyChanges(['answered'])
+          && request.resource.data.answered.toSet()
+              == resource.data.answered.toSet().union([uid()].toSet());
+
+      match /answers/{memberId} {
+        function ask() {
+          return get(/databases/$(database)/documents/circleAsks/$(askId)).data;
+        }
+
+        allow read: if signedIn()
+            && (memberId == uid() || ask().ownerId == uid());
+        allow create, update: if signedIn()
+            && memberId == uid()
+            && uid() in ask().members
+            && request.resource.data.ownerId == uid()
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 1000;
+        allow delete: if signedIn()
+            && (memberId == uid() || ask().ownerId == uid());
       }
     }
 

@@ -403,6 +403,83 @@ describe('circle capsules (groupCapsules)', () => {
   });
 });
 
+describe('ask my circle (circleAsks)', () => {
+  const ask = (extra = {}) => ({
+    ownerId: 'alice', ownerName: 'Alice', text: 'Best memory with me?',
+    createdAt: Timestamp.now(), members: ['bob', 'carol'], answered: [], ...extra,
+  });
+  const answer = (uid, extra = {}) => ({ ownerId: uid, ownerName: uid, ownerImage: '', text: `from ${uid}`, time: Timestamp.now(), ...extra });
+
+  beforeEach(() => seed((f) => setDoc(doc(f, 'circles/alice'), { members: ['bob', 'carol'] })));
+
+  test('ask people from your own circle', async () => {
+    await assertSucceeds(setDoc(doc(db('alice'), 'circleAsks/a1'), ask()));
+    await assertFails(setDoc(doc(db('alice'), 'circleAsks/a2'), ask({ members: ['bob', 'dave'] })));
+    await assertFails(setDoc(doc(db('alice'), 'circleAsks/a3'), ask({ members: [] })));
+    await assertFails(setDoc(doc(db('alice'), 'circleAsks/a4'), ask({ members: ['alice', 'bob'] })));
+    await assertFails(setDoc(doc(db('alice'), 'circleAsks/a5'), ask({ text: '' })));
+    await assertFails(setDoc(doc(db('alice'), 'circleAsks/a6'), ask({ answered: ['bob'] })));
+    await assertFails(setDoc(doc(db('bob'), 'circleAsks/a7'), ask()));
+  });
+
+  test('only the asker and the people asked can see it', async () => {
+    await seed((f) => setDoc(doc(f, 'circleAsks/a1'), ask()));
+    await assertSucceeds(getDoc(doc(db('alice'), 'circleAsks/a1')));
+    await assertSucceeds(getDoc(doc(db('bob'), 'circleAsks/a1')));
+    await assertSucceeds(getDocs(query(collection(db('bob'), 'circleAsks'), where('members', 'array-contains', 'bob'))));
+    await assertFails(getDoc(doc(db('dave'), 'circleAsks/a1')));
+  });
+
+  test('answers are private: only the asker reads them all', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'circleAsks/a1'), ask());
+      await setDoc(doc(f, 'circleAsks/a1/answers/bob'), answer('bob'));
+      await setDoc(doc(f, 'circleAsks/a1/answers/carol'), answer('carol'));
+    });
+    await assertSucceeds(getDocs(collection(db('alice'), 'circleAsks/a1/answers')));
+    await assertSucceeds(getDoc(doc(db('bob'), 'circleAsks/a1/answers/bob')));
+    await assertFails(getDoc(doc(db('bob'), 'circleAsks/a1/answers/carol')));
+    await assertFails(getDocs(collection(db('bob'), 'circleAsks/a1/answers')));
+    await assertFails(getDoc(doc(db('dave'), 'circleAsks/a1/answers/bob')));
+  });
+
+  test('a person answers once for themselves and ticks themselves off', async () => {
+    await seed((f) => setDoc(doc(f, 'circleAsks/a1'), ask()));
+    const f = db('bob');
+    const batch = writeBatch(f);
+    batch.set(doc(f, 'circleAsks/a1/answers/bob'), answer('bob'));
+    batch.update(doc(f, 'circleAsks/a1'), { answered: arrayUnion('bob') });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(updateDoc(doc(f, 'circleAsks/a1/answers/bob'), { text: 'changed my mind' }));
+  });
+
+  test('nobody answers for someone else, or when not asked', async () => {
+    await seed((f) => setDoc(doc(f, 'circleAsks/a1'), ask()));
+    await assertFails(setDoc(doc(db('bob'), 'circleAsks/a1/answers/carol'), answer('carol')));
+    await assertFails(setDoc(doc(db('bob'), 'circleAsks/a1/answers/bob'), answer('carol')));
+    await assertFails(setDoc(doc(db('dave'), 'circleAsks/a1/answers/dave'), answer('dave')));
+    await assertFails(setDoc(doc(db('alice'), 'circleAsks/a1/answers/alice'), answer('alice')));
+    await assertFails(updateDoc(doc(db('bob'), 'circleAsks/a1'), { answered: arrayUnion('carol') }));
+    await assertFails(updateDoc(doc(db('bob'), 'circleAsks/a1'), { text: 'mine now' }));
+  });
+
+  test('the asker deletes the question and its answers; people take back theirs', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'circleAsks/a1'), ask());
+      await setDoc(doc(f, 'circleAsks/a1/answers/bob'), answer('bob'));
+      await setDoc(doc(f, 'circleAsks/a1/answers/carol'), answer('carol'));
+    });
+    await assertFails(deleteDoc(doc(db('bob'), 'circleAsks/a1')));
+    await assertFails(deleteDoc(doc(db('bob'), 'circleAsks/a1/answers/carol')));
+    await assertSucceeds(deleteDoc(doc(db('bob'), 'circleAsks/a1/answers/bob')));
+    const f = db('alice');
+    const batch = writeBatch(f);
+    batch.delete(doc(f, 'circleAsks/a1/answers/carol'));
+    batch.delete(doc(f, 'circleAsks/a1'));
+    await assertSucceeds(batch.commit());
+  });
+});
+
 describe('shared notebooks', () => {
   const notebook = (extra = {}) => ({
     ownerId: 'alice', title: 'Us', members: ['alice', 'bob'],

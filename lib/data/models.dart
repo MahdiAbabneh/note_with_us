@@ -549,3 +549,72 @@ class NotebookEntry {
   final String text;
   final DateTime time;
 }
+
+/// A question someone asked some of their circle. The answers are private
+/// to the person who asked.
+class CircleAsk {
+  const CircleAsk({
+    required this.id,
+    required this.ownerId,
+    required this.ownerName,
+    required this.text,
+    required this.createdAt,
+    required this.members,
+    required this.answered,
+  });
+
+  factory CircleAsk.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return CircleAsk(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      createdAt: _parseTime(map['createdAt']),
+      members: (map['members'] as List? ?? const []).cast<String>(),
+      answered: {...(map['answered'] as List? ?? const []).cast<String>()},
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String ownerName;
+  final String text;
+  final DateTime createdAt;
+
+  /// The people asked (not the asker).
+  final List<String> members;
+
+  /// Who has answered so far.
+  final Set<String> answered;
+
+  bool hasAnswered(String uid) => answered.contains(uid);
+}
+
+/// One person's private answer to a [CircleAsk].
+class AskAnswer {
+  const AskAnswer({
+    required this.ownerId,
+    required this.ownerName,
+    required this.ownerImage,
+    required this.text,
+    required this.time,
+  });
+
+  factory AskAnswer.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return AskAnswer(
+      ownerId: map['ownerId'] as String? ?? doc.id,
+      ownerName: map['ownerName'] as String? ?? '',
+      ownerImage: map['ownerImage'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      time: _parseTime(map['time']),
+    );
+  }
+
+  final String ownerId;
+  final String ownerName;
+  final String ownerImage;
+  final String text;
+  final DateTime time;
+}

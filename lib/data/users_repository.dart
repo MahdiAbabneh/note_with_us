@@ -212,6 +212,27 @@ class UsersRepository {
           refs.add(doc.reference.collection('entries').doc(uid));
         }
       }
+      // Questions you asked go with their answers; in the ones you were
+      // asked, only your own answer goes.
+      final asks = await _db
+          .collection('circleAsks')
+          .where('ownerId', isEqualTo: uid)
+          .get();
+      for (final doc in asks.docs) {
+        refs.addAll(
+          (await doc.reference.collection('answers').get()).docs.map(
+            (d) => d.reference,
+          ),
+        );
+        refs.add(doc.reference);
+      }
+      final asked = await _db
+          .collection('circleAsks')
+          .where('members', arrayContains: uid)
+          .get();
+      for (final doc in asked.docs) {
+        refs.add(doc.reference.collection('answers').doc(uid));
+      }
       final notebooks = await _db
           .collection('sharedNotebooks')
           .where('members', arrayContains: uid)
