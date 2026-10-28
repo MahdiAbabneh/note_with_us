@@ -656,6 +656,15 @@ const Map<String, String> arabicStrings = {
       'مؤخرًا شعرت أكثر بـ {mood}. وقبل ذلك كان {before}.',
   'Worked out on your phone from your own notes. Nothing is sent anywhere.':
       'تُحسب على هاتفك من ملاحظاتك. لا يُرسل شيء إلى أي مكان.',
+  // Mood report
+  'Mood report': 'تقرير المزاج',
+  'MOODS': 'المزاج',
+  '{n} notes without a mood': '{n} ملاحظات بلا مزاج',
+  'No moods were chosen this month.': 'لم يُختر أي مزاج هذا الشهر.',
+  'Made from the writer’s own notes and chosen moods. It is a personal record, not a medical assessment.':
+      'تم إعداد هذا التقرير من ملاحظات الكاتب والمزاج الذي اختاره. هو سجل شخصي وليس تقييمًا طبيًا.',
+  'Created on': 'أُنشئ في',
+  'Export mood report': 'تصدير تقرير المزاج',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

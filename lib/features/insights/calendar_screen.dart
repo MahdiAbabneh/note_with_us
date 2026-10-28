@@ -1,13 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:printing/printing.dart';
 
 import '../../core/format.dart';
 import '../../core/hijri.dart';
-import '../../core/settings.dart';
 import '../../core/insights.dart';
+import '../../core/journal_pdf.dart';
 import '../../core/l10n.dart';
+import '../../core/settings.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
@@ -33,6 +36,45 @@ class _CalendarScreenState extends State<CalendarScreen> {
   static DateTime _firstOfMonth(DateTime d) => DateTime(d.year, d.month);
   static DateTime _dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  /// The newest notes seen, so the report button can use them.
+  List<Note> _latest = const [];
+  bool _exporting = false;
+
+  Future<void> _exportReport(BuildContext buttonContext) async {
+    if (_exporting) return;
+    final month = MonthInsights.from(_latest.where((n) => !n.archived), _month);
+    if (month.notes == 0) {
+      showToast(context, 'Nothing written this month yet.'.tr);
+      return;
+    }
+    final box = buttonContext.findRenderObject() as RenderBox?;
+    final origin = box == null
+        ? null
+        : box.localToGlobal(Offset.zero) & box.size;
+    setState(() => _exporting = true);
+    try {
+      final font = await rootBundle.load('assets/fonts/NotoNaskhArabic.ttf');
+      final bytes = await buildMoodReportPdf(
+        month: month,
+        authorName: _session.me.username,
+        fontData: font.buffer.asUint8List(),
+        now: DateTime.now(),
+        hijri: AppSettings.instance.hijri,
+      );
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'mood-report-${_month.year}-${_month.month}.pdf',
+        bounds: origin,
+      );
+    } catch (_) {
+      if (mounted) {
+        showToast(context, 'Couldn’t create the PDF'.tr, error: true);
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
   bool get _isCurrentMonth => _month == _firstOfMonth(DateTime.now());
 
   void _shift(int months) {
@@ -50,7 +92,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(title: 'Calendar'.tr),
+      appBar: TopBar(
+        title: 'Calendar'.tr,
+        actions: [
+          Builder(
+            builder: (buttonContext) => CircleIconButton(
+              icon: CupertinoIcons.doc_text,
+              size: 40,
+              semanticLabel: 'Export mood report'.tr,
+              onPressed: _exporting ? null : () => _exportReport(buttonContext),
+            ),
+          ),
+        ],
+      ),
       body: StreamBuilder<List<Note>>(
         stream: _notes,
         builder: (context, snap) {
@@ -63,6 +117,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           if (!snap.hasData) {
             return const Center(child: CupertinoActivityIndicator());
           }
+          _latest = snap.data!;
           final month = MonthInsights.from(
             snap.data!.where((n) => !n.archived),
             _month,

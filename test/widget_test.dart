@@ -910,6 +910,51 @@ void main() {
       expect(stripEmoji('Plain #tag text.'), 'Plain #tag text.');
     });
 
+    test('keeps Arabic vowel marks from crashing the PDF layout', () async {
+      await initializeDateFormatting();
+      final font = File('assets/fonts/NotoNaskhArabic.ttf').readAsBytesSync();
+      // A hamza-alef followed by a damma crashes the PDF library as is.
+      expect(pdfText('أُعدّ يومًا جميلًا 😀'), 'أعد يوما جميلا ');
+      L10n.arabic = true;
+      final bytes = await buildJournalPdf(
+        notes: [note(DateTime(2026, 10, 2, 22), 'أُعدّ الطعام، وكتابٌ جميل')],
+        authorName: 'مُهدي',
+        fontData: font,
+        now: now,
+      );
+      L10n.arabic = false;
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    });
+
+    test('builds the monthly mood report in English and Arabic', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      await initializeDateFormatting();
+      final font = File('assets/fonts/NotoNaskhArabic.ttf').readAsBytesSync();
+      final month = MonthInsights.from([
+        note(DateTime(2026, 10, 2), 'a'),
+        note(DateTime(2026, 10, 3), 'b'),
+      ], DateTime(2026, 10, 15));
+      for (final arabic in [false, true]) {
+        L10n.arabic = arabic;
+        final bytes = await buildMoodReportPdf(
+          month: month,
+          authorName: 'Mahdi',
+          fontData: font,
+          now: now,
+        );
+        expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+      }
+      L10n.arabic = false;
+      // A month with nothing in it still produces a page.
+      final empty = await buildMoodReportPdf(
+        month: MonthInsights.from(const [], DateTime(2026, 10, 15)),
+        authorName: 'Mahdi',
+        fontData: font,
+        now: now,
+      );
+      expect(String.fromCharCodes(empty.take(5)), '%PDF-');
+    });
+
     test('builds a PDF in English and Arabic from the bundled font', () async {
       await initializeDateFormatting();
       final font = File('assets/fonts/NotoNaskhArabic.ttf').readAsBytesSync();
