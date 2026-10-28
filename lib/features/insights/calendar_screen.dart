@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../core/format.dart';
+import '../../core/hijri.dart';
+import '../../core/settings.dart';
 import '../../core/insights.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
@@ -90,7 +92,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const SizedBox(height: Space.xl),
               Text(
-                fullDate(_selected).toUpperCase(),
+                fullDateWithHijri(_selected).toUpperCase(),
                 style: context.text.overline,
               ),
               const SizedBox(height: Space.sm),
@@ -133,7 +135,19 @@ class _MonthHeader extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Row(
       children: [
-        Expanded(child: Text(monthYear(month), style: context.text.display)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(monthYear(month), style: context.text.display),
+              if (AppSettings.instance.hijri)
+                Text(
+                  hijriRangeOf(month, DateTime(month.year, month.month + 1, 0)),
+                  style: context.text.caption,
+                ),
+            ],
+          ),
+        ),
         CircleIconButton(
           icon: rtl
               ? CupertinoIcons.chevron_right
@@ -300,15 +314,29 @@ class _MonthGrid extends StatelessWidget {
         ),
         child: mood != null && mood != Mood.plain
             ? Text(mood.emoji, style: const TextStyle(fontSize: 18, height: 1))
-            : Text(
-                '$dayNumber',
-                style: context.text.label.copyWith(
-                  color: isFuture
-                      ? c.muted.withValues(alpha: 0.5)
-                      : mood == null
-                      ? c.inkSoft
-                      : c.ink,
-                ),
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$dayNumber',
+                    style: context.text.label.copyWith(
+                      color: isFuture
+                          ? c.muted.withValues(alpha: 0.5)
+                          : mood == null
+                          ? c.inkSoft
+                          : c.ink,
+                    ),
+                  ),
+                  if (AppSettings.instance.hijri)
+                    Text(
+                      formatHijri(day, withYear: false).split(' ').first,
+                      style: TextStyle(
+                        fontSize: 9,
+                        height: 1,
+                        color: c.muted.withValues(alpha: isFuture ? 0.4 : 0.9),
+                      ),
+                    ),
+                ],
               ),
       ),
     );

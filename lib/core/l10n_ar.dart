@@ -557,6 +557,19 @@ const Map<String, String> arabicStrings = {
   'No notes to export for this choice.':
       'لا توجد ملاحظات للتصدير بهذا الاختيار.',
   'Couldn’t create the PDF': 'تعذّر إنشاء ملف PDF',
+  // Rest day and Hijri dates
+  'One rest day a week never breaks your rhythm.':
+      'يوم راحة واحد في الأسبوع لا يكسر إيقاعك.',
+  'Hijri dates': 'التاريخ الهجري',
+  'Show the Hijri date next to the usual one':
+      'اعرض التاريخ الهجري بجانب الميلادي',
+  'Hijri adjustment': 'تعديل التاريخ الهجري',
+  'A day earlier': 'يوم أبكر',
+  'As calculated': 'كما هو محسوب',
+  'A day later': 'يوم أتأخر',
+  'Dates follow the Umm al-Qura calendar. If your country starts the month a day earlier or later, adjust it here.':
+      'التواريخ حسب تقويم أم القرى. إذا كان بلدك يبدأ الشهر قبل يوم أو بعده، عدّل ذلك هنا.',
+  'Today: {date}': 'اليوم: {date}',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

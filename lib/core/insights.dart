@@ -82,21 +82,12 @@ class WeekInsights {
       return counts;
     }
 
-    var streak = 0;
-    var cursor = byDay.containsKey(today)
-        ? today
-        : today.subtract(const Duration(days: 1));
-    while (byDay.containsKey(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-
     return WeekInsights(
       days: days,
       notesThisWeek: days.fold(0, (sum, d) => sum + d.moods.length),
       moodsThisWeek: countSince(today.subtract(const Duration(days: 6))),
       moodsThisMonth: countSince(today.subtract(const Duration(days: 29))),
-      streak: streak,
+      streak: streakFromDays(byDay.keys.toSet(), today),
       totalNotes: notes.length,
     );
   }
@@ -146,23 +137,43 @@ List<Memory> memoriesFor(Iterable<Note> journal, DateTime now) {
   return memories..sort((a, b) => a.months.compareTo(b.months));
 }
 
-/// The longest run of consecutive days among [days] (time of day ignored).
+DateTime _dayBefore(DateTime d) => DateTime(d.year, d.month, d.day - 1);
+
+/// Days in a row with writing, counted back from [today] (an unwritten
+/// today never ends it). One missed day is forgiven as a rest day, as
+/// long as it is the only one missed in the past week; two missed days
+/// in a row end the streak. [days] holds midnight dates.
+int streakFromDays(Set<DateTime> days, DateTime today) {
+  if (days.isEmpty) return 0;
+  final earliest = days.reduce((a, b) => a.isBefore(b) ? a : b);
+  var count = 0;
+  DateTime? lastRest;
+  for (
+    var cursor = today;
+    !cursor.isBefore(earliest);
+    cursor = _dayBefore(cursor)
+  ) {
+    if (days.contains(cursor)) {
+      count++;
+    } else if (cursor != today) {
+      final restAllowed =
+          days.contains(_dayBefore(cursor)) &&
+          (lastRest == null || lastRest.difference(cursor).inDays >= 7);
+      if (!restAllowed) break;
+      lastRest = cursor;
+    }
+  }
+  return count;
+}
+
+/// The longest streak among [days] (time of day ignored), with the same
+/// rest-day rule as [streakFromDays].
 int longestStreak(Iterable<DateTime> days) {
-  final unique =
-      days.map((d) => DateTime(d.year, d.month, d.day)).toSet().toList()
-        ..sort();
+  final unique = {for (final d in days) DateTime(d.year, d.month, d.day)};
   var best = 0;
-  var run = 0;
-  DateTime? previous;
-  for (final day in unique) {
-    // `DateTime(y, m, d + 1)` stays correct across daylight-saving changes.
-    run =
-        previous != null &&
-            DateTime(day.year, day.month, day.day - 1) == previous
-        ? run + 1
-        : 1;
+  for (final end in unique) {
+    final run = streakFromDays(unique, end);
     if (run > best) best = run;
-    previous = day;
   }
   return best;
 }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/format.dart';
+import '../../core/hijri.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
@@ -56,7 +57,12 @@ class NoteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Header(note: note, author: author, showMenu: !inDetail && !preview),
+          _Header(
+            note: note,
+            author: author,
+            showMenu: !inDetail && !preview,
+            detail: inDetail,
+          ),
           if (note.prompt.isNotEmpty) ...[
             const SizedBox(height: Space.sm),
             Row(
@@ -132,11 +138,15 @@ class _Header extends StatelessWidget {
     required this.note,
     required this.author,
     required this.showMenu,
+    this.detail = false,
   });
 
   final Note note;
   final AppUser author;
   final bool showMenu;
+
+  /// The detail view shows the full date (and its Hijri date).
+  final bool detail;
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +193,7 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${relativeTime(note.time)}$moodLabel',
+                '${detail ? fullDateWithHijri(note.time) : relativeTime(note.time)}$moodLabel',
                 style: t.caption.copyWith(color: c.inkSoft),
               ),
             ],

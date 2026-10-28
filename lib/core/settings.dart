@@ -26,6 +26,10 @@ class AppSettings extends ChangeNotifier {
         WidgetsBinding.instance.platformDispatcher.locale.languageCode;
     _lang = lang == 'ar' ? 'ar' : 'en';
     L10n.arabic = _lang == 'ar';
+    // Hijri dates start on for Arabic, off for English, until chosen.
+    _hijri = Prefs.getBool('hijri') ?? _lang == 'ar';
+    _hijriOffset = (int.tryParse(Prefs.getString('hijriOffset') ?? '') ?? 0)
+        .clamp(-2, 2);
   }
 
   /// Shared instance.
@@ -35,12 +39,21 @@ class AppSettings extends ChangeNotifier {
   late Accent _accent;
   late Backdrop _backdrop;
   late String _lang;
+  late bool _hijri;
+  late int _hijriOffset;
 
   ThemeMode get mode => _mode;
   Accent get accent => _accent;
   Backdrop get backdrop => _backdrop;
   String get lang => _lang;
   bool get isArabic => _lang == 'ar';
+
+  /// Whether Hijri dates are shown next to the usual ones.
+  bool get hijri => _hijri;
+
+  /// Days to add before converting to Hijri, for countries that start
+  /// the month earlier or later than the Umm al-Qura calendar (-2…2).
+  int get hijriOffset => _hijriOffset;
   Locale get locale => Locale(_lang);
 
   void setMode(ThemeMode mode) {
@@ -59,6 +72,18 @@ class AppSettings extends ChangeNotifier {
   void setBackdrop(Backdrop backdrop) {
     _backdrop = backdrop;
     Prefs.setString('backdrop', backdrop.id);
+    notifyListeners();
+  }
+
+  void setHijri(bool on) {
+    _hijri = on;
+    Prefs.setBool('hijri', on);
+    notifyListeners();
+  }
+
+  void setHijriOffset(int days) {
+    _hijriOffset = days.clamp(-2, 2);
+    Prefs.setString('hijriOffset', '$_hijriOffset');
     notifyListeners();
   }
 

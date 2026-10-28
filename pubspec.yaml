@@ -57,6 +57,7 @@ dependencies:
   flutter_timezone: ^5.1.1
   pdf: ^3.13.1
   printing: ^5.15.1
+  hijri: ^3.0.1
 
 
 

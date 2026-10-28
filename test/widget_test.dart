@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mahdeko/core/format.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mahdeko/core/hijri.dart';
 import 'package:mahdeko/core/insights.dart';
 import 'package:mahdeko/core/journal_pdf.dart';
 import 'package:mahdeko/data/models.dart';
@@ -121,13 +122,47 @@ void main() {
       expect(week.moodsThisWeek.containsKey(Mood.plain), isFalse);
     });
 
-    test('a gap ends the streak; no notes means no streak', () {
-      final notes = [
+    test('one rest day a week keeps the streak; two in a row end it', () {
+      final restDay = [
         note(DateTime(2026, 10, 27, 9), Mood.calm),
         note(DateTime(2026, 10, 25, 9), Mood.calm),
       ];
-      expect(WeekInsights.from(notes, now).streak, 1);
+      // 26th is a rest day, so 27th and 25th both count.
+      expect(WeekInsights.from(restDay, now).streak, 2);
+
+      final twoMissed = [
+        note(DateTime(2026, 10, 27, 9), Mood.calm),
+        note(DateTime(2026, 10, 24, 9), Mood.calm),
+      ];
+      expect(WeekInsights.from(twoMissed, now).streak, 1);
       expect(WeekInsights.from(const [], now).streak, 0);
+    });
+
+    test('only one rest day is forgiven in any week', () {
+      // Written: 27, 25, 23 with 26 and 24 missed inside one week.
+      final days = {
+        DateTime(2026, 10, 27),
+        DateTime(2026, 10, 25),
+        DateTime(2026, 10, 23),
+      };
+      expect(streakFromDays(days, DateTime(2026, 10, 27)), 2);
+      // A rest day more than a week after the last one is forgiven again.
+      final spaced = {
+        DateTime(2026, 10, 27),
+        DateTime(2026, 10, 25),
+        for (var d = 18; d <= 24; d++) DateTime(2026, 10, d),
+        for (var d = 10; d <= 16; d++) DateTime(2026, 10, d),
+      };
+      // Rest days on the 26th and the 17th, nine days apart.
+      expect(streakFromDays(spaced, DateTime(2026, 10, 27)), 16);
+      // An unwritten today never ends it.
+      expect(
+        streakFromDays({
+          DateTime(2026, 10, 26),
+          DateTime(2026, 10, 25),
+        }, DateTime(2026, 10, 27)),
+        2,
+      );
     });
 
     test(
@@ -431,6 +466,50 @@ void main() {
       expect(counts.map((e) => '${e.key}:${e.value}'), ['work:3', 'family:1']);
       expect(hasTag(n('x #Family'), 'FAMILY'), isTrue);
       expect(hasTag(n('x family'), 'family'), isFalse);
+    });
+  });
+
+  group('hijri dates', () {
+    test('converts known Umm al-Qura dates both ways', () {
+      // Ramadan 1446 began on 1 March 2025, Eid al-Fitr on 30 March and
+      // Eid al-Adha on 6 June.
+      expect(
+        hijriOf(DateTime(2025, 3, 1), offset: 0),
+        const HijriDate(1446, 9, 1),
+      );
+      expect(
+        hijriOf(DateTime(2025, 3, 30), offset: 0),
+        const HijriDate(1446, 10, 1),
+      );
+      expect(
+        hijriOf(DateTime(2025, 6, 6), offset: 0),
+        const HijriDate(1446, 12, 10),
+      );
+      expect(gregorianOf(1446, 9, 1, offset: 0), DateTime(2025, 3, 1));
+      expect(gregorianOf(1446, 12, 10, offset: 0), DateTime(2025, 6, 6));
+    });
+
+    test('the day adjustment moves dates and round-trips', () {
+      // A country one day behind: 2 March is its 1 Ramadan.
+      expect(
+        hijriOf(DateTime(2025, 3, 2), offset: -1),
+        const HijriDate(1446, 9, 1),
+      );
+      expect(gregorianOf(1446, 9, 1, offset: -1), DateTime(2025, 3, 2));
+      for (final offset in [-2, -1, 0, 1, 2]) {
+        final date = DateTime(2026, 7, 15);
+        final h = hijriOf(date, offset: offset);
+        expect(gregorianOf(h.year, h.month, h.day, offset: offset), date);
+      }
+    });
+
+    test('month names come in both languages', () {
+      L10n.arabic = false;
+      expect(hijriMonthName(9), 'Ramadan');
+      L10n.arabic = true;
+      expect(hijriMonthName(9), 'رمضان');
+      expect(hijriMonthName(12), 'ذو الحجة');
+      L10n.arabic = false;
     });
   });
 

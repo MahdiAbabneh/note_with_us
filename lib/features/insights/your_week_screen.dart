@@ -112,6 +112,13 @@ class _Headline extends StatelessWidget {
         Text(title, style: context.text.display),
         const SizedBox(height: Space.xs),
         Text(subtitle, style: context.text.body.copyWith(color: c.inkSoft)),
+        if (insights.streak >= 1) ...[
+          const SizedBox(height: Space.xs),
+          Text(
+            'One rest day a week never breaks your rhythm.'.tr,
+            style: context.text.caption,
+          ),
+        ],
       ],
     );
   }
