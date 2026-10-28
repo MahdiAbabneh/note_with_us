@@ -623,6 +623,16 @@ const Map<String, String> arabicStrings = {
   'From you, {date}': 'منك، {date}',
   'Another one': 'واحدة أخرى',
   'Thank you': 'شكرًا',
+  // Send a hug
+  'Thinking of you. You’ve got this. 🤍': 'أفكر بك. أنت قادر على ذلك. 🤍',
+  'I’m here whenever you want to talk.': 'أنا هنا متى أردت أن تتحدث.',
+  'Sending you the biggest hug today.': 'أرسل لك أكبر حضن اليوم.',
+  'Your hug will be there tomorrow morning 🤍': 'سيصله حضنك صباح الغد 🤍',
+  'Send {name} a hug': 'أرسل لـ {name} حضنًا',
+  'Pick a message. It shows up on their Today tomorrow morning.':
+      'اختر رسالة. تظهر في شاشة «اليوم» لديه صباح الغد.',
+  'Send a hug': 'أرسل حضنًا',
+  'Hug sent': 'تم إرسال الحضن',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

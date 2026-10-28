@@ -10,6 +10,7 @@ import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
+import '../capsules/hug_sheet.dart';
 import '../profile/user_profile_screen.dart';
 import 'note_detail_screen.dart';
 import 'tag_notes_screen.dart';
@@ -263,7 +264,7 @@ class _Footer extends StatelessWidget {
     final t = context.text;
     final counts = note.reactionCounts;
     final mine = note.reactionOf(Session.instance.uid);
-    return Row(
+    final row = Row(
       children: [
         ReactButton(note: note, current: mine),
         const SizedBox(width: Space.xs),
@@ -290,6 +291,16 @@ class _Footer extends StatelessWidget {
           style: t.caption.copyWith(color: c.inkSoft),
         ),
         const SizedBox(width: Space.xs),
+      ],
+    );
+    if (!HugButton.shows(note)) return row;
+    // A friend writing in a blue mood gets a gentle way to reach out.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        row,
+        const SizedBox(height: Space.xs),
+        HugButton(note: note),
       ],
     );
   }
