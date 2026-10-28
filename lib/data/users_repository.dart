@@ -202,12 +202,13 @@ class UsersRepository {
           .get();
       for (final doc in capsules.docs) {
         if (doc.data()['ownerId'] == uid) {
-          refs.addAll(
-            (await doc.reference.collection('entries').get()).docs.map(
-              (d) => d.reference,
-            ),
-          );
-          refs.add(doc.reference);
+          // By id, not listed: sealed letters can't be listed by anyone.
+          final members = (doc.data()['members'] as List? ?? const [])
+              .cast<String>();
+          refs.addAll([
+            for (final m in members) doc.reference.collection('entries').doc(m),
+            doc.reference,
+          ]);
         } else {
           refs.add(doc.reference.collection('entries').doc(uid));
         }

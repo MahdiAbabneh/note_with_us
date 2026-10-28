@@ -1,6 +1,8 @@
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' show Brightness;
 
+import 'package:intl/date_symbol_data_local.dart' show initializeDateFormatting;
 import 'package:intl/intl.dart' show Bidi, DateFormat;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -52,6 +54,30 @@ String stripEmoji(String text) => text
 /// Arabic is normally written without them, so little is lost.
 String pdfText(String text) =>
     stripEmoji(text).replaceAll(RegExp('[\u064B-\u065F\u0670]'), '');
+
+/// [buildJournalPdf] on a background isolate, so laying out thousands of
+/// notes does not freeze the app. The isolate starts with no language or
+/// date data, so both are set up first.
+Future<Uint8List> buildJournalPdfInBackground({
+  required List<Note> notes,
+  required String authorName,
+  required Uint8List fontData,
+  required DateTime now,
+  String? tag,
+}) {
+  final arabic = L10n.arabic;
+  return Isolate.run(() async {
+    L10n.arabic = arabic;
+    await initializeDateFormatting();
+    return buildJournalPdf(
+      notes: notes,
+      authorName: authorName,
+      fontData: fontData,
+      now: now,
+      tag: tag,
+    );
+  });
+}
 
 /// A keepsake PDF of [notes] (oldest first): a cover, then the notes
 /// grouped by month. [fontData] is a TrueType font with Latin and Arabic

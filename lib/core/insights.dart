@@ -67,10 +67,7 @@ class WeekInsights {
 
     final days = [
       for (var i = 6; i >= 0; i--)
-        DayEntry(
-          today.subtract(Duration(days: i)),
-          byDay[today.subtract(Duration(days: i))] ?? const [],
-        ),
+        DayEntry(_daysAgo(today, i), byDay[_daysAgo(today, i)] ?? const []),
     ];
 
     Map<Mood, int> countSince(DateTime start) {
@@ -87,14 +84,19 @@ class WeekInsights {
     return WeekInsights(
       days: days,
       notesThisWeek: days.fold(0, (sum, d) => sum + d.moods.length),
-      moodsThisWeek: countSince(today.subtract(const Duration(days: 6))),
-      moodsThisMonth: countSince(today.subtract(const Duration(days: 29))),
+      moodsThisWeek: countSince(_daysAgo(today, 6)),
+      moodsThisMonth: countSince(_daysAgo(today, 29)),
       streak: streakFromDays(byDay.keys.toSet(), today),
       totalNotes: notes.length,
     );
   }
 
   static DateTime _day(DateTime t) => DateTime(t.year, t.month, t.day);
+
+  /// The midnight [n] calendar days before [day]. Unlike subtracting a
+  /// Duration this stays on a midnight across daylight-saving changes.
+  static DateTime _daysAgo(DateTime day, int n) =>
+      DateTime(day.year, day.month, day.day - n);
 }
 
 /// A past journal note to resurface today, the same one all day.
@@ -160,7 +162,7 @@ int streakFromDays(Set<DateTime> days, DateTime today) {
     } else if (cursor != today) {
       final restAllowed =
           days.contains(_dayBefore(cursor)) &&
-          (lastRest == null || lastRest.difference(cursor).inDays >= 7);
+          (lastRest == null || daysBetween(cursor, lastRest) >= 7);
       if (!restAllowed) break;
       lastRest = cursor;
     }

@@ -945,6 +945,75 @@ void main() {
     });
   });
 
+  group('daylight saving never shifts day counts', () {
+    test('daysBetween counts calendar days, not 24-hour blocks', () {
+      // US clocks went forward on 8 March 2026 and back on 1 November.
+      expect(daysBetween(DateTime(2026, 3, 7), DateTime(2026, 3, 9)), 2);
+      expect(daysBetween(DateTime(2026, 3, 8), DateTime(2026, 3, 9)), 1);
+      expect(daysBetween(DateTime(2026, 10, 31), DateTime(2026, 11, 2)), 2);
+      expect(daysBetween(DateTime(2026, 5, 1), DateTime(2026, 5, 1, 23)), 0);
+      expect(daysBetween(DateTime(2026, 5, 3), DateTime(2026, 5, 1)), -2);
+    });
+
+    test('the week strip keeps one midnight per day over a clock change', () {
+      // The strip must list consecutive dates ending today whichever way
+      // the clocks moved (US: 8 March and 1 November 2026; Europe: 25 Oct).
+      for (final today in [
+        DateTime(2026, 3, 9, 10),
+        DateTime(2026, 11, 2, 10),
+        DateTime(2026, 10, 27, 10),
+        DateTime(2026, 3, 30, 10),
+      ]) {
+        final week = WeekInsights.from(const [], today);
+        for (var i = 0; i < 7; i++) {
+          final day = week.days[i].date;
+          expect(day, DateTime(today.year, today.month, today.day - (6 - i)));
+        }
+      }
+    });
+
+    test('a birthday tomorrow is tomorrow even over the clock change', () {
+      final person = AppUser(
+        uid: 'sam',
+        username: 'Sam',
+        dateOfBirth: '3/8/1990',
+      );
+      final found = upcomingBirthdays([person], DateTime(2026, 3, 7, 20));
+      expect(found.single.daysAway, 1);
+      final today = upcomingBirthdays([person], DateTime(2026, 3, 8, 7));
+      expect(today.single.daysAway, 0);
+    });
+
+    test(
+      'a rest day exactly a week earlier is still forgiven over the change',
+      () {
+        // Written 13, 11, 10…6 and 4 March 2026; 12 and 5 March are rest days
+        // seven days apart, with the US clock change between them.
+        final days = {
+          DateTime(2026, 3, 13),
+          for (var d = 6; d <= 11; d++) DateTime(2026, 3, d),
+          DateTime(2026, 3, 4),
+        };
+        expect(streakFromDays(days, DateTime(2026, 3, 13)), 8);
+      },
+    );
+
+    test(
+      'Ramadan has as many days as its Hijri month, whatever the clocks do',
+      () {
+        for (final year in [1446, 1447, 1448]) {
+          final (start, end) = ramadanRange(year, offset: 0);
+          final days = daysBetween(start, end) + 1;
+          expect(days, anyOf(29, 30));
+          final stats = RamadanStats.from(const [], start, end, end);
+          expect(stats.totalDays, days);
+          expect(stats.elapsedDays, days);
+          expect(RamadanStats.from(const [], start, end, start).elapsedDays, 1);
+        }
+      },
+    );
+  });
+
   group('pdf export', () {
     final now = DateTime(2026, 10, 28, 12);
     Note note(DateTime time, String text, {bool archived = false}) => Note(
@@ -998,6 +1067,25 @@ void main() {
       );
       L10n.arabic = false;
       expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    });
+
+    test('builds the journal PDF on a background isolate', () async {
+      final font = File('assets/fonts/NotoNaskhArabic.ttf').readAsBytesSync();
+      for (final arabic in [false, true]) {
+        L10n.arabic = arabic;
+        final bytes = await buildJournalPdfInBackground(
+          notes: [
+            note(DateTime(2026, 9, 3, 9), 'First day back at work #work'),
+            note(DateTime(2026, 10, 2, 22), 'اليوم كان يومًا جميلًا'),
+          ],
+          authorName: 'Mahdi',
+          fontData: font,
+          now: now,
+        );
+        expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+        expect(bytes.length, greaterThan(5000));
+      }
+      L10n.arabic = false;
     });
 
     test('builds the monthly mood report in English and Arabic', () async {

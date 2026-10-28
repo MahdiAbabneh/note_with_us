@@ -1,5 +1,6 @@
 import '../data/models.dart';
 import '../design/tokens.dart';
+import 'format.dart';
 import 'hijri.dart';
 import 'insights.dart' as insights;
 import 'l10n.dart';
@@ -241,11 +242,11 @@ class RamadanStats {
             n.time.isBefore(endExclusive))
           n,
     ];
-    final total = endExclusive.difference(start).inDays;
+    final total = daysBetween(start, endExclusive);
     final today = DateTime(now.year, now.month, now.day);
     final elapsed = today.isBefore(start)
         ? 0
-        : (today.difference(start).inDays + 1).clamp(0, total);
+        : (daysBetween(start, today) + 1).clamp(0, total);
     final days = {
       for (final n in inRange) DateTime(n.time.year, n.time.month, n.time.day),
     };

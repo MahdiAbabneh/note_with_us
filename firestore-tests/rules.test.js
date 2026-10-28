@@ -391,6 +391,21 @@ describe('circle capsules (groupCapsules)', () => {
     await assertFails(updateDoc(doc(db('bob'), 'groupCapsules/g1'), { written: arrayUnion('bob') }));
   });
 
+  test('the creator can delete a sealed capsule by clearing each member\'s letter id', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'groupCapsules/g1'), group(future()));
+      await setDoc(doc(f, 'groupCapsules/g1/entries/bob'), letter('bob'));
+    });
+    // Listing the letters is refused while it is sealed...
+    await assertFails(getDocs(collection(db('alice'), 'groupCapsules/g1/entries')));
+    // ...so the app deletes them by id, which is allowed (even ones that don't exist).
+    const f = db('alice');
+    const batch = writeBatch(f);
+    for (const m of ['alice', 'bob', 'carol']) batch.delete(doc(f, `groupCapsules/g1/entries/${m}`));
+    batch.delete(doc(f, 'groupCapsules/g1'));
+    await assertSucceeds(batch.commit());
+  });
+
   test('only the creator deletes the capsule; members take back their own letter', async () => {
     await seed(async (f) => {
       await setDoc(doc(f, 'groupCapsules/g1'), group(future()));
@@ -538,6 +553,14 @@ describe('shared notebooks', () => {
     await assertFails(write('carol', 'n1'));
     // Nothing else on the notebook can change.
     await assertFails(updateDoc(doc(db('alice'), 'sharedNotebooks/n1'), { title: 'Mine', lastWriterId: 'alice' }));
+  });
+
+  test('the page count can only go up by one, with a real time', async () => {
+    await seed((f) => setDoc(doc(f, 'sharedNotebooks/n1'), notebook()));
+    const n = doc(db('alice'), 'sharedNotebooks/n1');
+    await assertFails(updateDoc(n, { lastWriterId: 'alice', lastTime: Timestamp.now(), entryCount: 9999 }));
+    await assertFails(updateDoc(n, { lastWriterId: 'alice', lastTime: 'yesterday', entryCount: increment(1) }));
+    await assertSucceeds(updateDoc(n, { lastWriterId: 'alice', lastTime: Timestamp.now(), entryCount: increment(1) }));
   });
 
   test('both people read pages; strangers do not', async () => {

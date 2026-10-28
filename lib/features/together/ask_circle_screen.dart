@@ -66,7 +66,10 @@ class _AskCircleScreenState extends State<AskCircleScreen> {
               return const Center(child: CupertinoActivityIndicator());
             }
             final uid = _session.uid;
-            final forMe = forMeSnap.data!;
+            // Someone you blocked can't put questions in front of you.
+            final forMe = forMeSnap.data!
+                .where((a) => _session.isVisible(a.ownerId))
+                .toList();
             final waiting = forMe.where((a) => !a.hasAnswered(uid)).toList();
             final answered = forMe.where((a) => a.hasAnswered(uid)).toList();
             final asked = askedSnap.data!;

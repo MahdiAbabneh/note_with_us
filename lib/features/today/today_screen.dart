@@ -657,7 +657,9 @@ class _TogetherCard extends StatelessWidget {
             StreamBuilder<List<GroupCapsule>>(
               stream: groups,
               builder: (context, snap) {
-                final all = snap.data ?? const <GroupCapsule>[];
+                final all = (snap.data ?? const <GroupCapsule>[])
+                    .where((g) => Session.instance.isVisible(g.ownerId))
+                    .toList();
                 final ready = all.where((g) => g.isUnlocked).length;
                 final waiting = all.length - ready;
                 final needLetter = all
@@ -727,7 +729,11 @@ class _TogetherCard extends StatelessWidget {
               stream: asks,
               builder: (context, snap) {
                 final waiting = (snap.data ?? const <CircleAsk>[])
-                    .where((a) => !a.hasAnswered(uid))
+                    .where(
+                      (a) =>
+                          !a.hasAnswered(uid) &&
+                          Session.instance.isVisible(a.ownerId),
+                    )
                     .length;
                 final subtitle = waiting == 0
                     ? 'Ask a question, read answers only you see'.tr

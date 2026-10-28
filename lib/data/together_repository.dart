@@ -84,11 +84,14 @@ class GroupCapsulesRepository {
       ..sort((a, b) => a.time.compareTo(b.time));
   }
 
+  /// Deletes the capsule and every member's letter. The letters are
+  /// deleted by id (one per member) rather than listed, because until the
+  /// capsule opens the rules let nobody list other people's letters, not
+  /// even the creator.
   Future<void> delete(GroupCapsule capsule) async {
-    final entries = await _capsules.doc(capsule.id).collection('entries').get();
     final batch = _db.batch();
-    for (final doc in entries.docs) {
-      batch.delete(doc.reference);
+    for (final member in capsule.members) {
+      batch.delete(_entry(capsule.id, member));
     }
     batch.delete(_capsules.doc(capsule.id));
     await batch.commit();
@@ -167,7 +170,7 @@ class NotebooksRepository {
       ..update(_notebooks.doc(notebook.id), {
         'lastWriterId': author.uid,
         'lastTime': now,
-        'entryCount': notebook.entryCount + 1,
+        'entryCount': FieldValue.increment(1),
       });
     return batch.commit();
   }

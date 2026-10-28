@@ -33,7 +33,7 @@ List<UpcomingBirthday> upcomingBirthdays(
   for (final person in people) {
     final birth = parseBirthDate(person.dateOfBirth);
     if (birth == null) continue;
-    final days = nextBirthdayOnOrAfter(birth, now).difference(today).inDays;
+    final days = daysBetween(today, nextBirthdayOnOrAfter(birth, now));
     if (days <= 1) found.add(UpcomingBirthday(person, days));
   }
   return found..sort((a, b) {

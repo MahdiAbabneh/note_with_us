@@ -25,7 +25,7 @@ class _GratitudeScreenState extends State<GratitudeScreen> {
   final _session = Session.instance;
   late Stream<List<Note>> _notes = _session.notes.journal(
     _session.uid,
-    limit: 400,
+    limit: 1000,
   );
   late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
 
@@ -71,7 +71,8 @@ class _GratitudeScreenState extends State<GratitudeScreen> {
           if (snap.hasError) {
             return ErrorState(
               onRetry: () => setState(
-                () => _notes = _session.notes.journal(_session.uid, limit: 400),
+                () =>
+                    _notes = _session.notes.journal(_session.uid, limit: 1000),
               ),
             );
           }

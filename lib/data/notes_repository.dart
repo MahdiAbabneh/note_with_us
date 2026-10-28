@@ -153,7 +153,7 @@ class NotesRepository {
 
   /// Everything [uid] wrote, private, circle and public, newest first.
   /// Used for weekly insights; emits once all three sources have loaded.
-  Stream<List<Note>> mine(String uid, {int limit = 300}) {
+  Stream<List<Note>> mine(String uid, {int limit = 1000}) {
     final sources = [
       journal(uid, limit: limit),
       circleFeed(uid).map((l) => l.where((n) => n.ownerId == uid).toList()),

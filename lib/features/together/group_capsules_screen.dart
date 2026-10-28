@@ -63,7 +63,10 @@ class _GroupCapsulesScreenState extends State<GroupCapsulesScreen> {
           if (!snap.hasData) {
             return const Center(child: CupertinoActivityIndicator());
           }
-          final all = snap.data!;
+          // Someone you blocked can't start capsules with you.
+          final all = snap.data!
+              .where((g) => _session.isVisible(g.ownerId))
+              .toList();
           if (all.isEmpty) {
             return EmptyState(
               emoji: '🎆',

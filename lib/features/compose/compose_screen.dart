@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -258,11 +260,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
     super.dispose();
   }
 
-  /// Days in a row including the note just posted. Best effort: a slow
-  /// or failed read just means the plain "Note posted" toast.
+  /// Replaces the "Note posted" toast with the streak when it is 2 or
+  /// more days. Best effort: a slow or failed read leaves the plain toast.
+  Future<void> _celebrateStreak(BuildContext context, String uid) async {
+    final streak = await _currentStreak(uid);
+    if (streak >= 2 && context.mounted) {
+      showToast(context, _postedMessage(streak));
+    }
+  }
+
+  /// Days in a row including the note just posted (0 if unknown).
   Future<int> _currentStreak(String uid) async {
     try {
-      final notes = await _session.notes
+      final notes = await Session.instance.notes
           .mine(uid)
           .first
           .timeout(const Duration(seconds: 2));
@@ -330,14 +340,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
       DraftStore.instance.clear();
       RecentTags.record(_text.text);
       if (!_isCapsule) PromptState.instance.noteAnswered(_prompt);
-      final streak = _isCapsule ? 0 : await _currentStreak(me.uid);
-      if (!mounted) return;
       HapticFeedback.mediumImpact();
-      Navigator.pop(context);
+      final navigator = Navigator.of(context);
+      navigator.pop();
       showToast(
-        context,
-        _isCapsule ? 'Capsule sealed ⏳'.tr : _postedMessage(streak),
+        navigator.context,
+        _isCapsule ? 'Capsule sealed ⏳'.tr : 'Note posted'.tr,
       );
+      // The composer is already closed; the streak shows up a moment later
+      // if there is one, so a slow connection never holds the screen.
+      if (!_isCapsule) unawaited(_celebrateStreak(navigator.context, me.uid));
     } catch (_) {
       if (mounted) showToast(context, 'Something went wrong'.tr, error: true);
     } finally {

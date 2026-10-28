@@ -338,7 +338,9 @@ service cloud.firestore {
           && uid() in resource.data.members
           && onlyChanges(['lastWriterId', 'lastTime', 'entryCount'])
           && resource.data.lastWriterId != uid()
-          && request.resource.data.lastWriterId == uid();
+          && request.resource.data.lastWriterId == uid()
+          && request.resource.data.lastTime is timestamp
+          && request.resource.data.entryCount == resource.data.entryCount + 1;
 
       match /entries/{entryId} {
         function notebook() {

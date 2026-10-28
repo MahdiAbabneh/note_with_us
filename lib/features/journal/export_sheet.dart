@@ -59,7 +59,7 @@ class _ExportSheetState extends State<_ExportSheet> {
         return;
       }
       final font = await rootBundle.load('assets/fonts/NotoNaskhArabic.ttf');
-      final bytes = await buildJournalPdf(
+      final bytes = await buildJournalPdfInBackground(
         notes: notes,
         authorName: session.me.username,
         fontData: font.buffer.asUint8List(),

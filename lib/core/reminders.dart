@@ -300,11 +300,21 @@ class Reminders extends ChangeNotifier {
   }
 
   String? _birthdaySignature;
+  Future<void> _birthdayQueue = Future.value();
 
   /// Schedules a reminder for each of [birthdays] and cancels reminders
   /// for people no longer listed. Does nothing when the list is the same
-  /// as last time, since this is called whenever the circle changes.
+  /// as the last one that worked, since this is called whenever the
+  /// circle changes. Calls run one after another, never at the same time.
   Future<void> syncBirthdays(
+    List<({String id, DateTime at, String title, String body})> birthdays,
+  ) {
+    final run = _birthdayQueue.then((_) => _syncBirthdays(birthdays));
+    _birthdayQueue = run;
+    return run;
+  }
+
+  Future<void> _syncBirthdays(
     List<({String id, DateTime at, String title, String body})> birthdays,
   ) async {
     if (!_ready || !birthdayAlerts) return;
@@ -312,27 +322,43 @@ class Reminders extends ChangeNotifier {
         .map((b) => '${b.id}@${b.at.millisecondsSinceEpoch}:${b.title}')
         .join('|');
     if (signature == _birthdaySignature) return;
-    _birthdaySignature = signature;
-    final wanted = {
-      for (final b in birthdays) _birthdayNotificationId(b.id): b,
-    };
-    for (final id in _scheduledIds(
-      _birthdayIdsKey,
-    ).difference(wanted.keys.toSet())) {
-      await _plugin.cancel(id: id);
-    }
-    for (final MapEntry(key: id, value: b) in wanted.entries) {
-      await _plugin.zonedSchedule(
-        id: id,
-        scheduledDate: tz.TZDateTime.from(b.at, tz.local),
-        title: b.title,
-        body: b.body,
-        payload: ReminderTarget.today.name,
-        notificationDetails: _details('birthdays', 'Birthdays'.tr),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    try {
+      final wanted = {
+        for (final b in birthdays) _birthdayNotificationId(b.id): b,
+      };
+      final previous = _scheduledIds(_birthdayIdsKey);
+      // Remember both old and new ids first, so even if scheduling stops
+      // halfway a later sync still knows what to cancel.
+      await Prefs.setString(
+        _birthdayIdsKey,
+        jsonEncode({...previous, ...wanted.keys}.toList()),
+      );
+      for (final id in previous.difference(wanted.keys.toSet())) {
+        await _plugin.cancel(id: id);
+      }
+      for (final MapEntry(key: id, value: b) in wanted.entries) {
+        await _plugin.zonedSchedule(
+          id: id,
+          scheduledDate: tz.TZDateTime.from(b.at, tz.local),
+          title: b.title,
+          body: b.body,
+          payload: ReminderTarget.today.name,
+          notificationDetails: _details('birthdays', 'Birthdays'.tr),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      }
+      await Prefs.setString(_birthdayIdsKey, jsonEncode(wanted.keys.toList()));
+      // Only a sync that finished is remembered, so a failed one is retried.
+      _birthdaySignature = signature;
+    } catch (error, stack) {
+      _birthdaySignature = null;
+      developer.log(
+        'Scheduling birthday reminders failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
       );
     }
-    await Prefs.setString(_birthdayIdsKey, jsonEncode(wanted.keys.toList()));
   }
 
   /// Removes all birthday reminders, e.g. on sign-out.

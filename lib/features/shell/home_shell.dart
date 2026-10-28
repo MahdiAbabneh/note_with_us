@@ -96,7 +96,9 @@ class _HomeShellState extends State<HomeShell> {
               ? 'A note from your past self is waiting.'.tr
               : 'From {name}'.tr.replaceAll('{name}', c.ownerName),
         ),
-      for (final g in _groups)
+      for (final g in _groups.where(
+        (g) => Session.instance.isVisible(g.ownerId),
+      ))
         (
           id: g.id,
           unlockAt: g.unlockAt,
