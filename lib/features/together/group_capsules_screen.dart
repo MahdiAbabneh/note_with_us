@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/format.dart';
+import '../../core/hijri.dart';
+import '../../core/islamic.dart';
+import '../../core/settings.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
@@ -194,6 +197,11 @@ class _NewGroupCapsuleSheetState extends State<_NewGroupCapsuleSheet> {
 
   static List<(String, DateTime)> _presets(DateTime now) => [
     ('New Year', DateTime(now.year + 1, 1, 1, 9)),
+    if (AppSettings.instance.islamic) ...[
+      ('Ramadan', nextOccasionStart(IslamicOccasion.ramadan, now)),
+      ('Eid al-Fitr', nextOccasionStart(IslamicOccasion.eidAlFitr, now)),
+      ('Eid al-Adha', nextOccasionStart(IslamicOccasion.eidAlAdha, now)),
+    ],
     ('1 month', now.add(const Duration(days: 30))),
     ('6 months', now.add(const Duration(days: 182))),
     ('1 year', DateTime(now.year + 1, now.month, now.day, now.hour)),
@@ -203,6 +211,19 @@ class _NewGroupCapsuleSheetState extends State<_NewGroupCapsuleSheet> {
   void dispose() {
     _title.dispose();
     super.dispose();
+  }
+
+  /// A name for the capsule when a dated preset is chosen and no name was
+  /// typed yet, e.g. "Eid al-Fitr 1448".
+  void _choosePreset(String label, DateTime date) {
+    setState(() => _unlockAt = date);
+    if (_title.text.trim().isNotEmpty) return;
+    final year = switch (label) {
+      'Ramadan' || 'Eid al-Fitr' || 'Eid al-Adha' => hijriYearOf(date),
+      'New Year' => date.year,
+      _ => null,
+    };
+    if (year != null) _title.text = '${label.tr} $year';
   }
 
   Future<void> _pickDate() async {
@@ -281,7 +302,7 @@ class _NewGroupCapsuleSheetState extends State<_NewGroupCapsuleSheet> {
                 _Chip(
                   label: label.tr,
                   selected: isPreset(date),
-                  onTap: () => setState(() => _unlockAt = date),
+                  onTap: () => _choosePreset(label, date),
                 ),
               _Chip(
                 label: 'Pick a date'.tr,

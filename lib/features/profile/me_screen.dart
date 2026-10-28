@@ -322,7 +322,17 @@ List<Widget> _hijriRows(BuildContext context, AppSettings settings) => [
       onChanged: settings.setHijri,
     ),
   ),
-  if (settings.hijri)
+  ListRow(
+    icon: CupertinoIcons.sparkles,
+    title: 'Ramadan and Eid'.tr,
+    subtitle: 'Daily Ramadan prompts, Eid greetings and Eid capsule dates'.tr,
+    trailing: CupertinoSwitch(
+      value: settings.islamic,
+      activeTrackColor: context.colors.accent,
+      onChanged: settings.setIslamic,
+    ),
+  ),
+  if (settings.hijri || settings.islamic)
     ListRow(
       icon: CupertinoIcons.plus_slash_minus,
       title: 'Hijri adjustment'.tr,

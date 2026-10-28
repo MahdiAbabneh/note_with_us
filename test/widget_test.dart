@@ -7,6 +7,7 @@ import 'package:mahdeko/core/format.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mahdeko/core/hijri.dart';
 import 'package:mahdeko/core/insights.dart';
+import 'package:mahdeko/core/islamic.dart';
 import 'package:mahdeko/core/journal_pdf.dart';
 import 'package:mahdeko/data/models.dart';
 import 'package:mahdeko/design/tokens.dart';
@@ -510,6 +511,98 @@ void main() {
       expect(hijriMonthName(9), 'رمضان');
       expect(hijriMonthName(12), 'ذو الحجة');
       L10n.arabic = false;
+    });
+  });
+
+  group('islamic occasions', () {
+    test('finds Ramadan, the Eids and the days after, by Hijri date', () {
+      IslamicOccasion? on(int y, int m, int d) =>
+          occasionOn(DateTime(y, m, d), offset: 0);
+      // Ramadan 1446: 1 March to 29 March 2025; Eid al-Fitr 30 March.
+      expect(on(2025, 2, 28), isNull);
+      expect(on(2025, 3, 1), IslamicOccasion.ramadan);
+      expect(on(2025, 3, 29), IslamicOccasion.ramadan);
+      expect(on(2025, 3, 30), IslamicOccasion.eidAlFitr);
+      expect(on(2025, 4, 1), IslamicOccasion.eidAlFitr);
+      expect(on(2025, 4, 2), isNull);
+      expect(isAfterRamadan(DateTime(2025, 4, 2), offset: 0), isTrue);
+      expect(isAfterRamadan(DateTime(2025, 3, 31), offset: 0), isFalse);
+      // Arafah 5 June, Eid al-Adha 6-8 June 2025.
+      expect(on(2025, 6, 5), IslamicOccasion.arafahDay);
+      expect(on(2025, 6, 6), IslamicOccasion.eidAlAdha);
+      expect(on(2025, 6, 8), IslamicOccasion.eidAlAdha);
+      expect(on(2025, 6, 9), isNull);
+      expect(on(2025, 6, 26), IslamicOccasion.islamicNewYear);
+      expect(ramadanDay(DateTime(2025, 3, 10), offset: 0), 10);
+      expect(ramadanDay(DateTime(2025, 4, 10), offset: 0), isNull);
+    });
+
+    test('finds the next start of an occasion, a day or more away', () {
+      final from = DateTime(2025, 4, 10, 12);
+      expect(
+        nextOccasionStart(IslamicOccasion.eidAlAdha, from, offset: 0),
+        DateTime(2025, 6, 6, 8),
+      );
+      final next = nextOccasionStart(
+        IslamicOccasion.eidAlFitr,
+        from,
+        offset: 0,
+      );
+      expect(next.isAfter(DateTime(2026, 3, 1)), isTrue);
+      expect(next.isBefore(DateTime(2026, 4, 1)), isTrue);
+      expect(next.hour, 8);
+      // Too close to seal a capsule: it moves to the following year.
+      final eve = DateTime(2025, 3, 30, 1);
+      expect(
+        nextOccasionStart(IslamicOccasion.eidAlFitr, eve, offset: 0).year,
+        2026,
+      );
+    });
+
+    test('Ramadan range and stats', () {
+      final (start, end) = ramadanRange(1446, offset: 0);
+      expect(start, DateTime(2025, 3, 1));
+      expect(end, DateTime(2025, 3, 29));
+      Note n(DateTime time, Mood mood, String text) => Note(
+        id: '${time.millisecondsSinceEpoch}',
+        audience: Audience.private,
+        text: text,
+        images: const [],
+        time: time,
+        ownerId: 'me',
+        ownerName: 'Me',
+        ownerImage: '',
+        mood: mood,
+      );
+      final notes = [
+        n(DateTime(2025, 2, 28, 9), Mood.joy, 'before'),
+        n(DateTime(2025, 3, 1, 21), Mood.calm, 'start #ramadan'),
+        n(DateTime(2025, 3, 2, 21), Mood.calm, 'day two #ramadan'),
+        n(DateTime(2025, 3, 3, 21), Mood.joy, 'day three'),
+        n(DateTime(2025, 3, 10, 21), Mood.calm, 'later'),
+        n(DateTime(2025, 3, 30, 9), Mood.joy, 'eid'),
+      ];
+      final stats = RamadanStats.from(notes, start, end, DateTime(2025, 3, 12));
+      expect(stats.totalDays, 29);
+      expect(stats.elapsedDays, 12);
+      expect(stats.notes, 4);
+      expect(stats.daysWritten, 4);
+      expect(stats.longestStreak, 3);
+      expect(stats.topMood, Mood.calm);
+      expect(stats.topTags, ['ramadan']);
+      // After the month, every day has started.
+      expect(
+        RamadanStats.from(notes, start, end, DateTime(2025, 4, 5)).elapsedDays,
+        29,
+      );
+    });
+
+    test('every Ramadan day has a prompt in both languages', () {
+      expect(ramadanPrompts.length, 30);
+      for (final (en, ar) in ramadanPrompts) {
+        expect(en.trim(), isNotEmpty);
+        expect(ar.trim(), isNotEmpty);
+      }
     });
   });
 

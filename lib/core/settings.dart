@@ -28,6 +28,7 @@ class AppSettings extends ChangeNotifier {
     L10n.arabic = _lang == 'ar';
     // Hijri dates start on for Arabic, off for English, until chosen.
     _hijri = Prefs.getBool('hijri') ?? _lang == 'ar';
+    _islamic = Prefs.getBool('islamic') ?? _lang == 'ar';
     _hijriOffset = (int.tryParse(Prefs.getString('hijriOffset') ?? '') ?? 0)
         .clamp(-2, 2);
   }
@@ -40,6 +41,7 @@ class AppSettings extends ChangeNotifier {
   late Backdrop _backdrop;
   late String _lang;
   late bool _hijri;
+  late bool _islamic;
   late int _hijriOffset;
 
   ThemeMode get mode => _mode;
@@ -50,6 +52,10 @@ class AppSettings extends ChangeNotifier {
 
   /// Whether Hijri dates are shown next to the usual ones.
   bool get hijri => _hijri;
+
+  /// Whether Ramadan and Eid features (daily prompts, greetings, Eid
+  /// capsule dates) are shown.
+  bool get islamic => _islamic;
 
   /// Days to add before converting to Hijri, for countries that start
   /// the month earlier or later than the Umm al-Qura calendar (-2…2).
@@ -78,6 +84,12 @@ class AppSettings extends ChangeNotifier {
   void setHijri(bool on) {
     _hijri = on;
     Prefs.setBool('hijri', on);
+    notifyListeners();
+  }
+
+  void setIslamic(bool on) {
+    _islamic = on;
+    Prefs.setBool('islamic', on);
     notifyListeners();
   }
 

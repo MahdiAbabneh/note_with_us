@@ -5,6 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/drafts.dart';
 import '../../core/format.dart';
+import '../../core/islamic.dart';
+import '../../core/settings.dart';
 import '../../core/insights.dart';
 import '../../core/prompts.dart';
 import '../../core/tags.dart';
@@ -25,6 +27,7 @@ Future<void> openComposer(
   ComposeTarget? target,
   AppUser? recipient,
   Mood? mood,
+  String text = '',
 }) async {
   // Every way into the composer goes through here, so guests are asked
   // to join once, in one place.
@@ -37,6 +40,7 @@ Future<void> openComposer(
         initialTarget: target,
         recipient: recipient,
         initialMood: mood,
+        initialText: text,
       ),
     ),
   );
@@ -50,6 +54,7 @@ class ComposeScreen extends StatefulWidget {
     this.initialTarget,
     this.recipient,
     this.initialMood,
+    this.initialText = '',
   });
 
   final String prompt;
@@ -57,12 +62,16 @@ class ComposeScreen extends StatefulWidget {
   final AppUser? recipient;
   final Mood? initialMood;
 
+  /// Text to start with, e.g. a greeting or a tag.
+  final String initialText;
+
   /// Opening the composer with no preset continues the saved draft.
   bool get continuesDraft =>
       prompt.isEmpty &&
       initialTarget == null &&
       recipient == null &&
-      initialMood == null;
+      initialMood == null &&
+      initialText.isEmpty;
 
   @override
   State<ComposeScreen> createState() => _ComposeScreenState();
@@ -96,6 +105,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
       _target = ComposeTarget.values.firstWhere(
         (t) => t.name == draft.target,
         orElse: () => _target,
+      );
+    } else if (widget.initialText.isNotEmpty) {
+      _text.value = TextEditingValue(
+        text: widget.initialText,
+        selection: TextSelection.collapsed(offset: widget.initialText.length),
       );
     }
     _text.addListener(() {
@@ -141,7 +155,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       _unlockAt = template.unlockAt(DateTime.now());
       _mood = template.mood;
     });
-    final body = template.body.tr;
+    final body = template.text();
     _text.value = TextEditingValue(
       text: body,
       selection: TextSelection.collapsed(offset: body.length),
@@ -611,14 +625,43 @@ class _CapsuleTemplate {
     required this.body,
     required this.mood,
     required this.unlockAt,
+    this.eid,
   });
 
   final String emoji;
   final String title;
   final String body;
+
+  /// Set for an Eid greeting, whose text comes from [eidGreeting].
+  final IslamicOccasion? eid;
+
+  /// The starting letter in the app language.
+  String text() => eid == null
+      ? body.tr
+      : '${eidGreeting(eid!)}\n\n${'This year I am grateful for…'.tr}';
   final Mood mood;
   final DateTime Function(DateTime now) unlockAt;
 }
+
+/// Eid greetings, offered only when Ramadan and Eid features are on.
+final _eidTemplates = <_CapsuleTemplate>[
+  _CapsuleTemplate(
+    emoji: '🌙',
+    title: 'Eid al-Fitr greeting',
+    body: '',
+    eid: IslamicOccasion.eidAlFitr,
+    mood: Mood.joy,
+    unlockAt: (now) => nextOccasionStart(IslamicOccasion.eidAlFitr, now),
+  ),
+  _CapsuleTemplate(
+    emoji: '✨',
+    title: 'Eid al-Adha greeting',
+    body: '',
+    eid: IslamicOccasion.eidAlAdha,
+    mood: Mood.joy,
+    unlockAt: (now) => nextOccasionStart(IslamicOccasion.eidAlAdha, now),
+  ),
+];
 
 final _capsuleTemplates = <_CapsuleTemplate>[
   _CapsuleTemplate(
@@ -681,7 +724,10 @@ class _CapsuleTemplates extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
             children: [
-              for (final template in _capsuleTemplates)
+              for (final template in [
+                ..._capsuleTemplates,
+                if (AppSettings.instance.islamic) ..._eidTemplates,
+              ])
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: Space.xs),
                   child: Pressable(

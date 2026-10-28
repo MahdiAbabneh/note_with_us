@@ -7,6 +7,7 @@ import '../../core/insights.dart';
 import '../../core/l10n.dart';
 import '../../core/prompts.dart';
 import '../../core/reminders.dart';
+import '../../core/settings.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
@@ -15,6 +16,7 @@ import '../capsules/capsule_card.dart';
 import '../compose/compose_screen.dart';
 import '../insights/your_week_screen.dart';
 import '../messages/people_screen.dart';
+import '../islamic/occasion_card.dart';
 import '../notes/note_card.dart';
 import '../together/group_capsules_screen.dart';
 import '../together/notebooks_screen.dart';
@@ -77,6 +79,7 @@ class _TodayScreenState extends State<TodayScreen> {
         DraftStore.instance,
         PromptState.instance,
         PastSelfState.instance,
+        AppSettings.instance,
         Reminders.instance,
       ]),
       builder: (context, _) => CustomScrollView(
@@ -85,7 +88,9 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
         slivers: [
           if (_session.isGuest) const SliverToBoxAdapter(child: _GuestBanner()),
-          const SliverToBoxAdapter(child: _PromptCard()),
+          const SliverToBoxAdapter(child: OccasionCard()),
+          if (!ramadanPromptShows(DateTime.now()))
+            const SliverToBoxAdapter(child: _PromptCard()),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(child: _CircleQuestion(stream: _circle)),
           if (!_session.isGuest && _session.circle.isNotEmpty)

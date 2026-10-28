@@ -570,6 +570,39 @@ const Map<String, String> arabicStrings = {
   'Dates follow the Umm al-Qura calendar. If your country starts the month a day earlier or later, adjust it here.':
       'التواريخ حسب تقويم أم القرى. إذا كان بلدك يبدأ الشهر قبل يوم أو بعده، عدّل ذلك هنا.',
   'Today: {date}': 'اليوم: {date}',
+  // Ramadan and Eid
+  'Ramadan': 'رمضان',
+  'Eid al-Fitr': 'عيد الفطر',
+  'Day of Arafah': 'يوم عرفة',
+  'Eid al-Adha': 'عيد الأضحى',
+  'Islamic New Year': 'رأس السنة الهجرية',
+  'Eid Mubarak! Wishing you a blessed Eid al-Adha.':
+      'عيد أضحى مبارك! كل عام وأنتم بخير.',
+  'Eid Mubarak! Taqabbal Allahu minna wa minkum.':
+      'عيد مبارك! تقبّل الله منا ومنكم.',
+  'This year I am grateful for…': 'هذا العام أنا ممتن لـ…',
+  'Eid al-Fitr greeting': 'تهنئة عيد الفطر',
+  'Eid al-Adha greeting': 'تهنئة عيد الأضحى',
+  'Ramadan · day {n}': 'رمضان · اليوم {n}',
+  'Your Ramadan': 'رمضانك',
+  'Eid Mubarak!': 'عيد مبارك!',
+  'Share a greeting with the people you love.': 'شارك تهنئة مع من تحب.',
+  'Write an Eid note': 'اكتب ملاحظة العيد',
+  'Look back at Ramadan {year}': 'انظر إلى رمضان {year}',
+  'Open': 'افتح',
+  'Ramadan {year}': 'رمضان {year}',
+  'DAY BY DAY': 'يومًا بيوم',
+  'Days written': 'أيام الكتابة',
+  'Longest streak': 'أطول سلسلة',
+  'Most felt': 'الأكثر شعورًا',
+  'Keep writing. Every day counts.': 'واصل الكتابة. كل يوم له قيمة.',
+  'Ramadan Mubarak. Taqabbal Allahu minna wa minkum.':
+      'رمضان مبارك. تقبّل الله منا ومنكم.',
+  'You have not written this Ramadan yet.': 'لم تكتب في هذا رمضان بعد.',
+  'Ramadan has not started yet.': 'لم يبدأ رمضان بعد.',
+  'Ramadan and Eid': 'رمضان والعيد',
+  'Daily Ramadan prompts, Eid greetings and Eid capsule dates':
+      'أسئلة رمضان اليومية وتهاني العيد وتواريخ كبسولات العيد',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',
