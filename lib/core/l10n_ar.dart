@@ -542,6 +542,21 @@ const Map<String, String> arabicStrings = {
   'No notes with this tag': 'لا توجد ملاحظات بهذا الوسم',
   'Add #{tag} to a note and it shows up here.':
       'أضف #{tag} إلى ملاحظة وستظهر هنا.',
+  // PDF export
+  'My notes': 'ملاحظاتي',
+  'Export as PDF': 'تصدير PDF',
+  'Create PDF': 'إنشاء PDF',
+  'A book of everything you wrote, with the date and mood. It includes private, circle and public notes.':
+      'كتاب بكل ما كتبته، مع التاريخ والمزاج. يشمل الملاحظات الخاصة وملاحظات الدائرة والعامة.',
+  'Only notes tagged #{tag}.': 'الملاحظات الموسومة بـ #{tag} فقط.',
+  'Last 30 days': 'آخر 30 يومًا',
+  'This year': 'هذا العام',
+  'Everything': 'كل شيء',
+  'Emoji can’t be printed in the PDF, so they are left out.':
+      'لا يمكن طباعة الإيموجي في ملف PDF، لذلك تُحذف.',
+  'No notes to export for this choice.':
+      'لا توجد ملاحظات للتصدير بهذا الاختيار.',
+  'Couldn’t create the PDF': 'تعذّر إنشاء ملف PDF',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

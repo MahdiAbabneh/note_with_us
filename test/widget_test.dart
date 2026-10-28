@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart' show Brightness, TextDirection;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mahdeko/core/format.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mahdeko/core/insights.dart';
+import 'package:mahdeko/core/journal_pdf.dart';
 import 'package:mahdeko/data/models.dart';
 import 'package:mahdeko/design/tokens.dart';
 import 'package:mahdeko/core/l10n.dart';
@@ -427,6 +431,82 @@ void main() {
       expect(counts.map((e) => '${e.key}:${e.value}'), ['work:3', 'family:1']);
       expect(hasTag(n('x #Family'), 'FAMILY'), isTrue);
       expect(hasTag(n('x family'), 'family'), isFalse);
+    });
+  });
+
+  group('pdf export', () {
+    final now = DateTime(2026, 10, 28, 12);
+    Note note(DateTime time, String text, {bool archived = false}) => Note(
+      id: '${time.millisecondsSinceEpoch}',
+      audience: Audience.private,
+      text: text,
+      images: const [],
+      time: time,
+      ownerId: 'me',
+      ownerName: 'Me',
+      ownerImage: '',
+      archived: archived,
+    );
+
+    test('picks the notes of the range, oldest first, without archived', () {
+      final recent = note(DateTime(2026, 10, 20), 'recent');
+      final spring = note(DateTime(2026, 3, 1), 'spring');
+      final lastYear = note(DateTime(2025, 12, 31), 'last year');
+      final hidden = note(DateTime(2026, 10, 21), 'hidden', archived: true);
+      final blank = note(DateTime(2026, 10, 22), '   ');
+      final all = [recent, hidden, lastYear, blank, spring];
+      expect(notesForExport(all, ExportRange.everything, now), [
+        lastYear,
+        spring,
+        recent,
+      ]);
+      expect(notesForExport(all, ExportRange.thisYear, now), [spring, recent]);
+      expect(notesForExport(all, ExportRange.last30Days, now), [recent]);
+    });
+
+    test('leaves emoji out because the PDF font cannot print them', () {
+      expect(
+        stripEmoji('Great day 😀❤️ with family 👨‍👩‍👧'),
+        'Great day with family ',
+      );
+      expect(stripEmoji('اليوم جميل 🌿'), 'اليوم جميل ');
+      expect(stripEmoji('Plain #tag text.'), 'Plain #tag text.');
+    });
+
+    test('builds a PDF in English and Arabic from the bundled font', () async {
+      await initializeDateFormatting();
+      final font = File('assets/fonts/NotoNaskhArabic.ttf').readAsBytesSync();
+      final notes = [
+        note(DateTime(2026, 9, 3, 9), 'First day back at work #work'),
+        note(
+          DateTime(2026, 10, 2, 22),
+          'اليوم كان يومًا جميلًا مع العائلة #عائلة',
+        ),
+        note(
+          DateTime(2026, 10, 10, 8),
+          List.filled(400, 'long note').join(' '),
+        ),
+      ];
+      for (final arabic in [false, true]) {
+        L10n.arabic = arabic;
+        final bytes = await buildJournalPdf(
+          notes: notes,
+          authorName: 'Mahdi',
+          fontData: font,
+          now: now,
+        );
+        expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+        expect(bytes.length, greaterThan(5000));
+      }
+      L10n.arabic = false;
+      // An empty export still produces a valid cover page.
+      final empty = await buildJournalPdf(
+        notes: const [],
+        authorName: 'Mahdi',
+        fontData: font,
+        now: now,
+      );
+      expect(String.fromCharCodes(empty.take(5)), '%PDF-');
     });
   });
 

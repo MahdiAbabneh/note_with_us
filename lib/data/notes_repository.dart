@@ -65,6 +65,22 @@ class NotesRepository {
                 s.docs.map((d) => Note.fromDoc(d, Audience.private)).toList(),
           );
 
+  /// Everything [uid] wrote (private, circle and public), read once and
+  /// newest first. Used by the PDF export, so it has no limit.
+  Future<List<Note>> allMine(String uid) async {
+    final results = await Future.wait([
+      _collection(Audience.private, uid).get(),
+      _db.collection('circlePosts').where('audience', arrayContains: uid).get(),
+      _db.collection('postsMain').where('ownerId', isEqualTo: uid).get(),
+    ]);
+    return _sorted([
+      for (final d in results[0].docs) Note.fromDoc(d, Audience.private),
+      for (final d in results[1].docs)
+        if (d.data()['ownerId'] == uid) Note.fromDoc(d, Audience.circle),
+      for (final d in results[2].docs) Note.fromDoc(d, Audience.everyone),
+    ]);
+  }
+
   /// Public notes written by [uid].
   Stream<List<Note>> publicBy(String uid) => _db
       .collection('postsMain')

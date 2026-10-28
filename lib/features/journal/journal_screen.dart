@@ -9,6 +9,7 @@ import '../../data/session.dart';
 import '../../design/design.dart';
 import '../capsules/capsule_card.dart';
 import '../compose/compose_screen.dart';
+import 'export_sheet.dart';
 import '../notes/note_card.dart';
 
 /// Which Memories segment is showing (0 notes, 1 capsules, 2 favorites); lets a
@@ -84,6 +85,12 @@ class _JournalScreenState extends State<JournalScreen> {
           overline: 'Just for you'.tr,
           title: 'Memories'.tr,
           actions: [
+            if (_tab == 0)
+              CircleIconButton(
+                icon: CupertinoIcons.square_arrow_up,
+                semanticLabel: 'Export as PDF'.tr,
+                onPressed: () => showExportSheet(context, tag: _tag),
+              ),
             if (_tab == 0)
               CircleIconButton(
                 icon: _searching ? CupertinoIcons.xmark : CupertinoIcons.search,

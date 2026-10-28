@@ -55,6 +55,8 @@ dependencies:
   flutter_local_notifications: ^22.3.3
   timezone: ^0.11.2
   flutter_timezone: ^5.1.1
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 
 
@@ -99,6 +101,9 @@ flutter:
   assets:
     - assets/images/
     - assets/sample.mp3
+    # Used only to print the PDF export (it has every Arabic letter form).
+    - assets/fonts/NotoNaskhArabic.ttf
+    - assets/fonts/OFL-NotoNaskhArabic.txt
   fonts:
     - family: mali
       fonts:
