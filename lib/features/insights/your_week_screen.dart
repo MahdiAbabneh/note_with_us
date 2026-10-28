@@ -11,6 +11,7 @@ import '../../design/design.dart';
 import '../compose/compose_screen.dart';
 import 'calendar_screen.dart';
 import 'garden_screen.dart';
+import 'patterns_screen.dart';
 
 /// A calm look back at the last week: which days you wrote, how you felt,
 /// and your moods over the month. Computed on the phone from your notes.
@@ -72,6 +73,8 @@ class _YourWeekScreenState extends State<YourWeekScreen> {
                       const _CalendarLink(),
                       const SizedBox(height: Space.sm),
                       const _GardenLink(),
+                      const SizedBox(height: Space.sm),
+                      const _PatternsLink(),
                       const SizedBox(height: Space.xl),
                       _Milestones(milestones: milestonesFor(snap.data!)),
                     ]
@@ -406,6 +409,18 @@ class _CalendarLink extends StatelessWidget {
     title: 'Calendar'.tr,
     subtitle: 'See every month, day by day'.tr,
     builder: (_) => const CalendarScreen(),
+  );
+}
+
+class _PatternsLink extends StatelessWidget {
+  const _PatternsLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.chart_bar_alt_fill,
+    title: 'Your patterns'.tr,
+    subtitle: 'What your notes say about you'.tr,
+    builder: (_) => const PatternsScreen(),
   );
 }
 

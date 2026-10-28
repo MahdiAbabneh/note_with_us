@@ -633,6 +633,29 @@ const Map<String, String> arabicStrings = {
       'اختر رسالة. تظهر في شاشة «اليوم» لديه صباح الغد.',
   'Send a hug': 'أرسل حضنًا',
   'Hug sent': 'تم إرسال الحضن',
+  // Patterns
+  'Your patterns': 'أنماطك',
+  'What your notes say about you': 'ماذا تقول ملاحظاتك عنك',
+  'Patterns need a few more notes': 'الأنماط تحتاج ملاحظات أكثر قليلًا',
+  '{n} of {total} notes so far. Keep writing and they will appear.':
+      '{n} من {total} ملاحظات حتى الآن. واصل الكتابة وستظهر.',
+  'How you feel through the week': 'كيف تشعر خلال الأسبوع',
+  'No weekday stands out yet.': 'لا يوجد يوم يبرز بعد.',
+  'You tend to feel {mood} on {day}.': 'تميل إلى الشعور بـ {mood} يوم {day}.',
+  'When you write': 'متى تكتب',
+  'Morning': 'الصباح',
+  'Afternoon': 'بعد الظهر',
+  'Evening': 'المساء',
+  'Night': 'الليل',
+  'You write most in the {part}.': 'تكتب أكثر في {part}.',
+  'Words you reach for': 'كلمات تستخدمها كثيرًا',
+  'Lately': 'مؤخرًا',
+  'Lately you have felt {mood} again, as in the month before.':
+      'مؤخرًا شعرت بـ {mood} مجددًا، كما في الشهر الذي قبله.',
+  'Lately you have felt more {mood}. Before that it was {before}.':
+      'مؤخرًا شعرت أكثر بـ {mood}. وقبل ذلك كان {before}.',
+  'Worked out on your phone from your own notes. Nothing is sent anywhere.':
+      'تُحسب على هاتفك من ملاحظاتك. لا يُرسل شيء إلى أي مكان.',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

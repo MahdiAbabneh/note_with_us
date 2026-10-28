@@ -15,6 +15,7 @@ import 'package:mahdeko/data/models.dart';
 import 'package:mahdeko/design/tokens.dart';
 import 'package:mahdeko/core/l10n.dart';
 import 'package:mahdeko/core/l10n_ar.dart';
+import 'package:mahdeko/core/patterns.dart';
 import 'package:mahdeko/core/prefs.dart';
 import 'package:mahdeko/core/prompts.dart';
 import 'package:mahdeko/core/tags.dart';
@@ -783,6 +784,90 @@ void main() {
       )!;
       expect(next.text, isNot(first.text));
       expect(pickComfort(const [], const [], 'me', now, Random(1)), isNull);
+    });
+  });
+
+  group('patterns', () {
+    final now = DateTime(2026, 10, 28, 12);
+    Note n(DateTime time, String text, Mood mood) => Note(
+      id: '${time.millisecondsSinceEpoch}$text',
+      audience: Audience.private,
+      text: text,
+      images: const [],
+      time: time,
+      ownerId: 'me',
+      ownerName: 'Me',
+      ownerImage: '',
+      mood: mood,
+    );
+
+    test('parts of the day', () {
+      expect(dayPartOf(DateTime(2026, 1, 1, 6)), DayPart.morning);
+      expect(dayPartOf(DateTime(2026, 1, 1, 13)), DayPart.afternoon);
+      expect(dayPartOf(DateTime(2026, 1, 1, 19)), DayPart.evening);
+      expect(dayPartOf(DateTime(2026, 1, 1, 23)), DayPart.night);
+      expect(dayPartOf(DateTime(2026, 1, 1, 2)), DayPart.night);
+    });
+
+    test('finds the usual mood of a weekday, only with enough notes', () {
+      // Fridays are 2, 9, 16 October 2026; Mondays are 5 and 12.
+      final notes = [
+        n(DateTime(2026, 10, 2, 9), 'Friday one', Mood.calm),
+        n(DateTime(2026, 10, 9, 9), 'Friday two', Mood.calm),
+        n(DateTime(2026, 10, 16, 9), 'Friday three', Mood.joy),
+        n(DateTime(2026, 10, 5, 9), 'Monday one', Mood.blue),
+        n(DateTime(2026, 10, 12, 9), 'Monday two', Mood.blue),
+      ];
+      final p = Patterns.from(notes, now);
+      expect(
+        p.weekdays.map(
+          (w) => '${w.weekday}:${w.mood.id}:${w.count}/${w.total}',
+        ),
+        ['5:calm:2/3'],
+      );
+      expect(p.standouts.single.weekday, DateTime.friday);
+    });
+
+    test('counts when you write and the words you reach for', () {
+      final notes = [
+        n(
+          DateTime(2026, 10, 1, 22),
+          'Coffee with my mother and #family. Coffee again.',
+          Mood.calm,
+        ),
+        n(
+          DateTime(2026, 10, 2, 23),
+          'Long walk, coffee, and the sea',
+          Mood.joy,
+        ),
+        n(DateTime(2026, 10, 3, 8), 'قهوة مع أمي، قهوة الصباح', Mood.love),
+        n(DateTime(2026, 10, 4, 14), 'قهوة', Mood.plain),
+      ];
+      final p = Patterns.from(notes, now);
+      expect(p.notes, 4);
+      expect(p.busiestPart, DayPart.night);
+      expect(p.dayParts[DayPart.morning], 1);
+      final words = {for (final e in p.topWords) e.key: e.value};
+      expect(words['coffee'], 3);
+      expect(words['قهوة'], 3);
+      // Tags, short and common words are left out.
+      expect(words.containsKey('family'), isFalse);
+      expect(words.containsKey('the'), isFalse);
+      expect(words.containsKey('with'), isFalse);
+      expect(p.enough, isFalse);
+    });
+
+    test('compares the last 30 days with the 30 before', () {
+      final notes = [
+        for (var d = 1; d <= 4; d++)
+          n(DateTime(2026, 10, d + 10, 9), 'recent $d', Mood.joy),
+        for (var d = 1; d <= 4; d++)
+          n(DateTime(2026, 9, d + 5, 9), 'older $d', Mood.blue),
+      ];
+      final p = Patterns.from(notes, now);
+      expect(p.lately, Mood.joy);
+      expect(p.before, Mood.blue);
+      expect(Patterns.from(const [], now).lately, isNull);
     });
   });
 
