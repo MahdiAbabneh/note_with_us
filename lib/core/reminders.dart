@@ -11,6 +11,18 @@ import 'package:timezone/timezone.dart' as tz;
 import 'l10n.dart';
 import 'prefs.dart';
 
+/// Why turning a reminder on did not work, so the app can say so.
+enum ReminderProblem {
+  /// Notifications could not be set up at startup.
+  unavailable,
+
+  /// The user (or the OS) refused permission.
+  permissionDenied,
+
+  /// Permission was fine but scheduling failed.
+  failed,
+}
+
 /// Where a tapped notification should take the user.
 enum ReminderTarget { write, capsules }
 
@@ -36,6 +48,12 @@ class Reminders extends ChangeNotifier {
 
   /// Set when the user taps a notification; the home shell routes it.
   final ValueNotifier<ReminderTarget?> openRequest = ValueNotifier(null);
+
+  /// Set when the last attempt to turn something on failed.
+  ReminderProblem? lastProblem;
+
+  /// Technical detail of the last failure, shown only in debug builds.
+  String? lastDetail;
 
   bool get dailyEnabled => Prefs.getBool('reminderOn') ?? false;
   bool get capsuleAlerts => Prefs.getBool('capsuleAlerts') ?? true;
@@ -79,6 +97,7 @@ class Reminders extends ChangeNotifier {
       }
       _ready = true;
     } catch (error, stack) {
+      lastDetail = '$error';
       developer.log(
         'Reminders unavailable',
         name: 'note_with_us.reminders',
@@ -96,24 +115,36 @@ class Reminders extends ChangeNotifier {
 
   /// Asks the OS for permission; returns whether notifications may show.
   Future<bool> requestPermission() async {
-    if (!_ready) return false;
-    final ios = _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    if (ios != null) {
-      return await ios.requestPermissions(
-            alert: true,
-            badge: false,
-            sound: true,
-          ) ??
-          false;
+    if (!_ready) {
+      lastProblem = ReminderProblem.unavailable;
+      return false;
     }
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    return await android?.requestNotificationsPermission() ?? true;
+    try {
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final granted = ios != null
+          ? await ios.requestPermissions(alert: true, badge: false, sound: true)
+          : await android?.requestNotificationsPermission();
+      if (granted ?? ios == null) return true;
+      lastProblem = ReminderProblem.permissionDenied;
+      return false;
+    } catch (error, stack) {
+      lastProblem = ReminderProblem.failed;
+      lastDetail = '$error';
+      developer.log(
+        'Notification permission request failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
+      );
+      return false;
+    }
   }
 
   /// Turns the daily reminder on or off. Returns false if permission was
@@ -121,7 +152,22 @@ class Reminders extends ChangeNotifier {
   Future<bool> setDaily(bool on) async {
     if (on && !await requestPermission()) return false;
     await Prefs.setBool('reminderOn', on);
-    await _rescheduleDaily();
+    try {
+      await _rescheduleDaily();
+    } catch (error, stack) {
+      // Scheduling failed: leave the reminder off rather than pretend.
+      await Prefs.setBool('reminderOn', false);
+      lastProblem = ReminderProblem.failed;
+      lastDetail = '$error';
+      developer.log(
+        'Scheduling the daily reminder failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
+      );
+      notifyListeners();
+      return false;
+    }
     notifyListeners();
     return true;
   }

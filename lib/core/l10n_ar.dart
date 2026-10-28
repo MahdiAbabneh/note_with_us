@@ -535,6 +535,10 @@ const Map<String, String> arabicStrings = {
   'Your turn in {n} notebooks ✍️': 'دورك في {n} دفاتر ✍️',
   'Waiting for their page': 'بانتظار صفحتهم',
   'Take turns writing with one person': 'تبادل الكتابة مع شخص واحد',
+  'Notifications aren’t available right now. Restart the app and try again.':
+      'الإشعارات غير متاحة الآن. أعد تشغيل التطبيق وحاول مجددًا.',
+  'Couldn’t set up the reminder. Try again.':
+      'تعذّر إعداد التذكير. حاول مرة أخرى.',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

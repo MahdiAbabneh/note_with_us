@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart' show DateFormat;
@@ -621,18 +622,27 @@ Future<void> _deleteAccount(BuildContext context) async {
 class _NotificationSettings extends StatelessWidget {
   const _NotificationSettings();
 
+  /// Says why a switch snapped back; debug builds add the raw error.
+  static String _problem() {
+    final reminders = Reminders.instance;
+    final message = switch (reminders.lastProblem) {
+      ReminderProblem.unavailable =>
+        'Notifications aren’t available right now. Restart the app and try again.',
+      ReminderProblem.failed => 'Couldn’t set up the reminder. Try again.',
+      _ => 'Allow notifications in Settings',
+    }.tr;
+    final detail = reminders.lastDetail;
+    return kDebugMode && detail != null ? '$message\n$detail' : message;
+  }
+
   Future<void> _toggleDaily(BuildContext context, bool on) async {
     final ok = await Reminders.instance.setDaily(on);
-    if (!ok && context.mounted) {
-      showToast(context, 'Allow notifications in Settings'.tr, error: true);
-    }
+    if (!ok && context.mounted) showToast(context, _problem(), error: true);
   }
 
   Future<void> _toggleCapsules(BuildContext context, bool on) async {
     final ok = await Reminders.instance.setCapsuleAlerts(on);
-    if (!ok && context.mounted) {
-      showToast(context, 'Allow notifications in Settings'.tr, error: true);
-    }
+    if (!ok && context.mounted) showToast(context, _problem(), error: true);
   }
 
   Future<void> _pickTime(BuildContext context) async {
@@ -749,6 +759,8 @@ class _PermissionSwitchState extends State<_PermissionSwitch> {
     setState(() => _pending = on);
     try {
       await widget.onChanged(on);
+    } catch (_) {
+      if (mounted) showToast(context, 'Something went wrong'.tr, error: true);
     } finally {
       if (mounted) setState(() => _pending = null);
     }
