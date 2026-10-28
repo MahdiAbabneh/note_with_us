@@ -9,6 +9,7 @@ import 'package:mahdeko/core/l10n.dart';
 import 'package:mahdeko/core/l10n_ar.dart';
 import 'package:mahdeko/core/prefs.dart';
 import 'package:mahdeko/core/prompts.dart';
+import 'package:mahdeko/core/tags.dart';
 import 'package:mahdeko/design/components/content_text.dart';
 
 void main() {
@@ -383,6 +384,49 @@ void main() {
       );
       final old = note(DateTime(2026, 1, 2), Mood.joy);
       expect(noteOfTheDay([old], now), same(old));
+    });
+  });
+
+  group('tags', () {
+    test('finds #tags in English and Arabic, once each, lower-cased', () {
+      expect(extractTags('Dinner with #Family and #عائلة, #family again'), [
+        'family',
+        'عائلة',
+      ]);
+    });
+
+    test('ignores lone hashes, numbers and tags glued to a word', () {
+      expect(extractTags('# alone, #123, issue#4, ##double, a#b'), isEmpty);
+      expect(extractTags('(#work) and "#goals".'), ['work', 'goals']);
+    });
+
+    test('splitTags keeps every character', () {
+      const text = 'Hello #family, bye #work';
+      final parts = splitTags(text);
+      expect(parts.map((p) => p.text).join(), text);
+      expect(parts.where((p) => p.isTag).map((p) => p.tag), ['family', 'work']);
+    });
+
+    test('counts tags across notes, most used first', () {
+      Note n(String text) => Note(
+        id: text,
+        audience: Audience.private,
+        text: text,
+        images: const [],
+        time: DateTime(2026, 10, 1),
+        ownerId: 'me',
+        ownerName: 'Me',
+        ownerImage: '',
+      );
+      final counts = tagCounts([
+        n('a #work'),
+        n('b #family #work'),
+        n('c #work #work'),
+        n('d'),
+      ]);
+      expect(counts.map((e) => '${e.key}:${e.value}'), ['work:3', 'family:1']);
+      expect(hasTag(n('x #Family'), 'FAMILY'), isTrue);
+      expect(hasTag(n('x family'), 'family'), isFalse);
     });
   });
 

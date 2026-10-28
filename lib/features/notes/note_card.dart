@@ -11,6 +11,7 @@ import '../../design/design.dart';
 import '../auth/join_sheet.dart';
 import '../profile/user_profile_screen.dart';
 import 'note_detail_screen.dart';
+import 'tag_notes_screen.dart';
 
 /// A note rendered as a sheet of mood-tinted paper.
 class NoteCard extends StatelessWidget {
@@ -78,8 +79,16 @@ class NoteCard extends StatelessWidget {
             const SizedBox(height: Space.sm),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: Space.xs),
-              child: ContentText(
+              child: TaggedText(
                 note.text,
+                // Tapping a tag of your own note lists your notes with it.
+                onTag: preview || note.ownerId != Session.instance.uid
+                    ? null
+                    : (tag) => Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => TagNotesScreen(tag: tag),
+                        ),
+                      ),
                 maxLines: inDetail ? null : 9,
                 overflow: inDetail ? null : TextOverflow.fade,
                 style: inDetail

@@ -7,6 +7,7 @@ import '../../core/drafts.dart';
 import '../../core/format.dart';
 import '../../core/insights.dart';
 import '../../core/prompts.dart';
+import '../../core/tags.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
@@ -147,6 +148,25 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
+  /// Puts `#tag ` where the cursor is (or at the end).
+  void _insertTag(String tag) {
+    HapticFeedback.selectionClick();
+    final value = _text.value;
+    final at = value.selection.isValid
+        ? value.selection.end
+        : value.text.length;
+    final before = value.text.substring(0, at);
+    final after = value.text.substring(at);
+    final gap = before.isEmpty || before.endsWith(' ') || before.endsWith('\n')
+        ? ''
+        : ' ';
+    final insert = '$gap#$tag ';
+    _text.value = TextEditingValue(
+      text: '$before$insert$after',
+      selection: TextSelection.collapsed(offset: before.length + insert.length),
+    );
+  }
+
   void _setMood(Mood mood) {
     setState(() => _mood = mood);
     _saveDraft();
@@ -274,6 +294,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       if (!mounted) return;
       _posted = true;
       DraftStore.instance.clear();
+      RecentTags.record(_text.text);
       if (!_isCapsule) PromptState.instance.noteAnswered(_prompt);
       final streak = _isCapsule ? 0 : await _currentStreak(me.uid);
       if (!mounted) return;
@@ -382,6 +403,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 ],
               ),
             ),
+            if (!_isCapsule) _TagBar(text: _text.text, onTag: _insertTag),
             _MoodBar(value: _mood, onChanged: _setMood),
           ],
         ),
@@ -859,6 +881,58 @@ class _DateChip extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One-tap `#tags` under the text: the ones you used lately, then a few
+/// starters.
+class _TagBar extends StatelessWidget {
+  const _TagBar({required this.text, required this.onTag});
+
+  final String text;
+  final ValueChanged<String> onTag;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final tags = tagSuggestions(text);
+    if (tags.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.gutter,
+          vertical: 4,
+        ),
+        children: [
+          for (final tag in tags)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6),
+              child: Pressable(
+                onTap: () => onTag(tag),
+                scale: 0.92,
+                semanticLabel: '#$tag',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: c.accentSoft,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: context.text.caption.copyWith(
+                      color: c.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

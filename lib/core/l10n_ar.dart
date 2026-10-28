@@ -539,6 +539,9 @@ const Map<String, String> arabicStrings = {
       'الإشعارات غير متاحة الآن. أعد تشغيل التطبيق وحاول مجددًا.',
   'Couldn’t set up the reminder. Try again.':
       'تعذّر إعداد التذكير. حاول مرة أخرى.',
+  'No notes with this tag': 'لا توجد ملاحظات بهذا الوسم',
+  'Add #{tag} to a note and it shows up here.':
+      'أضف #{tag} إلى ملاحظة وستظهر هنا.',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',
