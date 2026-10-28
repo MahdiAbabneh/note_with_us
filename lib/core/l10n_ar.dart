@@ -612,6 +612,17 @@ const Map<String, String> arabicStrings = {
   'A reminder the day before a friend’s birthday':
       'تذكير قبل يوم من عيد ميلاد صديق',
   'Birthdays': 'أعياد الميلاد',
+  // Comfort box
+  'Remove from comfort box': 'أزل من صندوق المواساة',
+  'Keep for hard days': 'احتفظ بها للأيام الصعبة',
+  'Removed from your comfort box': 'أُزيلت من صندوق المواساة',
+  'Kept for hard days 🤍': 'محفوظة للأيام الصعبة 🤍',
+  'A little something for a hard day': 'شيء صغير ليوم صعب',
+  'You’re not alone in this. Here is something to hold on to.':
+      'لست وحدك. إليك شيئًا تتمسك به.',
+  'From you, {date}': 'منك، {date}',
+  'Another one': 'واحدة أخرى',
+  'Thank you': 'شكرًا',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

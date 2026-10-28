@@ -18,6 +18,7 @@ import '../compose/compose_screen.dart';
 import '../insights/your_week_screen.dart';
 import '../messages/people_screen.dart';
 import '../capsules/morning_note_sheet.dart';
+import '../comfort/comfort_sheet.dart';
 import '../islamic/occasion_card.dart';
 import '../messages/chat_screen.dart';
 import '../notes/note_card.dart';
@@ -714,11 +715,18 @@ class _MoodRow extends StatelessWidget {
               final mood = moods[i];
               return Pressable(
                 semanticLabel: mood.label.tr,
-                onTap: () => openComposer(
-                  context,
-                  target: ComposeTarget.private,
-                  mood: mood,
-                ),
+                onTap: () async {
+                  // A hard day first gets something kind to read.
+                  if (mood == Mood.blue && !Session.instance.isGuest) {
+                    await showComfortSheet(context);
+                    if (!context.mounted) return;
+                  }
+                  openComposer(
+                    context,
+                    target: ComposeTarget.private,
+                    mood: mood,
+                  );
+                },
                 child: Container(
                   width: 68,
                   decoration: BoxDecoration(

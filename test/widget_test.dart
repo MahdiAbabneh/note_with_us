@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/widgets.dart' show Brightness, TextDirection;
 import 'package:flutter_test/flutter_test.dart';
@@ -653,6 +654,135 @@ void main() {
         reminderTimeFor(DateTime(1990, 1, 1), DateTime(2026, 12, 31, 8)),
         DateTime(2026, 12, 31, 9),
       );
+    });
+  });
+
+  group('comfort box', () {
+    final now = DateTime(2026, 10, 27, 20);
+    Note note(
+      String text,
+      Mood mood,
+      DateTime time, {
+      bool comfort = false,
+      bool archived = false,
+    }) => Note(
+      id: text,
+      audience: Audience.private,
+      text: text,
+      images: const [],
+      time: time,
+      ownerId: 'me',
+      ownerName: 'Me',
+      ownerImage: '',
+      mood: mood,
+      comfort: comfort,
+      archived: archived,
+    );
+    Capsule capsule({
+      String kind = morningKind,
+      bool opened = true,
+      String owner = 'sam',
+      String text = 'You are loved.',
+    }) => Capsule(
+      id: 'c$kind$owner$opened',
+      ownerId: owner,
+      ownerName: owner,
+      ownerImage: '',
+      recipientId: 'me',
+      recipientName: 'Me',
+      text: text,
+      mood: Mood.joy,
+      createdAt: now,
+      unlockAt: now.subtract(const Duration(days: 1)),
+      opened: opened,
+      kind: kind,
+    );
+
+    test('kept notes and friends\' opened morning notes come first', () {
+      final kept = note(
+        'Kept for a hard day',
+        Mood.joy,
+        DateTime(2026, 5, 1),
+        comfort: true,
+      );
+      final happy = note(
+        'A happy day long ago, remembered.',
+        Mood.joy,
+        DateTime(2026, 1, 1),
+      );
+      final friend = capsule();
+      final seen = <String>{};
+      for (var seed = 0; seed < 30; seed++) {
+        final item = pickComfort(
+          [kept, happy],
+          [friend],
+          'me',
+          now,
+          Random(seed),
+        )!;
+        seen.add(item.text);
+      }
+      expect(seen, {'Kept for a hard day', 'You are loved.'});
+    });
+
+    test('ignores unopened, normal and own capsules and archived notes', () {
+      final item = pickComfort(
+        [
+          note(
+            'Archived comfort',
+            Mood.joy,
+            DateTime(2026, 5, 1),
+            comfort: true,
+            archived: true,
+          ),
+        ],
+        [capsule(opened: false), capsule(kind: ''), capsule(owner: 'me')],
+        'me',
+        now,
+        Random(1),
+      );
+      expect(item, isNull);
+    });
+
+    test('falls back to an older happy note, and offers another one', () {
+      final a = note(
+        'A happy day long ago, remembered A.',
+        Mood.joy,
+        DateTime(2026, 1, 1),
+      );
+      final b = note(
+        'A happy day long ago, remembered B.',
+        Mood.love,
+        DateTime(2026, 2, 1),
+      );
+      final recent = note(
+        'A happy day just now, remembered.',
+        Mood.joy,
+        DateTime(2026, 10, 26),
+      );
+      final blue = note(
+        'A sad day long ago, remembered...',
+        Mood.blue,
+        DateTime(2026, 1, 1),
+      );
+      final first = pickComfort(
+        [a, b, recent, blue],
+        const [],
+        'me',
+        now,
+        Random(3),
+      )!;
+      expect(first.text, anyOf(a.text, b.text));
+      final next = pickComfort(
+        [a, b, recent, blue],
+        const [],
+        'me',
+        now,
+        Random(3),
+        except: first,
+      )!;
+      expect(next.text, isNot(first.text));
+      expect(pickComfort(const [], const [], 'me', now, Random(1)), isNull);
     });
   });
 

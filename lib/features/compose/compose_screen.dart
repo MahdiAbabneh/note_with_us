@@ -15,6 +15,7 @@ import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
+import '../comfort/comfort_sheet.dart';
 import '../notes/note_card.dart';
 
 /// Where a new piece of writing goes.
@@ -181,8 +182,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
+  bool _comfortOffered = false;
+
   void _setMood(Mood mood) {
     setState(() => _mood = mood);
+    if (mood == Mood.blue && !_comfortOffered && !_isCapsule) {
+      _comfortOffered = true;
+      showComfortSheet(context);
+    }
     _saveDraft();
   }
 

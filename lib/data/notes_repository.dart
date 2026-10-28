@@ -224,6 +224,9 @@ class NotesRepository {
   }
 
   /// Pins or unpins one of the owner's private notes.
+  Future<void> setComfort(Note note, {required bool comfort}) =>
+      _ref(note).update({'comfort': comfort});
+
   Future<void> setPinned(Note note, {required bool pinned}) =>
       _ref(note).update({'pinned': pinned});
 

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../data/models.dart';
 import '../design/tokens.dart';
 import 'format.dart';
@@ -353,4 +355,55 @@ List<Note> gardenNotes(Iterable<Note> notes, DateTime now, {int days = 30}) {
   final start = DateTime(now.year, now.month, now.day - (days - 1));
   return notes.where((n) => !n.archived && !n.time.isBefore(start)).toList()
     ..sort((a, b) => a.time.compareTo(b.time));
+}
+
+/// Something kind to read on a hard day.
+class ComfortItem {
+  const ComfortItem({required this.text, required this.time, this.fromName});
+
+  final String text;
+  final DateTime time;
+
+  /// Who wrote it when it came from a friend; null for your own note.
+  final String? fromName;
+}
+
+/// Picks a note for the comfort box: notes you kept for hard days and
+/// morning notes friends sent you come first; without any, an older
+/// happy note of yours. [except] avoids showing the same one twice.
+ComfortItem? pickComfort(
+  Iterable<Note> journal,
+  Iterable<Capsule> capsules,
+  String uid,
+  DateTime now,
+  Random random, {
+  ComfortItem? except,
+}) {
+  final kept = <ComfortItem>[
+    for (final n in journal)
+      if (!n.archived && n.comfort && n.text.trim().isNotEmpty)
+        ComfortItem(text: n.text, time: n.time),
+    for (final c in capsules)
+      if (c.isMorningNote &&
+          c.recipientId == uid &&
+          c.ownerId != uid &&
+          c.opened &&
+          c.text.trim().isNotEmpty)
+        ComfortItem(text: c.text, time: c.unlockAt, fromName: c.ownerName),
+  ];
+  final pool = kept.isNotEmpty
+      ? kept
+      : [
+          for (final n in journal)
+            if (!n.archived &&
+                n.text.trim().length >= 20 &&
+                (n.mood == Mood.joy || n.mood == Mood.love) &&
+                n.time.isBefore(now.subtract(const Duration(days: 3))))
+              ComfortItem(text: n.text, time: n.time),
+        ];
+  final choices = pool.length > 1 && except != null
+      ? pool.where((i) => i.text != except.text).toList()
+      : pool;
+  if (choices.isEmpty) return null;
+  return choices[random.nextInt(choices.length)];
 }

@@ -203,6 +203,10 @@ class _Header extends StatelessWidget {
           Icon(CupertinoIcons.pin_fill, size: 14, color: c.accent),
           const SizedBox(width: 6),
         ],
+        if (note.comfort) ...[
+          Icon(CupertinoIcons.heart_fill, size: 14, color: c.accent),
+          const SizedBox(width: 6),
+        ],
         ListenableBuilder(
           listenable: Session.instance,
           builder: (context, _) =>
@@ -524,6 +528,22 @@ void showNoteActions(
             context,
             () => session.notes.setArchived(note, archived: !note.archived),
             note.archived ? 'Note restored'.tr : 'Note archived'.tr,
+          ),
+        ),
+      if (mine && note.audience == Audience.private)
+        SheetAction(
+          icon: note.comfort
+              ? CupertinoIcons.heart_slash
+              : CupertinoIcons.heart,
+          label: note.comfort
+              ? 'Remove from comfort box'.tr
+              : 'Keep for hard days'.tr,
+          onTap: () => _run(
+            context,
+            () => session.notes.setComfort(note, comfort: !note.comfort),
+            note.comfort
+                ? 'Removed from your comfort box'.tr
+                : 'Kept for hard days 🤍'.tr,
           ),
         ),
       if (mine && note.audience == Audience.private)
