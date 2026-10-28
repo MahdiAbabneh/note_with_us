@@ -325,6 +325,51 @@ void main() {
       expect(garden, [edge, today]);
     });
 
+    test('a notebook for two alternates turns and knows the other person', () {
+      final notebook = SharedNotebook(
+        id: 'n',
+        ownerId: 'alice',
+        title: 'Us',
+        members: const ['alice', 'bob'],
+        memberNames: const {'alice': 'Alice', 'bob': 'Bob'},
+        createdAt: now,
+      );
+      expect(notebook.otherId('alice'), 'bob');
+      expect(notebook.otherId('bob'), 'alice');
+      // Nobody has written yet, so either person may start.
+      expect(notebook.isMyTurn('alice'), isTrue);
+      expect(notebook.isMyTurn('bob'), isTrue);
+      final after = SharedNotebook(
+        id: 'n',
+        ownerId: 'alice',
+        title: 'Us',
+        members: const ['alice', 'bob'],
+        memberNames: const {},
+        createdAt: now,
+        lastWriterId: 'alice',
+        entryCount: 1,
+      );
+      expect(after.isMyTurn('alice'), isFalse);
+      expect(after.isMyTurn('bob'), isTrue);
+    });
+
+    test('a circle capsule tracks who has written and when it opens', () {
+      GroupCapsule capsule(Duration opensIn) => GroupCapsule(
+        id: 'g',
+        ownerId: 'alice',
+        ownerName: 'Alice',
+        title: 'New Year',
+        createdAt: now,
+        unlockAt: DateTime.now().add(opensIn),
+        members: const ['alice', 'bob', 'carol'],
+        written: const {'bob'},
+      );
+      expect(capsule(const Duration(days: 3)).isUnlocked, isFalse);
+      expect(capsule(const Duration(days: -1)).isUnlocked, isTrue);
+      expect(capsule(const Duration(days: 3)).hasWritten('bob'), isTrue);
+      expect(capsule(const Duration(days: 3)).hasWritten('carol'), isFalse);
+    });
+
     test('note of the day skips recent and archived notes', () {
       expect(
         noteOfTheDay([note(DateTime(2026, 10, 26), Mood.calm)], now),

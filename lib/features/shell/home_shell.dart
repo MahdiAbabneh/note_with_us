@@ -31,6 +31,9 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _tab = 0;
   StreamSubscription<List<Capsule>>? _capsules;
+  StreamSubscription<List<GroupCapsule>>? _groupCapsules;
+  List<Capsule> _received = const [];
+  List<GroupCapsule> _groups = const [];
   final _guest = Session.instance.isGuest;
 
   @override
@@ -45,22 +48,46 @@ class _HomeShellState extends State<HomeShell> {
     );
     final session = Session.instance;
     _capsules = session.capsules.received(session.uid).listen((list) {
-      reminders.syncCapsules([
-        for (final c in list.where((c) => !c.opened))
-          (
-            id: c.id,
-            unlockAt: c.unlockAt,
-            from: c.isToSelf ? '' : c.ownerName,
-            morning: c.isMorningNote,
-          ),
-      ]);
+      _received = list;
+      _syncCapsuleAlerts();
     }, onError: (_) {});
+    _groupCapsules = session.groupCapsules.mine(session.uid).listen((list) {
+      _groups = list;
+      _syncCapsuleAlerts();
+    }, onError: (_) {});
+  }
+
+  /// One alert per capsule that is still sealed: capsules sent to you
+  /// (and morning notes) plus the circle capsules you are part of. The
+  /// reminders keep only what is passed here, so both lists go together.
+  void _syncCapsuleAlerts() {
+    Reminders.instance.syncCapsules([
+      for (final c in _received.where((c) => !c.opened))
+        (
+          id: c.id,
+          unlockAt: c.unlockAt,
+          title: c.isMorningNote
+              ? 'A morning note is waiting ☀️'.tr
+              : 'A time capsule is ready to open'.tr,
+          body: c.isToSelf
+              ? 'A note from your past self is waiting.'.tr
+              : 'From {name}'.tr.replaceAll('{name}', c.ownerName),
+        ),
+      for (final g in _groups)
+        (
+          id: g.id,
+          unlockAt: g.unlockAt,
+          title: 'A circle capsule is ready to open'.tr,
+          body: g.title,
+        ),
+    ]);
   }
 
   @override
   void dispose() {
     Reminders.instance.openRequest.removeListener(_handleNotificationTap);
     _capsules?.cancel();
+    _groupCapsules?.cancel();
     super.dispose();
   }
 

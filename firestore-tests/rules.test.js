@@ -325,6 +325,168 @@ describe('time capsules', () => {
   });
 });
 
+describe('circle capsules (groupCapsules)', () => {
+  const group = (unlockAt, extra = {}) => ({
+    ownerId: 'alice', ownerName: 'Alice', title: 'New Year', createdAt: Timestamp.now(),
+    unlockAt, members: ['alice', 'bob', 'carol'], written: [], ...extra,
+  });
+  const letter = (uid, extra = {}) => ({ ownerId: uid, ownerName: uid, text: `hi from ${uid}`, mood: 'joy', ...extra });
+
+  beforeEach(() => seed((f) => setDoc(doc(f, 'circles/alice'), { members: ['bob', 'carol'] })));
+
+  test('the creator starts one with people from their own circle', async () => {
+    await assertSucceeds(setDoc(doc(db('alice'), 'groupCapsules/g1'), group(future())));
+    await assertFails(setDoc(doc(db('alice'), 'groupCapsules/g2'),
+      group(future(), { members: ['alice', 'bob', 'dave'] })));
+    await assertFails(setDoc(doc(db('bob'), 'groupCapsules/g3'), group(future())));
+    await assertFails(setDoc(doc(db('alice'), 'groupCapsules/g4'), group(future(), { written: ['bob'] })));
+    await assertFails(setDoc(doc(db('alice'), 'groupCapsules/g5'), group(future(), { title: '' })));
+    await assertFails(setDoc(doc(db('alice'), 'groupCapsules/g6'), group(future(), { members: ['alice'] })));
+  });
+
+  test('only members can see it', async () => {
+    await seed((f) => setDoc(doc(f, 'groupCapsules/g1'), group(future())));
+    await assertSucceeds(getDoc(doc(db('bob'), 'groupCapsules/g1')));
+    await assertSucceeds(getDocs(query(collection(db('bob'), 'groupCapsules'), where('members', 'array-contains', 'bob'))));
+    await assertFails(getDoc(doc(db('dave'), 'groupCapsules/g1')));
+  });
+
+  test('a member writes their own letter and ticks themselves off, in one batch', async () => {
+    await seed((f) => setDoc(doc(f, 'groupCapsules/g1'), group(future())));
+    const f = db('bob');
+    const batch = writeBatch(f);
+    batch.set(doc(f, 'groupCapsules/g1/entries/bob'), letter('bob'));
+    batch.update(doc(f, 'groupCapsules/g1'), { written: arrayUnion('bob') });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(updateDoc(doc(f, 'groupCapsules/g1/entries/bob'), { text: 'rewritten' }));
+  });
+
+  test('nobody writes for someone else or ticks someone else off', async () => {
+    await seed((f) => setDoc(doc(f, 'groupCapsules/g1'), group(future())));
+    await assertFails(setDoc(doc(db('bob'), 'groupCapsules/g1/entries/carol'), letter('carol')));
+    await assertFails(setDoc(doc(db('bob'), 'groupCapsules/g1/entries/bob'), letter('carol')));
+    await assertFails(setDoc(doc(db('dave'), 'groupCapsules/g1/entries/dave'), letter('dave')));
+    await assertFails(updateDoc(doc(db('bob'), 'groupCapsules/g1'), { written: arrayUnion('carol') }));
+    await assertFails(updateDoc(doc(db('bob'), 'groupCapsules/g1'), { title: 'Mine now' }));
+  });
+
+  test('letters stay private until it opens, then everyone reads them all', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'groupCapsules/locked'), group(future()));
+      await setDoc(doc(f, 'groupCapsules/locked/entries/bob'), letter('bob'));
+      await setDoc(doc(f, 'groupCapsules/open'), group(past()));
+      await setDoc(doc(f, 'groupCapsules/open/entries/bob'), letter('bob'));
+    });
+    await assertSucceeds(getDoc(doc(db('bob'), 'groupCapsules/locked/entries/bob')));
+    await assertFails(getDoc(doc(db('alice'), 'groupCapsules/locked/entries/bob')));
+    await assertFails(getDocs(collection(db('carol'), 'groupCapsules/locked/entries')));
+    await assertSucceeds(getDocs(collection(db('carol'), 'groupCapsules/open/entries')));
+    await assertSucceeds(getDoc(doc(db('alice'), 'groupCapsules/open/entries/bob')));
+    await assertFails(getDoc(doc(db('dave'), 'groupCapsules/open/entries/bob')));
+  });
+
+  test('no letters after it has opened', async () => {
+    await seed((f) => setDoc(doc(f, 'groupCapsules/g1'), group(past())));
+    await assertFails(setDoc(doc(db('bob'), 'groupCapsules/g1/entries/bob'), letter('bob')));
+    await assertFails(updateDoc(doc(db('bob'), 'groupCapsules/g1'), { written: arrayUnion('bob') }));
+  });
+
+  test('only the creator deletes the capsule; members take back their own letter', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'groupCapsules/g1'), group(future()));
+      await setDoc(doc(f, 'groupCapsules/g1/entries/bob'), letter('bob'));
+    });
+    await assertFails(deleteDoc(doc(db('bob'), 'groupCapsules/g1')));
+    await assertFails(deleteDoc(doc(db('carol'), 'groupCapsules/g1/entries/bob')));
+    await assertSucceeds(deleteDoc(doc(db('bob'), 'groupCapsules/g1/entries/bob')));
+    await assertSucceeds(deleteDoc(doc(db('alice'), 'groupCapsules/g1')));
+  });
+});
+
+describe('shared notebooks', () => {
+  const notebook = (extra = {}) => ({
+    ownerId: 'alice', title: 'Us', members: ['alice', 'bob'],
+    memberNames: { alice: 'Alice', bob: 'Bob' }, createdAt: Timestamp.now(),
+    lastWriterId: '', entryCount: 0, ...extra,
+  });
+  const page = (uid, extra = {}) => ({ ownerId: uid, ownerName: uid, text: `page by ${uid}`, time: Timestamp.now(), ...extra });
+
+  // Alice is in Bob's circle, so she may start a notebook with him.
+  beforeEach(() => seed((f) => setDoc(doc(f, 'circles/bob'), { members: ['alice'] })));
+
+  const write = (uid, id, extra = {}, turn = uid) => {
+    const f = db(uid);
+    const batch = writeBatch(f);
+    batch.set(doc(f, `sharedNotebooks/${id}/entries/${uid}${Math.random()}`), page(uid, extra));
+    batch.update(doc(f, `sharedNotebooks/${id}`), { lastWriterId: turn, lastTime: Timestamp.now(), entryCount: increment(1) });
+    return batch.commit();
+  };
+
+  test('start one with someone who has you in their circle', async () => {
+    await assertSucceeds(setDoc(doc(db('alice'), 'sharedNotebooks/n1'), notebook()));
+    await assertFails(setDoc(doc(db('alice'), 'sharedNotebooks/n2'),
+      notebook({ members: ['alice', 'carol'] })));
+    await assertFails(setDoc(doc(db('alice'), 'sharedNotebooks/n3'), notebook({ lastWriterId: 'alice' })));
+    await assertFails(setDoc(doc(db('alice'), 'sharedNotebooks/n4'), notebook({ members: ['alice', 'alice'] })));
+    await assertFails(setDoc(doc(db('carol'), 'sharedNotebooks/n5'), notebook()));
+    await seed((f) => setDoc(doc(f, 'blocks/bob'), { blocked: ['alice'] }));
+    await assertFails(setDoc(doc(db('alice'), 'sharedNotebooks/n6'), notebook()));
+  });
+
+  test('only its two people can read it', async () => {
+    await seed((f) => setDoc(doc(f, 'sharedNotebooks/n1'), notebook()));
+    await assertSucceeds(getDoc(doc(db('bob'), 'sharedNotebooks/n1')));
+    await assertSucceeds(getDocs(query(collection(db('bob'), 'sharedNotebooks'), where('members', 'array-contains', 'bob'))));
+    await assertFails(getDoc(doc(db('carol'), 'sharedNotebooks/n1')));
+  });
+
+  test('pages alternate: you cannot write twice in a row', async () => {
+    await seed((f) => setDoc(doc(f, 'sharedNotebooks/n1'), notebook()));
+    await assertSucceeds(write('alice', 'n1'));
+    await assertFails(write('alice', 'n1'));
+    await assertSucceeds(write('bob', 'n1'));
+    await assertFails(write('bob', 'n1'));
+    await assertSucceeds(write('alice', 'n1'));
+  });
+
+  test('a page must pass the turn, and nobody can pass it for someone else', async () => {
+    await seed((f) => setDoc(doc(f, 'sharedNotebooks/n1'), notebook()));
+    // A page with no turn change.
+    await assertFails(setDoc(doc(db('alice'), 'sharedNotebooks/n1/entries/p1'), page('alice')));
+    // A page that hands the turn to the other person's name.
+    await assertFails(write('alice', 'n1', {}, 'bob'));
+    // Someone else's page.
+    await assertFails(write('alice', 'n1', { ownerId: 'bob' }));
+    // Strangers.
+    await assertFails(write('carol', 'n1'));
+    // Nothing else on the notebook can change.
+    await assertFails(updateDoc(doc(db('alice'), 'sharedNotebooks/n1'), { title: 'Mine', lastWriterId: 'alice' }));
+  });
+
+  test('both people read pages; strangers do not', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'sharedNotebooks/n1'), notebook({ lastWriterId: 'alice' }));
+      await setDoc(doc(f, 'sharedNotebooks/n1/entries/p1'), page('alice'));
+    });
+    await assertSucceeds(getDocs(collection(db('bob'), 'sharedNotebooks/n1/entries')));
+    await assertSucceeds(getDocs(collection(db('alice'), 'sharedNotebooks/n1/entries')));
+    await assertFails(getDocs(collection(db('carol'), 'sharedNotebooks/n1/entries')));
+  });
+
+  test('either person can delete the notebook and its pages', async () => {
+    await seed(async (f) => {
+      await setDoc(doc(f, 'sharedNotebooks/n1'), notebook({ lastWriterId: 'alice' }));
+      await setDoc(doc(f, 'sharedNotebooks/n1/entries/p1'), page('alice'));
+    });
+    await assertFails(deleteDoc(doc(db('carol'), 'sharedNotebooks/n1')));
+    const f = db('bob');
+    const batch = writeBatch(f);
+    batch.delete(doc(f, 'sharedNotebooks/n1/entries/p1'));
+    batch.delete(doc(f, 'sharedNotebooks/n1'));
+    await assertSucceeds(batch.commit());
+  });
+});
+
 describe('circle requests', () => {
   const request = (from, to) => ({ from, to, fromName: from, fromImage: '', createdAt: Timestamp.now() });
 

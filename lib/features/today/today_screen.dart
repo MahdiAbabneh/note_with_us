@@ -16,6 +16,8 @@ import '../compose/compose_screen.dart';
 import '../insights/your_week_screen.dart';
 import '../messages/people_screen.dart';
 import '../notes/note_card.dart';
+import '../together/group_capsules_screen.dart';
+import '../together/notebooks_screen.dart';
 
 /// Home tab: a quick mood check-in, anything waiting for you, then what
 /// your circle shared.
@@ -33,6 +35,8 @@ class _TodayScreenState extends State<TodayScreen> {
   late Stream<List<Capsule>> _capsules;
   late Stream<List<Note>> _journal;
   late Stream<List<Note>> _mine;
+  late Stream<List<GroupCapsule>> _groups;
+  late Stream<List<SharedNotebook>> _notebooks;
 
   /// 0 = Discover (shown first, and the default), 1 = My circle.
   int _feed = 0;
@@ -50,12 +54,16 @@ class _TodayScreenState extends State<TodayScreen> {
       // Guests only see public notes; nothing of their own exists yet.
       _circle = _journal = _mine = const Stream.empty();
       _capsules = const Stream.empty();
+      _groups = const Stream.empty();
+      _notebooks = const Stream.empty();
       return;
     }
     _circle = _session.notes.circleFeed(_session.uid);
     _capsules = _session.capsules.received(_session.uid);
     _journal = _session.notes.journal(_session.uid, limit: 200);
     _mine = _session.notes.mine(_session.uid);
+    _groups = _session.groupCapsules.mine(_session.uid);
+    _notebooks = _session.notebooks.mine(_session.uid);
   }
 
   void _retry() => setState(_subscribe);
@@ -80,6 +88,10 @@ class _TodayScreenState extends State<TodayScreen> {
           const SliverToBoxAdapter(child: _PromptCard()),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(child: _CircleQuestion(stream: _circle)),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _TogetherCard(groups: _groups, notebooks: _notebooks),
+            ),
           const SliverToBoxAdapter(child: _MoodRow()),
           SliverToBoxAdapter(child: _MineSection(stream: _mine)),
           const SliverToBoxAdapter(child: _DraftCard()),
@@ -435,6 +447,165 @@ class _CircleQuestion extends StatelessWidget {
           ),
         ).animate().fadeIn(duration: Motion.base);
       },
+    );
+  }
+}
+
+/// Two ways to write with others: circle capsules and shared notebooks.
+class _TogetherCard extends StatelessWidget {
+  const _TogetherCard({required this.groups, required this.notebooks});
+
+  final Stream<List<GroupCapsule>> groups;
+  final Stream<List<SharedNotebook>> notebooks;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final uid = Session.instance.uid;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.md,
+        Space.gutter,
+        0,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.raised,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(color: c.line.withValues(alpha: 0.7)),
+        ),
+        child: Column(
+          children: [
+            StreamBuilder<List<GroupCapsule>>(
+              stream: groups,
+              builder: (context, snap) {
+                final all = snap.data ?? const <GroupCapsule>[];
+                final ready = all.where((g) => g.isUnlocked).length;
+                final waiting = all.length - ready;
+                final needLetter = all
+                    .where((g) => !g.isUnlocked && !g.hasWritten(uid))
+                    .length;
+                final String subtitle;
+                if (ready > 0) {
+                  subtitle =
+                      (ready == 1 ? '1 ready to open ✨' : '{n} ready to open ✨')
+                          .tr
+                          .replaceAll('{n}', '$ready');
+                } else if (needLetter > 0) {
+                  subtitle = 'Your letter is missing ✍️'.tr;
+                } else if (waiting > 0) {
+                  subtitle = (waiting == 1 ? '1 waiting' : '{n} waiting').tr
+                      .replaceAll('{n}', '$waiting');
+                } else {
+                  subtitle = 'Everyone writes, all open together'.tr;
+                }
+                return _TogetherRow(
+                  emoji: '🎆',
+                  title: 'Circle capsules'.tr,
+                  subtitle: subtitle,
+                  highlight: ready > 0 || needLetter > 0,
+                  onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute<void>(
+                      builder: (_) => const GroupCapsulesScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Container(height: 1, color: c.line),
+            StreamBuilder<List<SharedNotebook>>(
+              stream: notebooks,
+              builder: (context, snap) {
+                final all = snap.data ?? const <SharedNotebook>[];
+                final myTurn = all.where((n) => n.isMyTurn(uid)).length;
+                final String subtitle;
+                if (myTurn > 0) {
+                  subtitle =
+                      (myTurn == 1
+                              ? 'Your turn in 1 notebook ✍️'
+                              : 'Your turn in {n} notebooks ✍️')
+                          .tr
+                          .replaceAll('{n}', '$myTurn');
+                } else if (all.isNotEmpty) {
+                  subtitle = 'Waiting for their page'.tr;
+                } else {
+                  subtitle = 'Take turns writing with one person'.tr;
+                }
+                return _TogetherRow(
+                  emoji: '📖',
+                  title: 'Shared notebooks'.tr,
+                  subtitle: subtitle,
+                  highlight: myTurn > 0,
+                  onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute<void>(
+                      builder: (_) => const NotebooksScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: Motion.base);
+  }
+}
+
+class _TogetherRow extends StatelessWidget {
+  const _TogetherRow({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.highlight,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final bool highlight;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      scale: 0.99,
+      semanticLabel: '$title. $subtitle',
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Space.md),
+        child: Row(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: Space.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.text.label),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: context.text.caption.copyWith(
+                      color: highlight ? c.accent : c.inkSoft,
+                      fontWeight: highlight ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? CupertinoIcons.chevron_left
+                  : CupertinoIcons.chevron_right,
+              size: 16,
+              color: c.muted,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

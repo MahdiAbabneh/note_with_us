@@ -200,16 +200,17 @@ class Reminders extends ChangeNotifier {
     }
   }
 
-  /// Schedules an alert for each received, still-locked capsule and
-  /// cancels alerts for capsules that no longer exist.
+  /// Schedules an alert for each capsule that is still locked (with the
+  /// notification text the caller chose) and cancels alerts for capsules
+  /// that no longer exist.
   Future<void> syncCapsules(
-    List<({String id, DateTime unlockAt, String from, bool morning})> capsules,
+    List<({String id, DateTime unlockAt, String title, String body})> capsules,
   ) async {
     if (!_ready || !capsuleAlerts) return;
     final previous = _scheduledCapsuleIds();
     final now = DateTime.now();
     final wanted =
-        <int, ({String id, DateTime unlockAt, String from, bool morning})>{
+        <int, ({String id, DateTime unlockAt, String title, String body})>{
           for (final c in capsules.where((c) => c.unlockAt.isAfter(now)))
             _capsuleNotificationId(c.id): c,
         };
@@ -220,12 +221,8 @@ class Reminders extends ChangeNotifier {
       await _plugin.zonedSchedule(
         id: id,
         scheduledDate: tz.TZDateTime.from(c.unlockAt, tz.local),
-        title: c.morning
-            ? 'A morning note is waiting ☀️'.tr
-            : 'A time capsule is ready to open'.tr,
-        body: c.from.isEmpty
-            ? 'A note from your past self is waiting.'.tr
-            : 'From {name}'.tr.replaceAll('{name}', c.from),
+        title: c.title,
+        body: c.body,
         payload: ReminderTarget.capsules.name,
         notificationDetails: _details('capsules', 'Time capsules'.tr),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

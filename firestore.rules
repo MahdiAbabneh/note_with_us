@@ -6,8 +6,8 @@ rules_version = '2';
 // older Play Store version still uses, so both keep working:
 //   users (+ chats/messages), postsMain, postsOnlyMe, imagesUser,
 //   reminder, reportPostUser, reportUser          (original app)
-//   circlePosts, capsules, circles, circleRequests,
-//   blocks                                         (redesign)
+//   circlePosts, capsules, groupCapsules, sharedNotebooks,
+//   circles, circleRequests, blocks                (redesign)
 // Signed-out guests can only read notes shared with everyone and their
 // replies. Anything not listed here is denied.
 service cloud.firestore {
@@ -185,6 +185,121 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/capsules/$(capsuleId)).data.ownerId == uid();
         allow delete: if signedIn()
             && (capsule().ownerId == uid() || capsule().recipientId == uid());
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Circle capsules: the whole circle writes to one capsule and opens
+    // it together.
+    //
+    // The capsule holds who, when and who has written so far. Each
+    // letter lives in entries/{uid} and the others can read it only after
+    // `unlockAt`.
+    // ---------------------------------------------------------------
+    match /groupCapsules/{capsuleId} {
+      // The people in the creator's circle, or none if there is no circle.
+      function myCircle() {
+        let circle = /databases/$(database)/documents/circles/$(uid());
+        return exists(circle) ? get(circle).data.get('members', []) : [];
+      }
+      function members() {
+        return request.resource.data.members;
+      }
+
+      allow read: if signedIn() && uid() in resource.data.members;
+      allow create: if signedIn()
+          && request.resource.data.ownerId == uid()
+          && members() is list
+          && uid() in members()
+          && members().size() >= 2
+          && members().size() <= 30
+          && members().toSet().difference(myCircle().toSet().union([uid()].toSet())).size() == 0
+          && request.resource.data.written == []
+          && request.resource.data.unlockAt is timestamp
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 60;
+      allow delete: if signedIn() && resource.data.ownerId == uid();
+      // Members tick themselves off as written, until it opens.
+      allow update: if signedIn()
+          && uid() in resource.data.members
+          && request.time < resource.data.unlockAt
+          && onlyChanges(['written'])
+          && request.resource.data.written.toSet()
+              == resource.data.written.toSet().union([uid()].toSet());
+
+      match /entries/{memberId} {
+        function capsule() {
+          return get(/databases/$(database)/documents/groupCapsules/$(capsuleId)).data;
+        }
+
+        allow read: if signedIn()
+            && uid() in capsule().members
+            && (memberId == uid() || request.time >= capsule().unlockAt);
+        allow create, update: if signedIn()
+            && memberId == uid()
+            && uid() in capsule().members
+            && request.time < capsule().unlockAt
+            && request.resource.data.ownerId == uid()
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 2000;
+        // You can take back your own letter; the creator can clear all.
+        allow delete: if signedIn()
+            && (memberId == uid() || capsule().ownerId == uid());
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Shared notebooks: two people write pages in turn.
+    //
+    // `lastWriterId` says whose turn it is not. A page is accepted only
+    // from the person whose turn it is, in the same batch that passes
+    // the turn on.
+    // ---------------------------------------------------------------
+    match /sharedNotebooks/{notebookId} {
+      function otherMember() {
+        return request.resource.data.members[0] == uid()
+            ? request.resource.data.members[1]
+            : request.resource.data.members[0];
+      }
+
+      allow read: if signedIn() && uid() in resource.data.members;
+      // A notebook goes to someone who has you in their circle.
+      allow create: if signedIn()
+          && request.resource.data.ownerId == uid()
+          && request.resource.data.members.size() == 2
+          && uid() in request.resource.data.members
+          && request.resource.data.members[0] != request.resource.data.members[1]
+          && inCircleOf(otherMember())
+          && notBlockedBy(otherMember())
+          && request.resource.data.lastWriterId == ''
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 60;
+      allow delete: if signedIn() && uid() in resource.data.members;
+      allow update: if signedIn()
+          && uid() in resource.data.members
+          && onlyChanges(['lastWriterId', 'lastTime', 'entryCount'])
+          && resource.data.lastWriterId != uid()
+          && request.resource.data.lastWriterId == uid();
+
+      match /entries/{entryId} {
+        function notebook() {
+          return get(/databases/$(database)/documents/sharedNotebooks/$(notebookId)).data;
+        }
+
+        allow read: if signedIn() && uid() in notebook().members;
+        allow create: if signedIn()
+            && uid() in notebook().members
+            && request.resource.data.ownerId == uid()
+            && notebook().lastWriterId != uid()
+            && getAfter(/databases/$(database)/documents/sharedNotebooks/$(notebookId)).data.lastWriterId == uid()
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 2000;
+        // Either person can clear pages, e.g. when deleting the notebook.
+        allow delete: if signedIn() && uid() in notebook().members;
       }
     }
 

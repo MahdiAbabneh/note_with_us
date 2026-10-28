@@ -192,7 +192,39 @@ class UsersRepository {
       }
     }
 
+    // Circle capsules you started go entirely; in the others, only your
+    // own letter. Your pages in shared notebooks go, the notebook stays
+    // for the other person to keep or delete.
+    Future<void> collectTogether() async {
+      final capsules = await _db
+          .collection('groupCapsules')
+          .where('members', arrayContains: uid)
+          .get();
+      for (final doc in capsules.docs) {
+        if (doc.data()['ownerId'] == uid) {
+          refs.addAll(
+            (await doc.reference.collection('entries').get()).docs.map(
+              (d) => d.reference,
+            ),
+          );
+          refs.add(doc.reference);
+        } else {
+          refs.add(doc.reference.collection('entries').doc(uid));
+        }
+      }
+      final notebooks = await _db
+          .collection('sharedNotebooks')
+          .where('members', arrayContains: uid)
+          .get();
+      for (final doc in notebooks.docs) {
+        await collect(
+          doc.reference.collection('entries').where('ownerId', isEqualTo: uid),
+        );
+      }
+    }
+
     await Future.wait([
+      collectTogether(),
       collect(_db.collection('postsOnlyMe').doc(uid).collection('myPost')),
       collect(_db.collection('postsMain').where('ownerId', isEqualTo: uid)),
       collect(_db.collection('circlePosts').where('ownerId', isEqualTo: uid)),

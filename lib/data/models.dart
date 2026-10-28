@@ -388,3 +388,159 @@ class FavoriteRef {
 
   String get key => '${audience.name}_${ownerId}_$noteId';
 }
+
+/// A capsule the whole circle writes to, opened together on [unlockAt].
+/// Each person's letter stays in `entries/{uid}` and is readable by the
+/// others only after it unlocks.
+class GroupCapsule {
+  const GroupCapsule({
+    required this.id,
+    required this.ownerId,
+    required this.ownerName,
+    required this.title,
+    required this.createdAt,
+    required this.unlockAt,
+    required this.members,
+    required this.written,
+  });
+
+  factory GroupCapsule.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return GroupCapsule(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      createdAt: _parseTime(map['createdAt']),
+      unlockAt: _parseTime(map['unlockAt']),
+      members: (map['members'] as List? ?? const []).cast<String>(),
+      written: {...(map['written'] as List? ?? const []).cast<String>()},
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String ownerName;
+  final String title;
+  final DateTime createdAt;
+  final DateTime unlockAt;
+
+  /// Everyone taking part, the creator included.
+  final List<String> members;
+
+  /// Who has already written their letter.
+  final Set<String> written;
+
+  bool get isUnlocked => !DateTime.now().isBefore(unlockAt);
+  bool hasWritten(String uid) => written.contains(uid);
+}
+
+/// One person's letter in a [GroupCapsule].
+class GroupEntry {
+  const GroupEntry({
+    required this.ownerId,
+    required this.ownerName,
+    required this.ownerImage,
+    required this.text,
+    required this.mood,
+    required this.time,
+  });
+
+  factory GroupEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return GroupEntry(
+      ownerId: map['ownerId'] as String? ?? doc.id,
+      ownerName: map['ownerName'] as String? ?? '',
+      ownerImage: map['ownerImage'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      mood: Mood.fromId(map['mood'] as String?),
+      time: _parseTime(map['time']),
+    );
+  }
+
+  final String ownerId;
+  final String ownerName;
+  final String ownerImage;
+  final String text;
+  final Mood mood;
+  final DateTime time;
+}
+
+/// A notebook two people write in, taking turns.
+class SharedNotebook {
+  const SharedNotebook({
+    required this.id,
+    required this.ownerId,
+    required this.title,
+    required this.members,
+    required this.memberNames,
+    required this.createdAt,
+    this.lastWriterId = '',
+    this.lastTime,
+    this.entryCount = 0,
+  });
+
+  factory SharedNotebook.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return SharedNotebook(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      members: (map['members'] as List? ?? const []).cast<String>(),
+      memberNames: Map<String, String>.from(map['memberNames'] as Map? ?? {}),
+      createdAt: _parseTime(map['createdAt']),
+      lastWriterId: map['lastWriterId'] as String? ?? '',
+      lastTime: map['lastTime'] == null ? null : _parseTime(map['lastTime']),
+      entryCount: (map['entryCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String title;
+  final List<String> members;
+
+  /// `uid -> name` as it was when the notebook was made.
+  final Map<String, String> memberNames;
+  final DateTime createdAt;
+
+  /// Who wrote the last page; empty before the first one.
+  final String lastWriterId;
+  final DateTime? lastTime;
+  final int entryCount;
+
+  /// The other person in the notebook.
+  String otherId(String uid) =>
+      members.firstWhere((m) => m != uid, orElse: () => uid);
+
+  /// Pages alternate: you may write unless you wrote the last one.
+  bool isMyTurn(String uid) => lastWriterId != uid;
+}
+
+/// One page of a [SharedNotebook].
+class NotebookEntry {
+  const NotebookEntry({
+    required this.id,
+    required this.ownerId,
+    required this.ownerName,
+    required this.text,
+    required this.time,
+  });
+
+  factory NotebookEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return NotebookEntry(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      time: _parseTime(map['time']),
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String ownerName;
+  final String text;
+  final DateTime time;
+}
