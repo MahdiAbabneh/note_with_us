@@ -722,6 +722,25 @@ const Map<String, String> arabicStrings = {
   'Ask a question, read answers only you see':
       'اطرح سؤالًا واقرأ إجابات لا يراها غيرك',
   '{a} of {b} answered': 'أجاب {a} من {b}',
+  // Gratitude jar
+  'Gratitude jar': 'برطمان الامتنان',
+  'Added to your jar 🫙': 'أُضيف إلى برطمانك 🫙',
+  'Add to the jar': 'أضف إلى البرطمان',
+  '1 thing you are grateful for': 'شيء واحد تشكر عليه',
+  '{n} things you are grateful for': '{n} أشياء تشكر عليها',
+  'Add today’s gratitude': 'أضف امتنان اليوم',
+  'Nothing in the jar this month yet.': 'لا شيء في البرطمان هذا الشهر بعد.',
+  'READ YOUR JAR': 'اقرأ برطمانك',
+  'What are you grateful for today?': 'ما الذي تشكر عليه اليوم؟',
+  'Up to three things, big or small. Each one becomes a bead.':
+      'حتى ثلاثة أشياء، كبيرة أو صغيرة. كل واحد يصير خرزة.',
+  'I am grateful for…': 'أنا ممتن لـ…',
+  'Drop in the jar': 'ضعها في البرطمان',
+  'Three good things a day, a bead for each':
+      'ثلاثة أشياء جميلة كل يوم، وخرزة لكل واحد',
+  '1 bead this month': 'خرزة واحدة هذا الشهر',
+  '{n} beads this month': '{n} خرزات هذا الشهر',
+  'Start filling it with what you are grateful for': 'ابدأ بملئه بما تشكر عليه',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

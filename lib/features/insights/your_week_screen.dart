@@ -10,6 +10,7 @@ import '../../data/session.dart';
 import '../../design/design.dart';
 import '../compose/compose_screen.dart';
 import 'calendar_screen.dart';
+import '../gratitude/gratitude_screen.dart';
 import 'garden_screen.dart';
 import 'patterns_screen.dart';
 
@@ -75,6 +76,8 @@ class _YourWeekScreenState extends State<YourWeekScreen> {
                       const _GardenLink(),
                       const SizedBox(height: Space.sm),
                       const _PatternsLink(),
+                      const SizedBox(height: Space.sm),
+                      const _JarLink(),
                       const SizedBox(height: Space.xl),
                       _Milestones(milestones: milestonesFor(snap.data!)),
                     ]
@@ -409,6 +412,18 @@ class _CalendarLink extends StatelessWidget {
     title: 'Calendar'.tr,
     subtitle: 'See every month, day by day'.tr,
     builder: (_) => const CalendarScreen(),
+  );
+}
+
+class _JarLink extends StatelessWidget {
+  const _JarLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.heart,
+    title: 'Gratitude jar'.tr,
+    subtitle: 'Three good things a day, a bead for each'.tr,
+    builder: (_) => const GratitudeScreen(),
   );
 }
 

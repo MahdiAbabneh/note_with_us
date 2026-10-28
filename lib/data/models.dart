@@ -90,6 +90,7 @@ class Note {
     this.pinned = false,
     this.archived = false,
     this.comfort = false,
+    this.kind = '',
     this.fromOldApp = false,
   });
 
@@ -121,6 +122,7 @@ class Note {
       pinned: map['pinned'] as bool? ?? false,
       archived: map['archived'] as bool? ?? false,
       comfort: map['comfort'] as bool? ?? false,
+      kind: map['kind'] as String? ?? '',
       // The redesigned app always saves a mood, even "plain".
       fromOldApp: !map.containsKey('mood'),
     );
@@ -156,6 +158,12 @@ class Note {
 
   /// Kept in the owner's comfort box to read on a hard day (private only).
   final bool comfort;
+
+  /// What kind of note this is: empty for a normal one, `gratitude` for a
+  /// day's entry in the gratitude jar.
+  final String kind;
+
+  bool get isGratitude => kind == gratitudeKind;
 
   /// Written by the old app, before notes had a feeling. Kept in the
   /// database, but left out of public lists.
@@ -217,6 +225,9 @@ class Comment {
   final String text;
   final DateTime time;
 }
+
+/// [Note.kind] of a gratitude jar entry.
+const gratitudeKind = 'gratitude';
 
 /// [Capsule.kind] of a surprise note that arrives the next morning.
 const morningKind = 'morning';

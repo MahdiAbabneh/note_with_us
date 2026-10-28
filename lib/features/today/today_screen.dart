@@ -19,6 +19,7 @@ import '../insights/your_week_screen.dart';
 import '../messages/people_screen.dart';
 import '../capsules/morning_note_sheet.dart';
 import '../comfort/comfort_sheet.dart';
+import '../gratitude/gratitude_screen.dart';
 import '../islamic/occasion_card.dart';
 import '../messages/chat_screen.dart';
 import '../notes/note_card.dart';
@@ -113,6 +114,8 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           const SliverToBoxAdapter(child: _MoodRow()),
           SliverToBoxAdapter(child: _MineSection(stream: _mine)),
+          if (!_session.isGuest)
+            SliverToBoxAdapter(child: _JarCard(stream: _journal)),
           const SliverToBoxAdapter(child: _DraftCard()),
           SliverToBoxAdapter(child: _CapsuleSection(stream: _capsules)),
           SliverToBoxAdapter(child: _Memories(stream: _journal)),
@@ -538,6 +541,85 @@ class _BirthdayCard extends StatelessWidget {
         ),
       ),
     ).animate().fadeIn(duration: Motion.base);
+  }
+}
+
+/// A slim way into the gratitude jar, showing how full it is this month.
+class _JarCard extends StatelessWidget {
+  const _JarCard({required this.stream});
+
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        final now = DateTime.now();
+        final beads = gratitudeItems(
+          snap.data ?? const <Note>[],
+          month: DateTime(now.year, now.month),
+        ).length;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.md,
+            Space.gutter,
+            0,
+          ),
+          child: Pressable(
+            semanticLabel: 'Gratitude jar'.tr,
+            onTap: () => Navigator.of(context).push(
+              CupertinoPageRoute<void>(builder: (_) => const GratitudeScreen()),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.md,
+                vertical: Space.sm,
+              ),
+              decoration: BoxDecoration(
+                color: c.raised,
+                borderRadius: BorderRadius.circular(Radii.lg),
+                border: Border.all(color: c.line.withValues(alpha: 0.7)),
+              ),
+              child: Row(
+                children: [
+                  const Text('🫙', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: Space.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gratitude jar'.tr, style: context.text.label),
+                        Text(
+                          beads == 0
+                              ? 'Start filling it with what you are grateful for'
+                                    .tr
+                              : (beads == 1
+                                        ? '1 bead this month'
+                                        : '{n} beads this month')
+                                    .tr
+                                    .replaceAll('{n}', '$beads'),
+                          style: context.text.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? CupertinoIcons.chevron_left
+                        : CupertinoIcons.chevron_right,
+                    size: 16,
+                    color: c.muted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ).animate().fadeIn(duration: Motion.base);
+      },
+    );
   }
 }
 

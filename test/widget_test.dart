@@ -904,6 +904,47 @@ void main() {
     });
   });
 
+  group('gratitude jar', () {
+    Note entry(DateTime time, String text, {String kind = gratitudeKind}) =>
+        Note(
+          id: '${time.millisecondsSinceEpoch}$text',
+          audience: Audience.private,
+          text: text,
+          images: const [],
+          time: time,
+          ownerId: 'me',
+          ownerName: 'Me',
+          ownerImage: '',
+          kind: kind,
+        );
+
+    test('turns each line of a day\'s entry into a bead, newest first', () {
+      final items = gratitudeItems([
+        entry(DateTime(2026, 10, 2, 20), 'my mother\nthe sea\n\n  coffee  '),
+        entry(DateTime(2026, 10, 3, 20), 'sunshine'),
+        entry(DateTime(2026, 10, 4, 20), 'a normal note', kind: ''),
+        entry(DateTime(2026, 9, 30, 20), 'last month'),
+      ]);
+      expect(items.map((i) => i.text), [
+        'sunshine',
+        'my mother',
+        'the sea',
+        'coffee',
+        'last month',
+      ]);
+    });
+
+    test('can be limited to one month', () {
+      final notes = [
+        entry(DateTime(2026, 10, 2), 'a\nb'),
+        entry(DateTime(2026, 9, 2), 'c'),
+      ];
+      expect(gratitudeItems(notes, month: DateTime(2026, 10)).length, 2);
+      expect(gratitudeItems(notes, month: DateTime(2026, 9)).single.text, 'c');
+      expect(gratitudeItems(notes, month: DateTime(2026, 8)), isEmpty);
+    });
+  });
+
   group('pdf export', () {
     final now = DateTime(2026, 10, 28, 12);
     Note note(DateTime time, String text, {bool archived = false}) => Note(

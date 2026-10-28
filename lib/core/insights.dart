@@ -407,3 +407,29 @@ ComfortItem? pickComfort(
   if (choices.isEmpty) return null;
   return choices[random.nextInt(choices.length)];
 }
+
+/// One thing someone was grateful for.
+class GratitudeItem {
+  const GratitudeItem(this.text, this.time);
+
+  final String text;
+  final DateTime time;
+}
+
+/// The things written in gratitude jar notes (one per line), newest
+/// first, optionally only those of the month of [month].
+List<GratitudeItem> gratitudeItems(Iterable<Note> notes, {DateTime? month}) {
+  final items = <GratitudeItem>[];
+  for (final note in notes) {
+    if (!note.isGratitude || note.archived) continue;
+    if (month != null &&
+        (note.time.year != month.year || note.time.month != month.month)) {
+      continue;
+    }
+    for (final line in note.text.split('\n')) {
+      final text = line.trim();
+      if (text.isNotEmpty) items.add(GratitudeItem(text, note.time));
+    }
+  }
+  return items..sort((a, b) => b.time.compareTo(a.time));
+}
