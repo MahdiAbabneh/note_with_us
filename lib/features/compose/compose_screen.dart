@@ -16,6 +16,7 @@ import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
 import '../comfort/comfort_sheet.dart';
+import '../freewrite/free_write_screen.dart';
 import '../notes/note_card.dart';
 
 /// Where a new piece of writing goes.
@@ -161,6 +162,18 @@ class _ComposeScreenState extends State<ComposeScreen> {
       text: body,
       selection: TextSelection.collapsed(offset: body.length),
     );
+  }
+
+  /// Free writing is its own screen; if it saved a note this one is done.
+  Future<void> _freeWrite() async {
+    final saved = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(builder: (_) => const FreeWriteScreen()),
+    );
+    if (saved == true && mounted) {
+      _posted = true;
+      DraftStore.instance.clear();
+      Navigator.pop(context);
+    }
   }
 
   /// Puts `#tag ` where the cursor is (or at the end).
@@ -394,7 +407,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       onRemove: () => setState(() => _prompt = ''),
                     )
                   else if (!_isCapsule && _text.text.isEmpty)
-                    _IdeaButton(onTap: _shufflePrompt),
+                    _IdeaButton(onTap: _shufflePrompt, onFreeWrite: _freeWrite),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: Space.gutter,
@@ -587,9 +600,10 @@ class _PromptChip extends StatelessWidget {
 }
 
 class _IdeaButton extends StatelessWidget {
-  const _IdeaButton({required this.onTap});
+  const _IdeaButton({required this.onTap, required this.onFreeWrite});
 
   final VoidCallback onTap;
+  final VoidCallback onFreeWrite;
 
   @override
   Widget build(BuildContext context) {
@@ -601,23 +615,36 @@ class _IdeaButton extends StatelessWidget {
         Space.gutter,
         0,
       ),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Pressable(
-          onTap: onTap,
-          semanticLabel: 'Need an idea?'.tr,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: c.accentSoft,
-              borderRadius: BorderRadius.circular(Radii.pill),
+      child: Wrap(
+        spacing: Space.xs,
+        runSpacing: Space.xs,
+        children: [
+          for (final (label, tap, hint) in [
+            ('🎲  ${'Need an idea?'.tr}', onTap, 'Need an idea?'.tr),
+            ('⏱  ${'Free writing'.tr}', onFreeWrite, 'Free writing'.tr),
+          ])
+            Pressable(
+              onTap: tap,
+              semanticLabel: hint,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: c.accentSoft,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: Text(
+                  label,
+                  style: context.text.label.copyWith(
+                    color: c.ink,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
             ),
-            child: Text(
-              '🎲  ${'Need an idea?'.tr}',
-              style: context.text.label.copyWith(color: c.ink, fontSize: 13),
-            ),
-          ),
-        ),
+        ],
       ),
     ).animate().fadeIn(duration: Motion.base);
   }

@@ -17,6 +17,7 @@ import 'package:mahdeko/core/l10n.dart';
 import 'package:mahdeko/core/l10n_ar.dart';
 import 'package:mahdeko/core/patterns.dart';
 import 'package:mahdeko/core/prefs.dart';
+import 'package:mahdeko/features/freewrite/free_write_screen.dart';
 import 'package:mahdeko/core/prompts.dart';
 import 'package:mahdeko/core/tags.dart';
 import 'package:mahdeko/design/components/content_text.dart';
@@ -868,6 +869,38 @@ void main() {
       expect(p.lately, Mood.joy);
       expect(p.before, Mood.blue);
       expect(Patterns.from(const [], now).lately, isNull);
+    });
+  });
+
+  group('free writing', () {
+    TextEditingValue v(String text) => TextEditingValue(text: text);
+    final formatter = ForwardOnlyFormatter();
+
+    test('only lets text grow at the end', () {
+      expect(
+        formatter.formatEditUpdate(v('Hello'), v('Hello!')).text,
+        'Hello!',
+      );
+      // Deleting is refused.
+      expect(formatter.formatEditUpdate(v('Hello'), v('Hell')).text, 'Hello');
+      // Editing the middle is refused.
+      expect(formatter.formatEditUpdate(v('Hello'), v('Heyllo')).text, 'Hello');
+      // So is pasting a lot at once, but a short autocorrect is fine.
+      expect(
+        formatter.formatEditUpdate(v('Hi '), v('Hi ${'x' * 40}')).text,
+        'Hi ',
+      );
+      expect(
+        formatter.formatEditUpdate(v('Hi '), v('Hi there')).text,
+        'Hi there',
+      );
+    });
+
+    test('counts words in English and Arabic', () {
+      expect(wordCount(''), 0);
+      expect(wordCount('One, two three!'), 3);
+      expect(wordCount('كتبت اليوم عن  يومي'), 4);
+      expect(wordCount('route 66 and #tags'), 4);
     });
   });
 
