@@ -407,68 +407,223 @@ void _showAppearance(BuildContext context) {
           Space.gutter,
           Space.lg,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Appearance'.tr, style: ctx.text.title),
-            const SizedBox(height: Space.lg),
-            SegmentedPills(
-              labels: ['Automatic'.tr, 'Light'.tr, 'Dark'.tr],
-              index: switch (settings.mode) {
-                ThemeMode.system => 0,
-                ThemeMode.light => 1,
-                ThemeMode.dark => 2,
-              },
-              onChanged: (i) => settings.setMode(
-                [ThemeMode.system, ThemeMode.light, ThemeMode.dark][i],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Appearance'.tr, style: ctx.text.title),
+              const SizedBox(height: Space.lg),
+              SegmentedPills(
+                labels: ['Automatic'.tr, 'Light'.tr, 'Dark'.tr],
+                index: switch (settings.mode) {
+                  ThemeMode.system => 0,
+                  ThemeMode.light => 1,
+                  ThemeMode.dark => 2,
+                },
+                onChanged: (i) => settings.setMode(
+                  [ThemeMode.system, ThemeMode.light, ThemeMode.dark][i],
+                ),
               ),
-            ),
-            const SizedBox(height: Space.xl),
-            Text('BACKGROUND'.tr, style: ctx.text.overline),
-            const SizedBox(height: Space.sm),
-            Row(
-              children: [
-                for (final backdrop in Backdrop.values) ...[
-                  Expanded(
-                    child: _BackdropTile(
-                      backdrop: backdrop,
-                      accent: settings.accent,
-                      selected: settings.backdrop == backdrop,
-                      onTap: () => settings.setBackdrop(backdrop),
+              const SizedBox(height: Space.xl),
+              Text('BACKGROUND'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final backdrop in Backdrop.values) ...[
+                    Expanded(
+                      child: _BackdropTile(
+                        backdrop: backdrop,
+                        accent: settings.accent,
+                        selected: settings.backdrop == backdrop,
+                        onTap: () => settings.setBackdrop(backdrop),
+                      ),
                     ),
-                  ),
-                  if (backdrop != Backdrop.values.last)
-                    const SizedBox(width: Space.sm),
+                    if (backdrop != Backdrop.values.last)
+                      const SizedBox(width: Space.sm),
+                  ],
                 ],
-              ],
-            ),
-            const SizedBox(height: Space.xl),
-            Text('ACCENT'.tr, style: ctx.text.overline),
-            const SizedBox(height: Space.sm),
-            Row(
-              children: [
-                for (final accent in Accent.values)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: Space.md),
-                    child: _AccentSwatch(
-                      accent: accent,
-                      selected: settings.accent == accent,
-                      onTap: () {
-                        settings.setAccent(accent);
-                        final session = Session.instance;
-                        if (session.isGuest) return;
-                        session.users.update(session.uid, {'theme': accent.id});
-                      },
+              ),
+              const SizedBox(height: Space.xl),
+              Text('NOTE FONT'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final font in NoteFont.values) ...[
+                    Expanded(
+                      child: _FontTile(
+                        font: font,
+                        selected: settings.noteFont == font,
+                        onTap: () => settings.setNoteFont(font),
+                      ),
                     ),
-                  ),
-              ],
-            ),
-          ],
+                    if (font != NoteFont.values.last)
+                      const SizedBox(width: Space.xs),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Space.xl),
+              Text('NOTE PAPER'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final paper in NotePaper.values) ...[
+                    Expanded(
+                      child: _PaperTile(
+                        paper: paper,
+                        selected: settings.notePaper == paper,
+                        onTap: () => settings.setNotePaper(paper),
+                      ),
+                    ),
+                    if (paper != NotePaper.values.last)
+                      const SizedBox(width: Space.xs),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Space.xl),
+              Text('ACCENT'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final accent in Accent.values)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: Space.md),
+                      child: _AccentSwatch(
+                        accent: accent,
+                        selected: settings.accent == accent,
+                        onTap: () {
+                          settings.setAccent(accent);
+                          final session = Session.instance;
+                          if (session.isGuest) return;
+                          session.users.update(session.uid, {
+                            'theme': accent.id,
+                          });
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     ),
   );
+}
+
+/// A sample of a note font.
+class _FontTile extends StatelessWidget {
+  const _FontTile({
+    required this.font,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final NoteFont font;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final arabic = AppSettings.instance.isArabic;
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: font.label.tr,
+      child: AnimatedContainer(
+        duration: Motion.base,
+        padding: const EdgeInsets.symmetric(vertical: Space.sm),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.md),
+          border: Border.all(
+            color: selected ? c.accent : c.line,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              arabic ? 'أبج' : 'Aa',
+              style: noteBodyStyle(
+                font,
+                arabic: arabic,
+                color: c.ink,
+              ).copyWith(fontSize: 24, height: 1.2),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              font.label.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.text.caption.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A small sample of a note paper.
+class _PaperTile extends StatelessWidget {
+  const _PaperTile({
+    required this.paper,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final NotePaper paper;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final base = NwuPaper(paper).tint(c.raised, dark: c.isDark);
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: paper.label.tr,
+      child: AnimatedContainer(
+        duration: Motion.base,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.md),
+          border: Border.all(
+            color: selected ? c.accent : c.line,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                height: 44,
+                color: base,
+                child: CustomPaint(
+                  size: const Size.fromHeight(44),
+                  painter: PaperPainter(
+                    paper: paper,
+                    lineHeight: 11,
+                    color: c.ink.withValues(alpha: 0.2),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              paper.label.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.text.caption.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _AccentSwatch extends StatelessWidget {

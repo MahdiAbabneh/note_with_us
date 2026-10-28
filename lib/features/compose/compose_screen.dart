@@ -412,24 +412,29 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     padding: const EdgeInsets.symmetric(
                       horizontal: Space.gutter,
                     ),
-                    child: TextField(
-                      controller: _text,
-                      textDirection: inputDirection(context, _text.text),
-                      autofocus: true,
-                      minLines: 6,
-                      maxLines: null,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: context.text.noteBody.copyWith(fontSize: 21),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: _isCapsule
-                            ? 'Dear future you…'.tr
-                            : (_prompt.isNotEmpty
-                                  ? 'Write your answer…'.tr
-                                  : 'What’s on your mind?'.tr),
-                        hintStyle: context.text.noteBody.copyWith(
-                          fontSize: 21,
-                          color: c.muted,
+                    child: PaperBackdrop(
+                      lineHeight: lineHeightOf(
+                        context.text.noteBody.copyWith(fontSize: 21),
+                      ),
+                      child: TextField(
+                        controller: _text,
+                        textDirection: inputDirection(context, _text.text),
+                        autofocus: true,
+                        minLines: 6,
+                        maxLines: null,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: context.text.noteBody.copyWith(fontSize: 21),
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: _isCapsule
+                              ? 'Dear future you…'.tr
+                              : (_prompt.isNotEmpty
+                                    ? 'Write your answer…'.tr
+                                    : 'What’s on your mind?'.tr),
+                          hintStyle: context.text.noteBody.copyWith(
+                            fontSize: 21,
+                            color: c.muted,
+                          ),
                         ),
                       ),
                     ),

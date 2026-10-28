@@ -741,6 +741,17 @@ const Map<String, String> arabicStrings = {
   '1 bead this month': 'خرزة واحدة هذا الشهر',
   '{n} beads this month': '{n} خرزات هذا الشهر',
   'Start filling it with what you are grateful for': 'ابدأ بملئه بما تشكر عليه',
+  // Note fonts and paper
+  'NOTE FONT': 'خط الملاحظات',
+  'NOTE PAPER': 'ورق الملاحظات',
+  'Classic': 'كلاسيكي',
+  'Book': 'كتاب',
+  'Clean': 'نظيف',
+  'Handwritten': 'بخط اليد',
+  'Ruled': 'مسطّر',
+  'Grid': 'مربعات',
+  'Dots': 'نقاط',
+  'Warm': 'دافئ',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

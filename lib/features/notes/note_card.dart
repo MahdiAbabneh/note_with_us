@@ -52,7 +52,10 @@ class NoteCard extends StatelessWidget {
         Space.md,
       ),
       decoration: BoxDecoration(
-        color: c.paperTint(note.mood, note.colorSeed),
+        color: context.paper.tint(
+          c.paperTint(note.mood, note.colorSeed),
+          dark: c.isDark,
+        ),
         borderRadius: BorderRadius.circular(Radii.lg),
       ),
       child: Column(
@@ -86,21 +89,26 @@ class NoteCard extends StatelessWidget {
             const SizedBox(height: Space.sm),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: Space.xs),
-              child: TaggedText(
-                note.text,
-                // Tapping a tag of your own note lists your notes with it.
-                onTag: preview || note.ownerId != Session.instance.uid
-                    ? null
-                    : (tag) => Navigator.of(context).push(
-                        CupertinoPageRoute<void>(
-                          builder: (_) => TagNotesScreen(tag: tag),
+              child: PaperBackdrop(
+                lineHeight: lineHeightOf(
+                  inDetail ? t.noteBody.copyWith(fontSize: 20) : t.noteBody,
+                ),
+                child: TaggedText(
+                  note.text,
+                  // Tapping a tag of your own note lists your notes with it.
+                  onTag: preview || note.ownerId != Session.instance.uid
+                      ? null
+                      : (tag) => Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => TagNotesScreen(tag: tag),
+                          ),
                         ),
-                      ),
-                maxLines: inDetail ? null : 9,
-                overflow: inDetail ? null : TextOverflow.fade,
-                style: inDetail
-                    ? t.noteBody.copyWith(fontSize: 20)
-                    : t.noteBody,
+                  maxLines: inDetail ? null : 9,
+                  overflow: inDetail ? null : TextOverflow.fade,
+                  style: inDetail
+                      ? t.noteBody.copyWith(fontSize: 20)
+                      : t.noteBody,
+                ),
               ),
             ),
           ],

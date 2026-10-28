@@ -29,6 +29,8 @@ class AppSettings extends ChangeNotifier {
     // Hijri dates start on for Arabic, off for English, until chosen.
     _hijri = Prefs.getBool('hijri') ?? _lang == 'ar';
     _islamic = Prefs.getBool('islamic') ?? _lang == 'ar';
+    _noteFont = NoteFont.fromId(Prefs.getString('noteFont'));
+    _notePaper = NotePaper.fromId(Prefs.getString('notePaper'));
     _hijriOffset = (int.tryParse(Prefs.getString('hijriOffset') ?? '') ?? 0)
         .clamp(-2, 2);
   }
@@ -42,11 +44,15 @@ class AppSettings extends ChangeNotifier {
   late String _lang;
   late bool _hijri;
   late bool _islamic;
+  late NoteFont _noteFont;
+  late NotePaper _notePaper;
   late int _hijriOffset;
 
   ThemeMode get mode => _mode;
   Accent get accent => _accent;
   Backdrop get backdrop => _backdrop;
+  NoteFont get noteFont => _noteFont;
+  NotePaper get notePaper => _notePaper;
   String get lang => _lang;
   bool get isArabic => _lang == 'ar';
 
@@ -84,6 +90,18 @@ class AppSettings extends ChangeNotifier {
   void setHijri(bool on) {
     _hijri = on;
     Prefs.setBool('hijri', on);
+    notifyListeners();
+  }
+
+  void setNoteFont(NoteFont font) {
+    _noteFont = font;
+    Prefs.setString('noteFont', font.id);
+    notifyListeners();
+  }
+
+  void setNotePaper(NotePaper paper) {
+    _notePaper = paper;
+    Prefs.setString('notePaper', paper.id);
     notifyListeners();
   }
 
