@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/birthdays.dart';
 import '../../core/drafts.dart';
 import '../../core/format.dart';
 import '../../core/insights.dart';
@@ -16,7 +17,9 @@ import '../capsules/capsule_card.dart';
 import '../compose/compose_screen.dart';
 import '../insights/your_week_screen.dart';
 import '../messages/people_screen.dart';
+import '../capsules/morning_note_sheet.dart';
 import '../islamic/occasion_card.dart';
+import '../messages/chat_screen.dart';
 import '../notes/note_card.dart';
 import '../together/group_capsules_screen.dart';
 import '../together/notebooks_screen.dart';
@@ -93,6 +96,8 @@ class _TodayScreenState extends State<TodayScreen> {
             const SliverToBoxAdapter(child: _PromptCard()),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(child: _CircleQuestion(stream: _circle)),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            const SliverToBoxAdapter(child: _BirthdayCard()),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(
               child: _TogetherCard(groups: _groups, notebooks: _notebooks),
@@ -453,6 +458,77 @@ class _CircleQuestion extends StatelessWidget {
         ).animate().fadeIn(duration: Motion.base);
       },
     );
+  }
+}
+
+/// Friends in your circle with a birthday today or tomorrow, with one
+/// tap to say something kind.
+class _BirthdayCard extends StatelessWidget {
+  const _BirthdayCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Session.instance;
+    final birthdays = upcomingBirthdays(
+      session.circleMembers.where((u) => session.isVisible(u.uid)),
+      DateTime.now(),
+    ).take(2).toList();
+    if (birthdays.isEmpty) return const SizedBox.shrink();
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.md,
+        Space.gutter,
+        0,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(Space.md),
+        decoration: BoxDecoration(
+          color: c.accentSoft,
+          borderRadius: BorderRadius.circular(Radii.lg),
+        ),
+        child: Column(
+          children: [
+            for (final (i, birthday) in birthdays.indexed) ...[
+              if (i > 0) const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  Avatar(
+                    url: birthday.user.image,
+                    name: birthday.user.username,
+                    size: 40,
+                  ),
+                  const SizedBox(width: Space.sm),
+                  Expanded(
+                    child: Text(
+                      (birthday.daysAway == 0
+                              ? '{name}’s birthday is today 🎂'
+                              : '{name}’s birthday is tomorrow 🎂')
+                          .tr
+                          .replaceAll('{name}', birthday.user.firstName),
+                      style: context.text.label,
+                    ),
+                  ),
+                  const SizedBox(width: Space.xs),
+                  NwuButton(
+                    label: birthday.daysAway == 0
+                        ? 'Message'.tr
+                        : 'Send a morning note'.tr,
+                    tone: ButtonTone.accent,
+                    compact: true,
+                    expand: false,
+                    onPressed: () => birthday.daysAway == 0
+                        ? openChat(context, birthday.user)
+                        : showMorningNoteSheet(context, birthday.user),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: Motion.base);
   }
 }
 

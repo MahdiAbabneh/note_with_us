@@ -603,6 +603,15 @@ const Map<String, String> arabicStrings = {
   'Ramadan and Eid': 'رمضان والعيد',
   'Daily Ramadan prompts, Eid greetings and Eid capsule dates':
       'أسئلة رمضان اليومية وتهاني العيد وتواريخ كبسولات العيد',
+  // Birthdays
+  '{name}’s birthday is tomorrow 🎂': 'عيد ميلاد {name} غدًا 🎂',
+  '{name}’s birthday is today 🎂': 'عيد ميلاد {name} اليوم 🎂',
+  'Send a morning note so it’s there when they wake up.':
+      'أرسل ملاحظة صباحية لتكون بانتظاره عندما يستيقظ.',
+  'Friends’ birthdays': 'أعياد ميلاد الأصدقاء',
+  'A reminder the day before a friend’s birthday':
+      'تذكير قبل يوم من عيد ميلاد صديق',
+  'Birthdays': 'أعياد الميلاد',
   // Guest mode
   'Look around first': 'تصفّح أولاً',
   'Create your free account': 'أنشئ حسابك المجاني',

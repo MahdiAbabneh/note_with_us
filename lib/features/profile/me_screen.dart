@@ -727,6 +727,11 @@ class _NotificationSettings extends StatelessWidget {
     if (!ok && context.mounted) showToast(context, _problem(), error: true);
   }
 
+  Future<void> _toggleBirthdays(BuildContext context, bool on) async {
+    final ok = await Reminders.instance.setBirthdayAlerts(on);
+    if (!ok && context.mounted) showToast(context, _problem(), error: true);
+  }
+
   Future<void> _toggleCapsules(BuildContext context, bool on) async {
     final ok = await Reminders.instance.setCapsuleAlerts(on);
     if (!ok && context.mounted) showToast(context, _problem(), error: true);
@@ -812,6 +817,15 @@ class _NotificationSettings extends StatelessWidget {
             value: _daysSummary(reminders.days),
             onTap: () => _pickDays(context),
           ),
+        ListRow(
+          icon: CupertinoIcons.gift,
+          title: 'Friends’ birthdays'.tr,
+          subtitle: 'A reminder the day before a friend’s birthday'.tr,
+          trailing: _PermissionSwitch(
+            value: reminders.birthdayAlerts,
+            onChanged: (on) => _toggleBirthdays(context, on),
+          ),
+        ),
         ListRow(
           icon: CupertinoIcons.hourglass,
           title: 'Capsule alerts'.tr,

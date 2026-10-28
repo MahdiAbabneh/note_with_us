@@ -24,7 +24,7 @@ enum ReminderProblem {
 }
 
 /// Where a tapped notification should take the user.
-enum ReminderTarget { write, capsules }
+enum ReminderTarget { write, capsules, today }
 
 /// Optional, on-device notifications: a daily writing reminder and an
 /// alert when a received time capsule unlocks.
@@ -42,6 +42,7 @@ class Reminders extends ChangeNotifier {
   /// One repeating notification per chosen weekday (Monday = 1).
   static int _weekdayId(int weekday) => 10 + weekday;
   static const _capsuleIdsKey = 'capsuleNotificationIds';
+  static const _birthdayIdsKey = 'birthdayNotificationIds';
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
@@ -57,6 +58,7 @@ class Reminders extends ChangeNotifier {
 
   bool get dailyEnabled => Prefs.getBool('reminderOn') ?? false;
   bool get capsuleAlerts => Prefs.getBool('capsuleAlerts') ?? true;
+  bool get birthdayAlerts => Prefs.getBool('birthdayAlerts') ?? true;
 
   /// Whether the user waved away the one-time "make it a habit" card.
   bool get nudgeDismissed => Prefs.getBool('reminderNudgeDismissed') ?? false;
@@ -204,6 +206,17 @@ class Reminders extends ChangeNotifier {
     return true;
   }
 
+  /// Turns birthday reminders on or off. Returns false if permission was
+  /// refused, leaving them as they were.
+  Future<bool> setBirthdayAlerts(bool on) async {
+    if (on && !await requestPermission()) return false;
+    await Prefs.setBool('birthdayAlerts', on);
+    _birthdaySignature = null;
+    if (!on) await clearBirthdayAlerts();
+    notifyListeners();
+    return true;
+  }
+
   /// Re-applies the daily reminder, e.g. after a language change.
   Future<void> refresh() => _rescheduleDaily();
 
@@ -286,16 +299,67 @@ class Reminders extends ChangeNotifier {
     await Prefs.setString(_capsuleIdsKey, '[]');
   }
 
-  Set<int> _scheduledCapsuleIds() {
+  String? _birthdaySignature;
+
+  /// Schedules a reminder for each of [birthdays] and cancels reminders
+  /// for people no longer listed. Does nothing when the list is the same
+  /// as last time, since this is called whenever the circle changes.
+  Future<void> syncBirthdays(
+    List<({String id, DateTime at, String title, String body})> birthdays,
+  ) async {
+    if (!_ready || !birthdayAlerts) return;
+    final signature = birthdays
+        .map((b) => '${b.id}@${b.at.millisecondsSinceEpoch}:${b.title}')
+        .join('|');
+    if (signature == _birthdaySignature) return;
+    _birthdaySignature = signature;
+    final wanted = {
+      for (final b in birthdays) _birthdayNotificationId(b.id): b,
+    };
+    for (final id in _scheduledIds(
+      _birthdayIdsKey,
+    ).difference(wanted.keys.toSet())) {
+      await _plugin.cancel(id: id);
+    }
+    for (final MapEntry(key: id, value: b) in wanted.entries) {
+      await _plugin.zonedSchedule(
+        id: id,
+        scheduledDate: tz.TZDateTime.from(b.at, tz.local),
+        title: b.title,
+        body: b.body,
+        payload: ReminderTarget.today.name,
+        notificationDetails: _details('birthdays', 'Birthdays'.tr),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
+    await Prefs.setString(_birthdayIdsKey, jsonEncode(wanted.keys.toList()));
+  }
+
+  /// Removes all birthday reminders, e.g. on sign-out.
+  Future<void> clearBirthdayAlerts() async {
+    _birthdaySignature = null;
+    if (!_ready) return;
+    for (final id in _scheduledIds(_birthdayIdsKey)) {
+      await _plugin.cancel(id: id);
+    }
+    await Prefs.setString(_birthdayIdsKey, '[]');
+  }
+
+  Set<int> _scheduledIds(String key) {
     try {
       return {
-        ...(jsonDecode(Prefs.getString(_capsuleIdsKey) ?? '[]') as List)
-            .cast<int>(),
+        ...(jsonDecode(Prefs.getString(key) ?? '[]') as List).cast<int>(),
       };
     } on FormatException {
       return {};
     }
   }
+
+  // Clear of the daily reminder and the capsule ids.
+  int _birthdayNotificationId(String userId) =>
+      400000000 + (userId.hashCode & 0x0FFFFFFF);
+
+  Set<int> _scheduledCapsuleIds() => _scheduledIds(_capsuleIdsKey);
 
   // Stable per capsule and clear of the daily reminder's id.
   int _capsuleNotificationId(String capsuleId) =>

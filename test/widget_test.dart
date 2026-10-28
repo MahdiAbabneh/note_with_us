@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/widgets.dart' show Brightness, TextDirection;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mahdeko/core/birthdays.dart';
 import 'package:mahdeko/core/format.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mahdeko/core/hijri.dart';
@@ -603,6 +604,55 @@ void main() {
         expect(en.trim(), isNotEmpty);
         expect(ar.trim(), isNotEmpty);
       }
+    });
+  });
+
+  group('friends birthdays', () {
+    AppUser person(String name, String dob) =>
+        AppUser(uid: name, username: name, dateOfBirth: dob);
+    final now = DateTime(2026, 10, 27, 14);
+
+    test('finds birthdays today and tomorrow, today first', () {
+      final found = upcomingBirthdays([
+        person('Tomorrow', '10/28/1990'),
+        person('Today', '10/27/2001'),
+        person('Later', '11/15/1999'),
+        person('Yesterday', '10/26/1999'),
+        person('NoDate', ''),
+      ], now);
+      expect(found.map((b) => '${b.user.username}:${b.daysAway}'), [
+        'Today:0',
+        'Tomorrow:1',
+      ]);
+    });
+
+    test('wraps over the new year', () {
+      final found = upcomingBirthdays([
+        person('NewYear', '1/1/1990'),
+      ], DateTime(2026, 12, 31, 9));
+      expect(found.single.daysAway, 1);
+    });
+
+    test('reminds at 9:00 the day before, never in the past', () {
+      // 28 Oct: this year's reminder (27 Oct, 9:00) has already passed.
+      expect(
+        reminderTimeFor(DateTime(1990, 10, 28), now),
+        DateTime(2027, 10, 27, 9),
+      );
+      expect(
+        reminderTimeFor(DateTime(1990, 11, 15), now),
+        DateTime(2026, 11, 14, 9),
+      );
+      // Birthday today: next year's reminder.
+      expect(
+        reminderTimeFor(DateTime(1990, 10, 27), now),
+        DateTime(2027, 10, 26, 9),
+      );
+      // 1 January, seen on the morning of 31 December.
+      expect(
+        reminderTimeFor(DateTime(1990, 1, 1), DateTime(2026, 12, 31, 8)),
+        DateTime(2026, 12, 31, 9),
+      );
     });
   });
 

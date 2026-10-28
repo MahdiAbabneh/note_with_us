@@ -125,6 +125,7 @@ class Session extends ChangeNotifier {
     if (user == null) {
       // Capsule alerts belong to the account that received them.
       Reminders.instance.clearCapsuleAlerts();
+      Reminders.instance.clearBirthdayAlerts();
       final guest = Prefs.getBool(_guestKey) ?? false;
       if (guest) blocked = _guestHidden();
       status = guest ? SessionStatus.guest : SessionStatus.signedOut;

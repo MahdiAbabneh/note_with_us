@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/birthdays.dart';
+import '../../core/format.dart';
 import '../../core/l10n.dart';
 import '../../core/prompts.dart';
 import '../../core/reminders.dart';
@@ -51,10 +53,31 @@ class _HomeShellState extends State<HomeShell> {
       _received = list;
       _syncCapsuleAlerts();
     }, onError: (_) {});
+    session.addListener(_syncBirthdayAlerts);
+    _syncBirthdayAlerts();
     _groupCapsules = session.groupCapsules.mine(session.uid).listen((list) {
       _groups = list;
       _syncCapsuleAlerts();
     }, onError: (_) {});
+  }
+
+  /// A reminder at 9:00 the day before each circle member's birthday.
+  void _syncBirthdayAlerts() {
+    final session = Session.instance;
+    final now = DateTime.now();
+    Reminders.instance.syncBirthdays([
+      for (final person in session.circleMembers)
+        if (parseBirthDate(person.dateOfBirth) case final birth?)
+          (
+            id: person.uid,
+            at: reminderTimeFor(birth, now),
+            title: '{name}’s birthday is tomorrow 🎂'.tr.replaceAll(
+              '{name}',
+              person.firstName,
+            ),
+            body: 'Send a morning note so it’s there when they wake up.'.tr,
+          ),
+    ]);
   }
 
   /// One alert per capsule that is still sealed: capsules sent to you
@@ -88,6 +111,7 @@ class _HomeShellState extends State<HomeShell> {
     Reminders.instance.openRequest.removeListener(_handleNotificationTap);
     _capsules?.cancel();
     _groupCapsules?.cancel();
+    Session.instance.removeListener(_syncBirthdayAlerts);
     super.dispose();
   }
 
@@ -106,6 +130,8 @@ class _HomeShellState extends State<HomeShell> {
       case ReminderTarget.capsules:
         memoriesTab.value = 1;
         setState(() => _tab = 1);
+      case ReminderTarget.today:
+        setState(() => _tab = 0);
     }
   }
 
