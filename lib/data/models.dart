@@ -85,9 +85,12 @@ class Note {
     this.legacyLikes = const {},
     this.mood = Mood.plain,
     this.prompt = '',
+    this.promptDay = '',
     this.commentCount = 0,
     this.pinned = false,
     this.archived = false,
+    this.comfort = false,
+    this.kind = '',
     this.fromOldApp = false,
   });
 
@@ -114,9 +117,12 @@ class Note {
       legacyLikes: likes,
       mood: Mood.fromId(map['mood'] as String?),
       prompt: map['prompt'] as String? ?? '',
+      promptDay: map['promptDay'] as String? ?? '',
       commentCount: (map['commentCount'] as num?)?.toInt() ?? 0,
       pinned: map['pinned'] as bool? ?? false,
       archived: map['archived'] as bool? ?? false,
+      comfort: map['comfort'] as bool? ?? false,
+      kind: map['kind'] as String? ?? '',
       // The redesigned app always saves a mood, even "plain".
       fromOldApp: !map.containsKey('mood'),
     );
@@ -138,6 +144,10 @@ class Note {
   final Set<String> legacyLikes;
   final Mood mood;
   final String prompt;
+
+  /// [dayKey] of the day this note answered the daily question, so a
+  /// circle can answer the same one whatever language each person uses.
+  final String promptDay;
   final int commentCount;
 
   /// Pinned to the top of the owner's journal (private notes only).
@@ -145,6 +155,15 @@ class Note {
 
   /// Hidden from the owner's journal without being deleted (private only).
   final bool archived;
+
+  /// Kept in the owner's comfort box to read on a hard day (private only).
+  final bool comfort;
+
+  /// What kind of note this is: empty for a normal one, `gratitude` for a
+  /// day's entry in the gratitude jar.
+  final String kind;
+
+  bool get isGratitude => kind == gratitudeKind;
 
   /// Written by the old app, before notes had a feeling. Kept in the
   /// database, but left out of public lists.
@@ -207,6 +226,12 @@ class Comment {
   final DateTime time;
 }
 
+/// [Note.kind] of a gratitude jar entry.
+const gratitudeKind = 'gratitude';
+
+/// [Capsule.kind] of a surprise note that arrives the next morning.
+const morningKind = 'morning';
+
 /// A note sealed until [unlockAt].
 class Capsule {
   const Capsule({
@@ -221,6 +246,7 @@ class Capsule {
     required this.createdAt,
     required this.unlockAt,
     required this.opened,
+    this.kind = '',
   });
 
   factory Capsule.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -237,6 +263,7 @@ class Capsule {
       createdAt: _parseTime(map['createdAt']),
       unlockAt: _parseTime(map['unlockAt']),
       opened: map['opened'] as bool? ?? false,
+      kind: map['kind'] as String? ?? '',
     );
   }
 
@@ -251,6 +278,16 @@ class Capsule {
   final DateTime createdAt;
   final DateTime unlockAt;
   final bool opened;
+
+  /// `morning` for a surprise note from a friend, empty for a normal capsule.
+  final String kind;
+
+  bool get isMorningNote => kind == morningKind;
+
+  /// A morning note from someone else stays out of sight until it
+  /// arrives, so it is still a surprise.
+  bool isSurpriseFor(String uid) =>
+      isMorningNote && recipientId == uid && ownerId != uid && !isUnlocked;
 
   bool get isUnlocked => !DateTime.now().isBefore(unlockAt);
   bool get isToSelf => ownerId == recipientId;
@@ -366,4 +403,229 @@ class FavoriteRef {
   final DateTime savedAt;
 
   String get key => '${audience.name}_${ownerId}_$noteId';
+}
+
+/// A capsule the whole circle writes to, opened together on [unlockAt].
+/// Each person's letter stays in `entries/{uid}` and is readable by the
+/// others only after it unlocks.
+class GroupCapsule {
+  const GroupCapsule({
+    required this.id,
+    required this.ownerId,
+    required this.ownerName,
+    required this.title,
+    required this.createdAt,
+    required this.unlockAt,
+    required this.members,
+    required this.written,
+  });
+
+  factory GroupCapsule.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return GroupCapsule(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      createdAt: _parseTime(map['createdAt']),
+      unlockAt: _parseTime(map['unlockAt']),
+      members: (map['members'] as List? ?? const []).cast<String>(),
+      written: {...(map['written'] as List? ?? const []).cast<String>()},
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String ownerName;
+  final String title;
+  final DateTime createdAt;
+  final DateTime unlockAt;
+
+  /// Everyone taking part, the creator included.
+  final List<String> members;
+
+  /// Who has already written their letter.
+  final Set<String> written;
+
+  bool get isUnlocked => !DateTime.now().isBefore(unlockAt);
+  bool hasWritten(String uid) => written.contains(uid);
+}
+
+/// One person's letter in a [GroupCapsule].
+class GroupEntry {
+  const GroupEntry({
+    required this.ownerId,
+    required this.ownerName,
+    required this.ownerImage,
+    required this.text,
+    required this.mood,
+    required this.time,
+  });
+
+  factory GroupEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return GroupEntry(
+      ownerId: map['ownerId'] as String? ?? doc.id,
+      ownerName: map['ownerName'] as String? ?? '',
+      ownerImage: map['ownerImage'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      mood: Mood.fromId(map['mood'] as String?),
+      time: _parseTime(map['time']),
+    );
+  }
+
+  final String ownerId;
+  final String ownerName;
+  final String ownerImage;
+  final String text;
+  final Mood mood;
+  final DateTime time;
+}
+
+/// A notebook two people write in, taking turns.
+class SharedNotebook {
+  const SharedNotebook({
+    required this.id,
+    required this.ownerId,
+    required this.title,
+    required this.members,
+    required this.memberNames,
+    required this.createdAt,
+    this.lastWriterId = '',
+    this.lastTime,
+    this.entryCount = 0,
+  });
+
+  factory SharedNotebook.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return SharedNotebook(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      members: (map['members'] as List? ?? const []).cast<String>(),
+      memberNames: Map<String, String>.from(map['memberNames'] as Map? ?? {}),
+      createdAt: _parseTime(map['createdAt']),
+      lastWriterId: map['lastWriterId'] as String? ?? '',
+      lastTime: map['lastTime'] == null ? null : _parseTime(map['lastTime']),
+      entryCount: (map['entryCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String title;
+  final List<String> members;
+
+  /// `uid -> name` as it was when the notebook was made.
+  final Map<String, String> memberNames;
+  final DateTime createdAt;
+
+  /// Who wrote the last page; empty before the first one.
+  final String lastWriterId;
+  final DateTime? lastTime;
+  final int entryCount;
+
+  /// The other person in the notebook.
+  String otherId(String uid) =>
+      members.firstWhere((m) => m != uid, orElse: () => uid);
+
+  /// Pages alternate: you may write unless you wrote the last one.
+  bool isMyTurn(String uid) => lastWriterId != uid;
+}
+
+/// One page of a [SharedNotebook].
+class NotebookEntry {
+  const NotebookEntry({
+    required this.id,
+    required this.ownerId,
+    required this.ownerName,
+    required this.text,
+    required this.time,
+  });
+
+  factory NotebookEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return NotebookEntry(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      time: _parseTime(map['time']),
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String ownerName;
+  final String text;
+  final DateTime time;
+}
+
+/// A question someone asked some of their circle. The answers are private
+/// to the person who asked.
+class CircleAsk {
+  const CircleAsk({
+    required this.id,
+    required this.ownerId,
+    required this.ownerName,
+    required this.text,
+    required this.createdAt,
+    required this.members,
+    required this.answered,
+  });
+
+  factory CircleAsk.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return CircleAsk(
+      id: doc.id,
+      ownerId: map['ownerId'] as String? ?? '',
+      ownerName: map['ownerName'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      createdAt: _parseTime(map['createdAt']),
+      members: (map['members'] as List? ?? const []).cast<String>(),
+      answered: {...(map['answered'] as List? ?? const []).cast<String>()},
+    );
+  }
+
+  final String id;
+  final String ownerId;
+  final String ownerName;
+  final String text;
+  final DateTime createdAt;
+
+  /// The people asked (not the asker).
+  final List<String> members;
+
+  /// Who has answered so far.
+  final Set<String> answered;
+
+  bool hasAnswered(String uid) => answered.contains(uid);
+}
+
+/// One person's private answer to a [CircleAsk].
+class AskAnswer {
+  const AskAnswer({
+    required this.ownerId,
+    required this.ownerName,
+    required this.ownerImage,
+    required this.text,
+    required this.time,
+  });
+
+  factory AskAnswer.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final map = doc.data() ?? const {};
+    return AskAnswer(
+      ownerId: map['ownerId'] as String? ?? doc.id,
+      ownerName: map['ownerName'] as String? ?? '',
+      ownerImage: map['ownerImage'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      time: _parseTime(map['time']),
+    );
+  }
+
+  final String ownerId;
+  final String ownerName;
+  final String ownerImage;
+  final String text;
+  final DateTime time;
 }

@@ -11,8 +11,20 @@ import 'package:timezone/timezone.dart' as tz;
 import 'l10n.dart';
 import 'prefs.dart';
 
+/// Why turning a reminder on did not work, so the app can say so.
+enum ReminderProblem {
+  /// Notifications could not be set up at startup.
+  unavailable,
+
+  /// The user (or the OS) refused permission.
+  permissionDenied,
+
+  /// Permission was fine but scheduling failed.
+  failed,
+}
+
 /// Where a tapped notification should take the user.
-enum ReminderTarget { write, capsules }
+enum ReminderTarget { write, capsules, today }
 
 /// Optional, on-device notifications: a daily writing reminder and an
 /// alert when a received time capsule unlocks.
@@ -30,6 +42,7 @@ class Reminders extends ChangeNotifier {
   /// One repeating notification per chosen weekday (Monday = 1).
   static int _weekdayId(int weekday) => 10 + weekday;
   static const _capsuleIdsKey = 'capsuleNotificationIds';
+  static const _birthdayIdsKey = 'birthdayNotificationIds';
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
@@ -37,8 +50,23 @@ class Reminders extends ChangeNotifier {
   /// Set when the user taps a notification; the home shell routes it.
   final ValueNotifier<ReminderTarget?> openRequest = ValueNotifier(null);
 
+  /// Set when the last attempt to turn something on failed.
+  ReminderProblem? lastProblem;
+
+  /// Technical detail of the last failure, shown only in debug builds.
+  String? lastDetail;
+
   bool get dailyEnabled => Prefs.getBool('reminderOn') ?? false;
   bool get capsuleAlerts => Prefs.getBool('capsuleAlerts') ?? true;
+  bool get birthdayAlerts => Prefs.getBool('birthdayAlerts') ?? true;
+
+  /// Whether the user waved away the one-time "make it a habit" card.
+  bool get nudgeDismissed => Prefs.getBool('reminderNudgeDismissed') ?? false;
+
+  Future<void> dismissNudge() async {
+    await Prefs.setBool('reminderNudgeDismissed', true);
+    notifyListeners();
+  }
 
   TimeOfDay get time {
     final parts = (Prefs.getString('reminderTime') ?? '20:30').split(':');
@@ -71,6 +99,7 @@ class Reminders extends ChangeNotifier {
       }
       _ready = true;
     } catch (error, stack) {
+      lastDetail = '$error';
       developer.log(
         'Reminders unavailable',
         name: 'note_with_us.reminders',
@@ -88,24 +117,36 @@ class Reminders extends ChangeNotifier {
 
   /// Asks the OS for permission; returns whether notifications may show.
   Future<bool> requestPermission() async {
-    if (!_ready) return false;
-    final ios = _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    if (ios != null) {
-      return await ios.requestPermissions(
-            alert: true,
-            badge: false,
-            sound: true,
-          ) ??
-          false;
+    if (!_ready) {
+      lastProblem = ReminderProblem.unavailable;
+      return false;
     }
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    return await android?.requestNotificationsPermission() ?? true;
+    try {
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final granted = ios != null
+          ? await ios.requestPermissions(alert: true, badge: false, sound: true)
+          : await android?.requestNotificationsPermission();
+      if (granted ?? ios == null) return true;
+      lastProblem = ReminderProblem.permissionDenied;
+      return false;
+    } catch (error, stack) {
+      lastProblem = ReminderProblem.failed;
+      lastDetail = '$error';
+      developer.log(
+        'Notification permission request failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
+      );
+      return false;
+    }
   }
 
   /// Turns the daily reminder on or off. Returns false if permission was
@@ -113,7 +154,22 @@ class Reminders extends ChangeNotifier {
   Future<bool> setDaily(bool on) async {
     if (on && !await requestPermission()) return false;
     await Prefs.setBool('reminderOn', on);
-    await _rescheduleDaily();
+    try {
+      await _rescheduleDaily();
+    } catch (error, stack) {
+      // Scheduling failed: leave the reminder off rather than pretend.
+      await Prefs.setBool('reminderOn', false);
+      lastProblem = ReminderProblem.failed;
+      lastDetail = '$error';
+      developer.log(
+        'Scheduling the daily reminder failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
+      );
+      notifyListeners();
+      return false;
+    }
     notifyListeners();
     return true;
   }
@@ -140,11 +196,25 @@ class Reminders extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setCapsuleAlerts(bool on) async {
-    if (on && !await requestPermission()) return;
+  /// Turns capsule alerts on or off. Returns false if permission was
+  /// refused, leaving them as they were.
+  Future<bool> setCapsuleAlerts(bool on) async {
+    if (on && !await requestPermission()) return false;
     await Prefs.setBool('capsuleAlerts', on);
     if (!on) await clearCapsuleAlerts();
     notifyListeners();
+    return true;
+  }
+
+  /// Turns birthday reminders on or off. Returns false if permission was
+  /// refused, leaving them as they were.
+  Future<bool> setBirthdayAlerts(bool on) async {
+    if (on && !await requestPermission()) return false;
+    await Prefs.setBool('birthdayAlerts', on);
+    _birthdaySignature = null;
+    if (!on) await clearBirthdayAlerts();
+    notifyListeners();
+    return true;
   }
 
   /// Re-applies the daily reminder, e.g. after a language change.
@@ -189,18 +259,20 @@ class Reminders extends ChangeNotifier {
     }
   }
 
-  /// Schedules an alert for each received, still-locked capsule and
-  /// cancels alerts for capsules that no longer exist.
+  /// Schedules an alert for each capsule that is still locked (with the
+  /// notification text the caller chose) and cancels alerts for capsules
+  /// that no longer exist.
   Future<void> syncCapsules(
-    List<({String id, DateTime unlockAt, String from})> capsules,
+    List<({String id, DateTime unlockAt, String title, String body})> capsules,
   ) async {
     if (!_ready || !capsuleAlerts) return;
     final previous = _scheduledCapsuleIds();
     final now = DateTime.now();
-    final wanted = <int, ({String id, DateTime unlockAt, String from})>{
-      for (final c in capsules.where((c) => c.unlockAt.isAfter(now)))
-        _capsuleNotificationId(c.id): c,
-    };
+    final wanted =
+        <int, ({String id, DateTime unlockAt, String title, String body})>{
+          for (final c in capsules.where((c) => c.unlockAt.isAfter(now)))
+            _capsuleNotificationId(c.id): c,
+        };
     for (final id in previous.difference(wanted.keys.toSet())) {
       await _plugin.cancel(id: id);
     }
@@ -208,10 +280,8 @@ class Reminders extends ChangeNotifier {
       await _plugin.zonedSchedule(
         id: id,
         scheduledDate: tz.TZDateTime.from(c.unlockAt, tz.local),
-        title: 'A time capsule is ready to open'.tr,
-        body: c.from.isEmpty
-            ? 'A note from your past self is waiting.'.tr
-            : 'From {name}'.tr.replaceAll('{name}', c.from),
+        title: c.title,
+        body: c.body,
         payload: ReminderTarget.capsules.name,
         notificationDetails: _details('capsules', 'Time capsules'.tr),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -229,16 +299,93 @@ class Reminders extends ChangeNotifier {
     await Prefs.setString(_capsuleIdsKey, '[]');
   }
 
-  Set<int> _scheduledCapsuleIds() {
+  String? _birthdaySignature;
+  Future<void> _birthdayQueue = Future.value();
+
+  /// Schedules a reminder for each of [birthdays] and cancels reminders
+  /// for people no longer listed. Does nothing when the list is the same
+  /// as the last one that worked, since this is called whenever the
+  /// circle changes. Calls run one after another, never at the same time.
+  Future<void> syncBirthdays(
+    List<({String id, DateTime at, String title, String body})> birthdays,
+  ) {
+    final run = _birthdayQueue.then((_) => _syncBirthdays(birthdays));
+    _birthdayQueue = run;
+    return run;
+  }
+
+  Future<void> _syncBirthdays(
+    List<({String id, DateTime at, String title, String body})> birthdays,
+  ) async {
+    if (!_ready || !birthdayAlerts) return;
+    final signature = birthdays
+        .map((b) => '${b.id}@${b.at.millisecondsSinceEpoch}:${b.title}')
+        .join('|');
+    if (signature == _birthdaySignature) return;
+    try {
+      final wanted = {
+        for (final b in birthdays) _birthdayNotificationId(b.id): b,
+      };
+      final previous = _scheduledIds(_birthdayIdsKey);
+      // Remember both old and new ids first, so even if scheduling stops
+      // halfway a later sync still knows what to cancel.
+      await Prefs.setString(
+        _birthdayIdsKey,
+        jsonEncode({...previous, ...wanted.keys}.toList()),
+      );
+      for (final id in previous.difference(wanted.keys.toSet())) {
+        await _plugin.cancel(id: id);
+      }
+      for (final MapEntry(key: id, value: b) in wanted.entries) {
+        await _plugin.zonedSchedule(
+          id: id,
+          scheduledDate: tz.TZDateTime.from(b.at, tz.local),
+          title: b.title,
+          body: b.body,
+          payload: ReminderTarget.today.name,
+          notificationDetails: _details('birthdays', 'Birthdays'.tr),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      }
+      await Prefs.setString(_birthdayIdsKey, jsonEncode(wanted.keys.toList()));
+      // Only a sync that finished is remembered, so a failed one is retried.
+      _birthdaySignature = signature;
+    } catch (error, stack) {
+      _birthdaySignature = null;
+      developer.log(
+        'Scheduling birthday reminders failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
+      );
+    }
+  }
+
+  /// Removes all birthday reminders, e.g. on sign-out.
+  Future<void> clearBirthdayAlerts() async {
+    _birthdaySignature = null;
+    if (!_ready) return;
+    for (final id in _scheduledIds(_birthdayIdsKey)) {
+      await _plugin.cancel(id: id);
+    }
+    await Prefs.setString(_birthdayIdsKey, '[]');
+  }
+
+  Set<int> _scheduledIds(String key) {
     try {
       return {
-        ...(jsonDecode(Prefs.getString(_capsuleIdsKey) ?? '[]') as List)
-            .cast<int>(),
+        ...(jsonDecode(Prefs.getString(key) ?? '[]') as List).cast<int>(),
       };
     } on FormatException {
       return {};
     }
   }
+
+  // Clear of the daily reminder and the capsule ids.
+  int _birthdayNotificationId(String userId) =>
+      400000000 + (userId.hashCode & 0x0FFFFFFF);
+
+  Set<int> _scheduledCapsuleIds() => _scheduledIds(_capsuleIdsKey);
 
   // Stable per capsule and clear of the daily reminder's id.
   int _capsuleNotificationId(String capsuleId) =>

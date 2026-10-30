@@ -65,6 +65,22 @@ class NotesRepository {
                 s.docs.map((d) => Note.fromDoc(d, Audience.private)).toList(),
           );
 
+  /// Everything [uid] wrote (private, circle and public), read once and
+  /// newest first. Used by the PDF export, so it has no limit.
+  Future<List<Note>> allMine(String uid) async {
+    final results = await Future.wait([
+      _collection(Audience.private, uid).get(),
+      _db.collection('circlePosts').where('audience', arrayContains: uid).get(),
+      _db.collection('postsMain').where('ownerId', isEqualTo: uid).get(),
+    ]);
+    return _sorted([
+      for (final d in results[0].docs) Note.fromDoc(d, Audience.private),
+      for (final d in results[1].docs)
+        if (d.data()['ownerId'] == uid) Note.fromDoc(d, Audience.circle),
+      for (final d in results[2].docs) Note.fromDoc(d, Audience.everyone),
+    ]);
+  }
+
   /// Public notes written by [uid].
   Stream<List<Note>> publicBy(String uid) => _db
       .collection('postsMain')
@@ -88,6 +104,8 @@ class NotesRepository {
     required String text,
     required Mood mood,
     String prompt = '',
+    String promptDay = '',
+    String kind = '',
     List<String> circle = const [],
   }) async {
     await _collection(audience, author.uid).add({
@@ -104,6 +122,8 @@ class NotesRepository {
       'reactions': {},
       'mood': mood.id,
       'prompt': prompt,
+      if (promptDay.isNotEmpty) 'promptDay': promptDay,
+      if (kind.isNotEmpty) 'kind': kind,
       'commentCount': 0,
       if (audience == Audience.circle)
         'audience': {author.uid, ...circle}.toList(),
@@ -133,7 +153,7 @@ class NotesRepository {
 
   /// Everything [uid] wrote, private, circle and public, newest first.
   /// Used for weekly insights; emits once all three sources have loaded.
-  Stream<List<Note>> mine(String uid, {int limit = 300}) {
+  Stream<List<Note>> mine(String uid, {int limit = 1000}) {
     final sources = [
       journal(uid, limit: limit),
       circleFeed(uid).map((l) => l.where((n) => n.ownerId == uid).toList()),
@@ -206,6 +226,9 @@ class NotesRepository {
   }
 
   /// Pins or unpins one of the owner's private notes.
+  Future<void> setComfort(Note note, {required bool comfort}) =>
+      _ref(note).update({'comfort': comfort});
+
   Future<void> setPinned(Note note, {required bool pinned}) =>
       _ref(note).update({'pinned': pinned});
 

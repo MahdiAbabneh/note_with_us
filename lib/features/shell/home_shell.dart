@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/birthdays.dart';
+import '../../core/format.dart';
 import '../../core/l10n.dart';
 import '../../core/prompts.dart';
 import '../../core/reminders.dart';
@@ -31,6 +33,9 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _tab = 0;
   StreamSubscription<List<Capsule>>? _capsules;
+  StreamSubscription<List<GroupCapsule>>? _groupCapsules;
+  List<Capsule> _received = const [];
+  List<GroupCapsule> _groups = const [];
   final _guest = Session.instance.isGuest;
 
   @override
@@ -45,17 +50,70 @@ class _HomeShellState extends State<HomeShell> {
     );
     final session = Session.instance;
     _capsules = session.capsules.received(session.uid).listen((list) {
-      reminders.syncCapsules([
-        for (final c in list.where((c) => !c.opened))
-          (id: c.id, unlockAt: c.unlockAt, from: c.isToSelf ? '' : c.ownerName),
-      ]);
+      _received = list;
+      _syncCapsuleAlerts();
     }, onError: (_) {});
+    session.addListener(_syncBirthdayAlerts);
+    _syncBirthdayAlerts();
+    _groupCapsules = session.groupCapsules.mine(session.uid).listen((list) {
+      _groups = list;
+      _syncCapsuleAlerts();
+    }, onError: (_) {});
+  }
+
+  /// A reminder at 9:00 the day before each circle member's birthday.
+  void _syncBirthdayAlerts() {
+    final session = Session.instance;
+    final now = DateTime.now();
+    Reminders.instance.syncBirthdays([
+      for (final person in session.circleMembers)
+        if (parseBirthDate(person.dateOfBirth) case final birth?)
+          (
+            id: person.uid,
+            at: reminderTimeFor(birth, now),
+            title: '{name}’s birthday is tomorrow 🎂'.tr.replaceAll(
+              '{name}',
+              person.firstName,
+            ),
+            body: 'Send a morning note so it’s there when they wake up.'.tr,
+          ),
+    ]);
+  }
+
+  /// One alert per capsule that is still sealed: capsules sent to you
+  /// (and morning notes) plus the circle capsules you are part of. The
+  /// reminders keep only what is passed here, so both lists go together.
+  void _syncCapsuleAlerts() {
+    Reminders.instance.syncCapsules([
+      for (final c in _received.where((c) => !c.opened))
+        (
+          id: c.id,
+          unlockAt: c.unlockAt,
+          title: c.isMorningNote
+              ? 'A morning note is waiting ☀️'.tr
+              : 'A time capsule is ready to open'.tr,
+          body: c.isToSelf
+              ? 'A note from your past self is waiting.'.tr
+              : 'From {name}'.tr.replaceAll('{name}', c.ownerName),
+        ),
+      for (final g in _groups.where(
+        (g) => Session.instance.isVisible(g.ownerId),
+      ))
+        (
+          id: g.id,
+          unlockAt: g.unlockAt,
+          title: 'A circle capsule is ready to open'.tr,
+          body: g.title,
+        ),
+    ]);
   }
 
   @override
   void dispose() {
     Reminders.instance.openRequest.removeListener(_handleNotificationTap);
     _capsules?.cancel();
+    _groupCapsules?.cancel();
+    Session.instance.removeListener(_syncBirthdayAlerts);
     super.dispose();
   }
 
@@ -74,6 +132,8 @@ class _HomeShellState extends State<HomeShell> {
       case ReminderTarget.capsules:
         memoriesTab.value = 1;
         setState(() => _tab = 1);
+      case ReminderTarget.today:
+        setState(() => _tab = 0);
     }
   }
 

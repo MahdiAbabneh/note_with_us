@@ -21,6 +21,28 @@ String fullDate(DateTime time) => DateFormat('d MMMM y', _locale).format(time);
 /// "October 2026".
 String monthYear(DateTime time) => DateFormat('MMMM y', _locale).format(time);
 
+/// Whole calendar days from [a] to [b], by date only, so a daylight-saving
+/// change between them (a 23 or 25 hour day) never shifts the count.
+int daysBetween(DateTime a, DateTime b) => DateTime.utc(
+  b.year,
+  b.month,
+  b.day,
+).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
+
+/// "2026-10-27": a language-independent key for a calendar day.
+String dayKey(DateTime time) =>
+    '${time.year}-${time.month.toString().padLeft(2, '0')}-'
+    '${time.day.toString().padLeft(2, '0')}';
+
+/// The coming 8:00 in the morning that is at least an hour away, so a
+/// "morning note" sent late at night arrives the next day.
+DateTime nextMorning(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day, 8);
+  return today.difference(now) >= const Duration(hours: 1)
+      ? today
+      : DateTime(now.year, now.month, now.day + 1, 8);
+}
+
 /// "9:41".
 String clockTime(DateTime time) => DateFormat('H:mm', _locale).format(time);
 

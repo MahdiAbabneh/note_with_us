@@ -4,6 +4,8 @@ export 'components/content_text.dart';
 export 'components/feedback.dart';
 export 'components/inputs.dart';
 export 'components/layout.dart';
+export 'components/paper.dart';
 export 'components/pressable.dart';
+export 'components/tagged_text.dart';
 export 'theme.dart';
 export 'tokens.dart';

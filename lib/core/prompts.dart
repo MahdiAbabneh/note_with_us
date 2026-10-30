@@ -127,3 +127,21 @@ class PromptState extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+/// Whether this stretch's "past you" note was answered or put off,
+/// remembered on this device (see `pastSelfWindow`).
+class PastSelfState extends ChangeNotifier {
+  PastSelfState._();
+
+  /// Shared instance.
+  static final PastSelfState instance = PastSelfState._();
+
+  static const _key = 'pastSelfDone';
+
+  bool isDone(int window) => Prefs.getString(_key) == '$window';
+
+  void markDone(int window) {
+    Prefs.setString(_key, '$window');
+    notifyListeners();
+  }
+}

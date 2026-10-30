@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/format.dart';
+import '../../core/hijri.dart';
 import '../../core/l10n.dart';
 import '../../core/reminders.dart';
 import '../../core/settings.dart';
@@ -86,6 +88,7 @@ class MeScreen extends StatelessWidget {
                   value: settings.isArabic ? 'العربية' : 'English',
                   onTap: () => _showLanguage(context),
                 ),
+                ..._hijriRows(context, settings),
               ],
             ),
             SectionLabel('More'.tr),
@@ -215,6 +218,7 @@ class GuestMeScreen extends StatelessWidget {
                 value: settings.isArabic ? 'العربية' : 'English',
                 onTap: () => _showLanguage(context),
               ),
+              ..._hijriRows(context, settings),
             ],
           ),
           SectionLabel('More'.tr),
@@ -306,7 +310,42 @@ class _Header extends StatelessWidget {
   }
 }
 
-void _showAppearance(BuildContext context) {
+/// The Hijri date switch and, when it is on, the day adjustment.
+List<Widget> _hijriRows(BuildContext context, AppSettings settings) => [
+  ListRow(
+    icon: CupertinoIcons.moon_stars,
+    title: 'Hijri dates'.tr,
+    subtitle: 'Show the Hijri date next to the usual one'.tr,
+    trailing: CupertinoSwitch(
+      value: settings.hijri,
+      activeTrackColor: context.colors.accent,
+      onChanged: settings.setHijri,
+    ),
+  ),
+  ListRow(
+    icon: CupertinoIcons.sparkles,
+    title: 'Ramadan and Eid'.tr,
+    subtitle: 'Daily Ramadan prompts, Eid greetings and Eid capsule dates'.tr,
+    trailing: CupertinoSwitch(
+      value: settings.islamic,
+      activeTrackColor: context.colors.accent,
+      onChanged: settings.setIslamic,
+    ),
+  ),
+  if (settings.hijri || settings.islamic)
+    ListRow(
+      icon: CupertinoIcons.plus_slash_minus,
+      title: 'Hijri adjustment'.tr,
+      value: switch (settings.hijriOffset) {
+        < 0 => 'A day earlier'.tr,
+        > 0 => 'A day later'.tr,
+        _ => 'As calculated'.tr,
+      },
+      onTap: () => _showHijriAdjustment(context),
+    ),
+];
+
+void _showHijriAdjustment(BuildContext context) {
   final settings = AppSettings.instance;
   showNwuSheet<void>(
     context,
@@ -323,64 +362,268 @@ void _showAppearance(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Appearance'.tr, style: ctx.text.title),
+            Text('Hijri adjustment'.tr, style: ctx.text.title),
+            const SizedBox(height: Space.xs),
+            Text(
+              'Dates follow the Umm al-Qura calendar. If your country starts the month a day earlier or later, adjust it here.'
+                  .tr,
+              style: ctx.text.small,
+            ),
             const SizedBox(height: Space.lg),
             SegmentedPills(
-              labels: ['Automatic'.tr, 'Light'.tr, 'Dark'.tr],
-              index: switch (settings.mode) {
-                ThemeMode.system => 0,
-                ThemeMode.light => 1,
-                ThemeMode.dark => 2,
-              },
-              onChanged: (i) => settings.setMode(
-                [ThemeMode.system, ThemeMode.light, ThemeMode.dark][i],
+              labels: [
+                'A day earlier'.tr,
+                'As calculated'.tr,
+                'A day later'.tr,
+              ],
+              index: settings.hijriOffset.clamp(-1, 1) + 1,
+              onChanged: (i) => settings.setHijriOffset(i - 1),
+            ),
+            const SizedBox(height: Space.sm),
+            Text(
+              'Today: {date}'.tr.replaceAll(
+                '{date}',
+                formatHijri(DateTime.now()),
               ),
-            ),
-            const SizedBox(height: Space.xl),
-            Text('BACKGROUND'.tr, style: ctx.text.overline),
-            const SizedBox(height: Space.sm),
-            Row(
-              children: [
-                for (final backdrop in Backdrop.values) ...[
-                  Expanded(
-                    child: _BackdropTile(
-                      backdrop: backdrop,
-                      accent: settings.accent,
-                      selected: settings.backdrop == backdrop,
-                      onTap: () => settings.setBackdrop(backdrop),
-                    ),
-                  ),
-                  if (backdrop != Backdrop.values.last)
-                    const SizedBox(width: Space.sm),
-                ],
-              ],
-            ),
-            const SizedBox(height: Space.xl),
-            Text('ACCENT'.tr, style: ctx.text.overline),
-            const SizedBox(height: Space.sm),
-            Row(
-              children: [
-                for (final accent in Accent.values)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: Space.md),
-                    child: _AccentSwatch(
-                      accent: accent,
-                      selected: settings.accent == accent,
-                      onTap: () {
-                        settings.setAccent(accent);
-                        final session = Session.instance;
-                        if (session.isGuest) return;
-                        session.users.update(session.uid, {'theme': accent.id});
-                      },
-                    ),
-                  ),
-              ],
+              style: ctx.text.label,
             ),
           ],
         ),
       ),
     ),
   );
+}
+
+void _showAppearance(BuildContext context) {
+  final settings = AppSettings.instance;
+  showNwuSheet<void>(
+    context,
+    builder: (ctx) => ListenableBuilder(
+      listenable: settings,
+      builder: (ctx, _) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.md,
+          Space.gutter,
+          Space.lg,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Appearance'.tr, style: ctx.text.title),
+              const SizedBox(height: Space.lg),
+              SegmentedPills(
+                labels: ['Automatic'.tr, 'Light'.tr, 'Dark'.tr],
+                index: switch (settings.mode) {
+                  ThemeMode.system => 0,
+                  ThemeMode.light => 1,
+                  ThemeMode.dark => 2,
+                },
+                onChanged: (i) => settings.setMode(
+                  [ThemeMode.system, ThemeMode.light, ThemeMode.dark][i],
+                ),
+              ),
+              const SizedBox(height: Space.xl),
+              Text('BACKGROUND'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final backdrop in Backdrop.values) ...[
+                    Expanded(
+                      child: _BackdropTile(
+                        backdrop: backdrop,
+                        accent: settings.accent,
+                        selected: settings.backdrop == backdrop,
+                        onTap: () => settings.setBackdrop(backdrop),
+                      ),
+                    ),
+                    if (backdrop != Backdrop.values.last)
+                      const SizedBox(width: Space.sm),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Space.xl),
+              Text('NOTE FONT'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final font in NoteFont.values) ...[
+                    Expanded(
+                      child: _FontTile(
+                        font: font,
+                        selected: settings.noteFont == font,
+                        onTap: () => settings.setNoteFont(font),
+                      ),
+                    ),
+                    if (font != NoteFont.values.last)
+                      const SizedBox(width: Space.xs),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Space.xl),
+              Text('NOTE PAPER'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final paper in NotePaper.values) ...[
+                    Expanded(
+                      child: _PaperTile(
+                        paper: paper,
+                        selected: settings.notePaper == paper,
+                        onTap: () => settings.setNotePaper(paper),
+                      ),
+                    ),
+                    if (paper != NotePaper.values.last)
+                      const SizedBox(width: Space.xs),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Space.xl),
+              Text('ACCENT'.tr, style: ctx.text.overline),
+              const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  for (final accent in Accent.values)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: Space.md),
+                      child: _AccentSwatch(
+                        accent: accent,
+                        selected: settings.accent == accent,
+                        onTap: () {
+                          settings.setAccent(accent);
+                          final session = Session.instance;
+                          if (session.isGuest) return;
+                          session.users.update(session.uid, {
+                            'theme': accent.id,
+                          });
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// A sample of a note font.
+class _FontTile extends StatelessWidget {
+  const _FontTile({
+    required this.font,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final NoteFont font;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final arabic = AppSettings.instance.isArabic;
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: font.label.tr,
+      child: AnimatedContainer(
+        duration: Motion.base,
+        padding: const EdgeInsets.symmetric(vertical: Space.sm),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.md),
+          border: Border.all(
+            color: selected ? c.accent : c.line,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              arabic ? 'أبج' : 'Aa',
+              style: noteBodyStyle(
+                font,
+                arabic: arabic,
+                color: c.ink,
+              ).copyWith(fontSize: 24, height: 1.2),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              font.label.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.text.caption.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A small sample of a note paper.
+class _PaperTile extends StatelessWidget {
+  const _PaperTile({
+    required this.paper,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final NotePaper paper;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final base = NwuPaper(paper).tint(c.raised, dark: c.isDark);
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: paper.label.tr,
+      child: AnimatedContainer(
+        duration: Motion.base,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.md),
+          border: Border.all(
+            color: selected ? c.accent : c.line,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                height: 44,
+                color: base,
+                child: CustomPaint(
+                  size: const Size.fromHeight(44),
+                  painter: PaperPainter(
+                    paper: paper,
+                    lineHeight: 11,
+                    color: c.ink.withValues(alpha: 0.2),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              paper.label.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.text.caption.copyWith(fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _AccentSwatch extends StatelessWidget {
@@ -621,11 +864,32 @@ Future<void> _deleteAccount(BuildContext context) async {
 class _NotificationSettings extends StatelessWidget {
   const _NotificationSettings();
 
+  /// Says why a switch snapped back; debug builds add the raw error.
+  static String _problem() {
+    final reminders = Reminders.instance;
+    final message = switch (reminders.lastProblem) {
+      ReminderProblem.unavailable =>
+        'Notifications aren’t available right now. Restart the app and try again.',
+      ReminderProblem.failed => 'Couldn’t set up the reminder. Try again.',
+      _ => 'Allow notifications in Settings',
+    }.tr;
+    final detail = reminders.lastDetail;
+    return kDebugMode && detail != null ? '$message\n$detail' : message;
+  }
+
   Future<void> _toggleDaily(BuildContext context, bool on) async {
     final ok = await Reminders.instance.setDaily(on);
-    if (!ok && context.mounted) {
-      showToast(context, 'Allow notifications in Settings'.tr, error: true);
-    }
+    if (!ok && context.mounted) showToast(context, _problem(), error: true);
+  }
+
+  Future<void> _toggleBirthdays(BuildContext context, bool on) async {
+    final ok = await Reminders.instance.setBirthdayAlerts(on);
+    if (!ok && context.mounted) showToast(context, _problem(), error: true);
+  }
+
+  Future<void> _toggleCapsules(BuildContext context, bool on) async {
+    final ok = await Reminders.instance.setCapsuleAlerts(on);
+    if (!ok && context.mounted) showToast(context, _problem(), error: true);
   }
 
   Future<void> _pickTime(BuildContext context) async {
@@ -682,7 +946,6 @@ class _NotificationSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reminders = Reminders.instance;
-    final c = context.colors;
     final t = reminders.time;
     return GroupedList(
       children: [
@@ -690,9 +953,8 @@ class _NotificationSettings extends StatelessWidget {
           icon: CupertinoIcons.bell,
           title: 'Daily writing reminder'.tr,
           subtitle: 'A gentle nudge to write, once a day'.tr,
-          trailing: CupertinoSwitch(
+          trailing: _PermissionSwitch(
             value: reminders.dailyEnabled,
-            activeTrackColor: c.accent,
             onChanged: (on) => _toggleDaily(context, on),
           ),
         ),
@@ -711,18 +973,61 @@ class _NotificationSettings extends StatelessWidget {
             onTap: () => _pickDays(context),
           ),
         ListRow(
+          icon: CupertinoIcons.gift,
+          title: 'Friends’ birthdays'.tr,
+          subtitle: 'A reminder the day before a friend’s birthday'.tr,
+          trailing: _PermissionSwitch(
+            value: reminders.birthdayAlerts,
+            onChanged: (on) => _toggleBirthdays(context, on),
+          ),
+        ),
+        ListRow(
           icon: CupertinoIcons.hourglass,
           title: 'Capsule alerts'.tr,
           subtitle: 'When a capsule sent to you unlocks'.tr,
-          trailing: CupertinoSwitch(
+          trailing: _PermissionSwitch(
             value: reminders.capsuleAlerts,
-            activeTrackColor: c.accent,
-            onChanged: (on) => reminders.setCapsuleAlerts(on),
+            onChanged: (on) => _toggleCapsules(context, on),
           ),
         ),
       ],
     );
   }
+}
+
+/// A switch that moves the instant it is tapped, even though turning it
+/// on may wait on the OS permission prompt. It snaps back to [value] if
+/// the action is refused.
+class _PermissionSwitch extends StatefulWidget {
+  const _PermissionSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final Future<void> Function(bool on) onChanged;
+
+  @override
+  State<_PermissionSwitch> createState() => _PermissionSwitchState();
+}
+
+class _PermissionSwitchState extends State<_PermissionSwitch> {
+  bool? _pending;
+
+  Future<void> _change(bool on) async {
+    setState(() => _pending = on);
+    try {
+      await widget.onChanged(on);
+    } catch (_) {
+      if (mounted) showToast(context, 'Something went wrong'.tr, error: true);
+    } finally {
+      if (mounted) setState(() => _pending = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => CupertinoSwitch(
+    value: _pending ?? widget.value,
+    activeTrackColor: context.colors.accent,
+    onChanged: _pending == null ? _change : null,
+  );
 }
 
 /// Short weekday name for 1 (Monday) … 7 (Sunday) in the app language.

@@ -10,9 +10,11 @@ ThemeData buildTheme({
   required Accent accent,
   required bool arabic,
   Backdrop backdrop = Backdrop.linen,
+  NoteFont noteFont = NoteFont.classic,
+  NotePaper notePaper = NotePaper.plain,
 }) {
   final c = NwuColors.of(brightness, accent, backdrop);
-  final text = _buildText(c, arabic);
+  final text = _buildText(c, arabic, noteFont);
   final scheme =
       ColorScheme.fromSeed(
         seedColor: c.accent,
@@ -60,11 +62,63 @@ ThemeData buildTheme({
         TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
       },
     ),
-    extensions: [c, text],
+    extensions: [c, text, NwuPaper(notePaper)],
   );
 }
 
-NwuText _buildText(NwuColors c, bool arabic) {
+/// The text style of a note body in [font] for the language.
+TextStyle noteBodyStyle(
+  NoteFont font, {
+  required bool arabic,
+  required Color color,
+}) {
+  return switch ((font, arabic)) {
+    (NoteFont.classic, true) => GoogleFonts.ibmPlexSansArabic(
+      fontSize: 17,
+      height: 1.7,
+      color: color,
+    ),
+    (NoteFont.classic, false) => GoogleFonts.fraunces(
+      fontSize: 18,
+      height: 1.45,
+      fontWeight: FontWeight.w400,
+      letterSpacing: -0.1,
+      color: color,
+    ),
+    (NoteFont.book, true) => GoogleFonts.amiri(
+      fontSize: 20,
+      height: 1.8,
+      color: color,
+    ),
+    (NoteFont.book, false) => GoogleFonts.lora(
+      fontSize: 17,
+      height: 1.55,
+      color: color,
+    ),
+    (NoteFont.clean, true) => GoogleFonts.tajawal(
+      fontSize: 17,
+      height: 1.7,
+      color: color,
+    ),
+    (NoteFont.clean, false) => GoogleFonts.dmSans(
+      fontSize: 16.5,
+      height: 1.5,
+      color: color,
+    ),
+    (NoteFont.handwritten, true) => GoogleFonts.arefRuqaa(
+      fontSize: 18,
+      height: 1.8,
+      color: color,
+    ),
+    (NoteFont.handwritten, false) => GoogleFonts.caveat(
+      fontSize: 22,
+      height: 1.35,
+      color: color,
+    ),
+  };
+}
+
+NwuText _buildText(NwuColors c, bool arabic, NoteFont noteFont) {
   TextStyle display(double size, FontWeight weight, double spacing) => arabic
       ? GoogleFonts.notoNaskhArabic(
           fontSize: size * 0.92,
@@ -106,15 +160,7 @@ NwuText _buildText(NwuColors c, bool arabic) {
     display: display(32, FontWeight.w600, -0.9),
     title: display(24, FontWeight.w600, -0.5),
     headline: ui(18, FontWeight.w600, height: 1.3, spacing: -0.2),
-    noteBody: arabic
-        ? GoogleFonts.ibmPlexSansArabic(fontSize: 17, height: 1.7, color: c.ink)
-        : GoogleFonts.fraunces(
-            fontSize: 18,
-            height: 1.45,
-            fontWeight: FontWeight.w400,
-            letterSpacing: -0.1,
-            color: c.ink,
-          ),
+    noteBody: noteBodyStyle(noteFont, arabic: arabic, color: c.ink),
     body: ui(16, FontWeight.w400),
     bodyStrong: ui(16, FontWeight.w600),
     small: ui(14, FontWeight.w400, color: c.inkSoft),

@@ -73,6 +73,85 @@ enum Backdrop {
       values.firstWhere((b) => b.id == id, orElse: () => linen);
 }
 
+/// The typeface notes are written and read in.
+enum NoteFont {
+  /// The app's own serif (Latin) and sans (Arabic). The default.
+  classic('classic', 'Classic'),
+
+  /// A bookish serif.
+  book('book', 'Book'),
+
+  /// A clean, modern sans.
+  clean('clean', 'Clean'),
+
+  /// A handwritten look.
+  handwritten('handwritten', 'Handwritten');
+
+  const NoteFont(this.id, this.label);
+
+  final String id;
+  final String label;
+
+  static NoteFont fromId(String? id) =>
+      values.firstWhere((f) => f.id == id, orElse: () => classic);
+}
+
+/// What a note's text sits on.
+enum NotePaper {
+  plain('plain', 'Plain'),
+
+  /// Lines to write on.
+  ruled('ruled', 'Ruled'),
+
+  /// Squares.
+  grid('grid', 'Grid'),
+
+  /// A grid of dots.
+  dots('dots', 'Dots'),
+
+  /// A warm, aged tint.
+  warm('warm', 'Warm');
+
+  const NotePaper(this.id, this.label);
+
+  final String id;
+  final String label;
+
+  static NotePaper fromId(String? id) =>
+      values.firstWhere((p) => p.id == id, orElse: () => plain);
+}
+
+/// The chosen [NotePaper] as a theme extension, so changing it rebuilds
+/// every note.
+@immutable
+class NwuPaper extends ThemeExtension<NwuPaper> {
+  const NwuPaper(this.paper);
+
+  final NotePaper paper;
+
+  /// [base] (a note's colour), warmed for the warm paper.
+  Color tint(Color base, {required bool dark}) => paper == NotePaper.warm
+      ? Color.lerp(
+          base,
+          dark ? const Color(0xFF4A3B26) : const Color(0xFFF0DDB8),
+          0.45,
+        )!
+      : base;
+
+  @override
+  NwuPaper copyWith({NotePaper? paper}) => NwuPaper(paper ?? this.paper);
+
+  @override
+  NwuPaper lerp(ThemeExtension<NwuPaper>? other, double t) =>
+      other is NwuPaper && t > 0.5 ? other : this;
+
+  @override
+  bool operator ==(Object other) => other is NwuPaper && other.paper == paper;
+
+  @override
+  int get hashCode => paper.hashCode;
+}
+
 /// Note moods. Each one tints the note card so a feed reads like a
 /// wall of soft colour rather than a list of identical boxes.
 enum Mood {
@@ -294,6 +373,8 @@ List<BoxShadow> softShadow(NwuColors c, {double strength = 1}) => [
 extension NwuContext on BuildContext {
   NwuColors get colors => Theme.of(this).extension<NwuColors>()!;
   NwuText get text => Theme.of(this).extension<NwuText>()!;
+  NwuPaper get paper =>
+      Theme.of(this).extension<NwuPaper>() ?? const NwuPaper(NotePaper.plain);
 }
 
 /// Typography tokens. Display styles use a serif to give notes a

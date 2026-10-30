@@ -10,6 +10,7 @@ import 'capsules_repository.dart';
 import 'chat_repository.dart';
 import 'models.dart';
 import 'notes_repository.dart';
+import 'together_repository.dart';
 import 'users_repository.dart';
 
 /// Where the signed-in flow currently is. A guest is signed out but
@@ -34,6 +35,9 @@ class Session extends ChangeNotifier {
   final notes = NotesRepository();
   final capsules = CapsulesRepository();
   final chats = ChatRepository();
+  final groupCapsules = GroupCapsulesRepository();
+  final notebooks = NotebooksRepository();
+  final asks = AsksRepository();
 
   SessionStatus status = SessionStatus.loading;
   AppUser? _me;
@@ -122,6 +126,7 @@ class Session extends ChangeNotifier {
     if (user == null) {
       // Capsule alerts belong to the account that received them.
       Reminders.instance.clearCapsuleAlerts();
+      Reminders.instance.clearBirthdayAlerts();
       final guest = Prefs.getBool(_guestKey) ?? false;
       if (guest) blocked = _guestHidden();
       status = guest ? SessionStatus.guest : SessionStatus.signedOut;

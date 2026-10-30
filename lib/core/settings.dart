@@ -26,6 +26,13 @@ class AppSettings extends ChangeNotifier {
         WidgetsBinding.instance.platformDispatcher.locale.languageCode;
     _lang = lang == 'ar' ? 'ar' : 'en';
     L10n.arabic = _lang == 'ar';
+    // Hijri dates start on for Arabic, off for English, until chosen.
+    _hijri = Prefs.getBool('hijri') ?? _lang == 'ar';
+    _islamic = Prefs.getBool('islamic') ?? _lang == 'ar';
+    _noteFont = NoteFont.fromId(Prefs.getString('noteFont'));
+    _notePaper = NotePaper.fromId(Prefs.getString('notePaper'));
+    _hijriOffset = (int.tryParse(Prefs.getString('hijriOffset') ?? '') ?? 0)
+        .clamp(-2, 2);
   }
 
   /// Shared instance.
@@ -35,12 +42,30 @@ class AppSettings extends ChangeNotifier {
   late Accent _accent;
   late Backdrop _backdrop;
   late String _lang;
+  late bool _hijri;
+  late bool _islamic;
+  late NoteFont _noteFont;
+  late NotePaper _notePaper;
+  late int _hijriOffset;
 
   ThemeMode get mode => _mode;
   Accent get accent => _accent;
   Backdrop get backdrop => _backdrop;
+  NoteFont get noteFont => _noteFont;
+  NotePaper get notePaper => _notePaper;
   String get lang => _lang;
   bool get isArabic => _lang == 'ar';
+
+  /// Whether Hijri dates are shown next to the usual ones.
+  bool get hijri => _hijri;
+
+  /// Whether Ramadan and Eid features (daily prompts, greetings, Eid
+  /// capsule dates) are shown.
+  bool get islamic => _islamic;
+
+  /// Days to add before converting to Hijri, for countries that start
+  /// the month earlier or later than the Umm al-Qura calendar (-2…2).
+  int get hijriOffset => _hijriOffset;
   Locale get locale => Locale(_lang);
 
   void setMode(ThemeMode mode) {
@@ -59,6 +84,36 @@ class AppSettings extends ChangeNotifier {
   void setBackdrop(Backdrop backdrop) {
     _backdrop = backdrop;
     Prefs.setString('backdrop', backdrop.id);
+    notifyListeners();
+  }
+
+  void setHijri(bool on) {
+    _hijri = on;
+    Prefs.setBool('hijri', on);
+    notifyListeners();
+  }
+
+  void setNoteFont(NoteFont font) {
+    _noteFont = font;
+    Prefs.setString('noteFont', font.id);
+    notifyListeners();
+  }
+
+  void setNotePaper(NotePaper paper) {
+    _notePaper = paper;
+    Prefs.setString('notePaper', paper.id);
+    notifyListeners();
+  }
+
+  void setIslamic(bool on) {
+    _islamic = on;
+    Prefs.setBool('islamic', on);
+    notifyListeners();
+  }
+
+  void setHijriOffset(int days) {
+    _hijriOffset = days.clamp(-2, 2);
+    Prefs.setString('hijriOffset', '$_hijriOffset');
     notifyListeners();
   }
 

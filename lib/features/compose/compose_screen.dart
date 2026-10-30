@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,12 +7,18 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/drafts.dart';
 import '../../core/format.dart';
+import '../../core/islamic.dart';
+import '../../core/settings.dart';
+import '../../core/insights.dart';
 import '../../core/prompts.dart';
+import '../../core/tags.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
+import '../comfort/comfort_sheet.dart';
+import '../freewrite/free_write_screen.dart';
 import '../notes/note_card.dart';
 
 /// Where a new piece of writing goes.
@@ -23,6 +31,7 @@ Future<void> openComposer(
   ComposeTarget? target,
   AppUser? recipient,
   Mood? mood,
+  String text = '',
 }) async {
   // Every way into the composer goes through here, so guests are asked
   // to join once, in one place.
@@ -35,6 +44,7 @@ Future<void> openComposer(
         initialTarget: target,
         recipient: recipient,
         initialMood: mood,
+        initialText: text,
       ),
     ),
   );
@@ -48,6 +58,7 @@ class ComposeScreen extends StatefulWidget {
     this.initialTarget,
     this.recipient,
     this.initialMood,
+    this.initialText = '',
   });
 
   final String prompt;
@@ -55,12 +66,16 @@ class ComposeScreen extends StatefulWidget {
   final AppUser? recipient;
   final Mood? initialMood;
 
+  /// Text to start with, e.g. a greeting or a tag.
+  final String initialText;
+
   /// Opening the composer with no preset continues the saved draft.
   bool get continuesDraft =>
       prompt.isEmpty &&
       initialTarget == null &&
       recipient == null &&
-      initialMood == null;
+      initialMood == null &&
+      initialText.isEmpty;
 
   @override
   State<ComposeScreen> createState() => _ComposeScreenState();
@@ -94,6 +109,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
       _target = ComposeTarget.values.firstWhere(
         (t) => t.name == draft.target,
         orElse: () => _target,
+      );
+    } else if (widget.initialText.isNotEmpty) {
+      _text.value = TextEditingValue(
+        text: widget.initialText,
+        selection: TextSelection.collapsed(offset: widget.initialText.length),
       );
     }
     _text.addListener(() {
@@ -130,8 +150,61 @@ class _ComposeScreenState extends State<ComposeScreen> {
     _saveDraft();
   }
 
+  /// Fills a capsule with a starting letter, date and feeling; the writer
+  /// can change any of it.
+  void _applyTemplate(_CapsuleTemplate template) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _recipient = _session.me;
+      _unlockAt = template.unlockAt(DateTime.now());
+      _mood = template.mood;
+    });
+    final body = template.text();
+    _text.value = TextEditingValue(
+      text: body,
+      selection: TextSelection.collapsed(offset: body.length),
+    );
+  }
+
+  /// Free writing is its own screen; if it saved a note this one is done.
+  Future<void> _freeWrite() async {
+    final saved = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(builder: (_) => const FreeWriteScreen()),
+    );
+    if (saved == true && mounted) {
+      _posted = true;
+      DraftStore.instance.clear();
+      Navigator.pop(context);
+    }
+  }
+
+  /// Puts `#tag ` where the cursor is (or at the end).
+  void _insertTag(String tag) {
+    HapticFeedback.selectionClick();
+    final value = _text.value;
+    final at = value.selection.isValid
+        ? value.selection.end
+        : value.text.length;
+    final before = value.text.substring(0, at);
+    final after = value.text.substring(at);
+    final gap = before.isEmpty || before.endsWith(' ') || before.endsWith('\n')
+        ? ''
+        : ' ';
+    final insert = '$gap#$tag ';
+    _text.value = TextEditingValue(
+      text: '$before$insert$after',
+      selection: TextSelection.collapsed(offset: before.length + insert.length),
+    );
+  }
+
+  bool _comfortOffered = false;
+
   void _setMood(Mood mood) {
     setState(() => _mood = mood);
+    if (mood == Mood.blue && !_comfortOffered && !_isCapsule) {
+      _comfortOffered = true;
+      showComfortSheet(context);
+    }
     _saveDraft();
   }
 
@@ -187,6 +260,34 @@ class _ComposeScreenState extends State<ComposeScreen> {
     super.dispose();
   }
 
+  /// Replaces the "Note posted" toast with the streak when it is 2 or
+  /// more days. Best effort: a slow or failed read leaves the plain toast.
+  Future<void> _celebrateStreak(BuildContext context, String uid) async {
+    final streak = await _currentStreak(uid);
+    if (streak >= 2 && context.mounted) {
+      showToast(context, _postedMessage(streak));
+    }
+  }
+
+  /// Days in a row including the note just posted (0 if unknown).
+  Future<int> _currentStreak(String uid) async {
+    try {
+      final notes = await Session.instance.notes
+          .mine(uid)
+          .first
+          .timeout(const Duration(seconds: 2));
+      return WeekInsights.from(notes, DateTime.now()).streak;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  String _postedMessage(int streak) {
+    if (streak < 2) return 'Note posted'.tr;
+    final days = '{n} days in a row'.tr.replaceAll('{n}', '$streak');
+    return '${const {3, 7, 14, 30, 100}.contains(streak) ? '🎉' : '🌱'} $days';
+  }
+
   Future<void> _post() async {
     if (!_canPost || _posting) return;
     // Public posts are the one irreversible-feeling choice; ask first so a
@@ -224,16 +325,31 @@ class _ComposeScreenState extends State<ComposeScreen> {
           text: _text.text.trim(),
           mood: _mood,
           prompt: _prompt,
+          // A circle answer to today's question lets friends answer the
+          // same one together, in whichever language they use.
+          promptDay:
+              _target == ComposeTarget.circle &&
+                  _prompt == PromptState.instance.today
+              ? dayKey(DateTime.now())
+              : '',
           circle: _session.circle.toList(),
         );
       }
       if (!mounted) return;
       _posted = true;
       DraftStore.instance.clear();
+      RecentTags.record(_text.text);
       if (!_isCapsule) PromptState.instance.noteAnswered(_prompt);
       HapticFeedback.mediumImpact();
-      Navigator.pop(context);
-      showToast(context, _isCapsule ? 'Capsule sealed ⏳'.tr : 'Note posted'.tr);
+      final navigator = Navigator.of(context);
+      navigator.pop();
+      showToast(
+        navigator.context,
+        _isCapsule ? 'Capsule sealed ⏳'.tr : 'Note posted'.tr,
+      );
+      // The composer is already closed; the streak shows up a moment later
+      // if there is one, so a slow connection never holds the screen.
+      if (!_isCapsule) unawaited(_celebrateStreak(navigator.context, me.uid));
     } catch (_) {
       if (mounted) showToast(context, 'Something went wrong'.tr, error: true);
     } finally {
@@ -294,6 +410,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       onRecipient: (u) => setState(() => _recipient = u),
                       onUnlockAt: (d) => setState(() => _unlockAt = d),
                     ),
+                  if (_isCapsule && _text.text.isEmpty)
+                    _CapsuleTemplates(onPick: _applyTemplate),
                   if (_prompt.isNotEmpty && !_isCapsule)
                     _PromptChip(
                       prompt: _prompt,
@@ -301,29 +419,34 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       onRemove: () => setState(() => _prompt = ''),
                     )
                   else if (!_isCapsule && _text.text.isEmpty)
-                    _IdeaButton(onTap: _shufflePrompt),
+                    _IdeaButton(onTap: _shufflePrompt, onFreeWrite: _freeWrite),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: Space.gutter,
                     ),
-                    child: TextField(
-                      controller: _text,
-                      textDirection: inputDirection(context, _text.text),
-                      autofocus: true,
-                      minLines: 6,
-                      maxLines: null,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: context.text.noteBody.copyWith(fontSize: 21),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: _isCapsule
-                            ? 'Dear future you…'.tr
-                            : (_prompt.isNotEmpty
-                                  ? 'Write your answer…'.tr
-                                  : 'What’s on your mind?'.tr),
-                        hintStyle: context.text.noteBody.copyWith(
-                          fontSize: 21,
-                          color: c.muted,
+                    child: PaperBackdrop(
+                      lineHeight: lineHeightOf(
+                        context.text.noteBody.copyWith(fontSize: 21),
+                      ),
+                      child: TextField(
+                        controller: _text,
+                        textDirection: inputDirection(context, _text.text),
+                        autofocus: true,
+                        minLines: 6,
+                        maxLines: null,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: context.text.noteBody.copyWith(fontSize: 21),
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: _isCapsule
+                              ? 'Dear future you…'.tr
+                              : (_prompt.isNotEmpty
+                                    ? 'Write your answer…'.tr
+                                    : 'What’s on your mind?'.tr),
+                          hintStyle: context.text.noteBody.copyWith(
+                            fontSize: 21,
+                            color: c.muted,
+                          ),
                         ),
                       ),
                     ),
@@ -331,6 +454,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 ],
               ),
             ),
+            if (!_isCapsule) _TagBar(text: _text.text, onTag: _insertTag),
             _MoodBar(value: _mood, onChanged: _setMood),
           ],
         ),
@@ -493,9 +617,10 @@ class _PromptChip extends StatelessWidget {
 }
 
 class _IdeaButton extends StatelessWidget {
-  const _IdeaButton({required this.onTap});
+  const _IdeaButton({required this.onTap, required this.onFreeWrite});
 
   final VoidCallback onTap;
+  final VoidCallback onFreeWrite;
 
   @override
   Widget build(BuildContext context) {
@@ -507,24 +632,175 @@ class _IdeaButton extends StatelessWidget {
         Space.gutter,
         0,
       ),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Pressable(
-          onTap: onTap,
-          semanticLabel: 'Need an idea?'.tr,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: c.accentSoft,
-              borderRadius: BorderRadius.circular(Radii.pill),
+      child: Wrap(
+        spacing: Space.xs,
+        runSpacing: Space.xs,
+        children: [
+          for (final (label, tap, hint) in [
+            ('🎲  ${'Need an idea?'.tr}', onTap, 'Need an idea?'.tr),
+            ('⏱  ${'Free writing'.tr}', onFreeWrite, 'Free writing'.tr),
+          ])
+            Pressable(
+              onTap: tap,
+              semanticLabel: hint,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: c.accentSoft,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: Text(
+                  label,
+                  style: context.text.label.copyWith(
+                    color: c.ink,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
             ),
-            child: Text(
-              '🎲  ${'Need an idea?'.tr}',
-              style: context.text.label.copyWith(color: c.ink, fontSize: 13),
-            ),
+        ],
+      ),
+    ).animate().fadeIn(duration: Motion.base);
+  }
+}
+
+/// A ready-made letter for a time capsule. English text is the key for
+/// the Arabic translation.
+class _CapsuleTemplate {
+  const _CapsuleTemplate({
+    required this.emoji,
+    required this.title,
+    required this.body,
+    required this.mood,
+    required this.unlockAt,
+    this.eid,
+  });
+
+  final String emoji;
+  final String title;
+  final String body;
+
+  /// Set for an Eid greeting, whose text comes from [eidGreeting].
+  final IslamicOccasion? eid;
+
+  /// The starting letter in the app language.
+  String text() => eid == null
+      ? body.tr
+      : '${eidGreeting(eid!)}\n\n${'This year I am grateful for…'.tr}';
+  final Mood mood;
+  final DateTime Function(DateTime now) unlockAt;
+}
+
+/// Eid greetings, offered only when Ramadan and Eid features are on.
+final _eidTemplates = <_CapsuleTemplate>[
+  _CapsuleTemplate(
+    emoji: '🌙',
+    title: 'Eid al-Fitr greeting',
+    body: '',
+    eid: IslamicOccasion.eidAlFitr,
+    mood: Mood.joy,
+    unlockAt: (now) => nextOccasionStart(IslamicOccasion.eidAlFitr, now),
+  ),
+  _CapsuleTemplate(
+    emoji: '✨',
+    title: 'Eid al-Adha greeting',
+    body: '',
+    eid: IslamicOccasion.eidAlAdha,
+    mood: Mood.joy,
+    unlockAt: (now) => nextOccasionStart(IslamicOccasion.eidAlAdha, now),
+  ),
+];
+
+final _capsuleTemplates = <_CapsuleTemplate>[
+  _CapsuleTemplate(
+    emoji: '💌',
+    title: 'Letter to me in 30 days',
+    body:
+        'Dear future me,\n\nToday I feel…\n\nBy the time you read this, I hope…',
+    mood: Mood.calm,
+    unlockAt: (now) => now.add(const Duration(days: 30)),
+  ),
+  _CapsuleTemplate(
+    emoji: '🌅',
+    title: 'Letter to me in 1 year',
+    body:
+        'Dear me, one year from now,\n\nThis is what my life looks like today…\n\nWhat I hope for you…',
+    mood: Mood.dreamy,
+    unlockAt: (now) => DateTime(now.year + 1, now.month, now.day, now.hour),
+  ),
+  _CapsuleTemplate(
+    emoji: '🎆',
+    title: 'Happy New Year',
+    body: 'Happy New Year!\n\nLast year I…\n\nThis year I want…',
+    mood: Mood.joy,
+    unlockAt: (now) => DateTime(now.year + 1, 1, 1, 9),
+  ),
+  _CapsuleTemplate(
+    emoji: '🫂',
+    title: 'For a hard day',
+    body:
+        'Hey you,\n\nIf you are reading this on a hard day, remember…\n\nYou have gotten through hard days before.',
+    mood: Mood.blue,
+    unlockAt: (now) => now.add(const Duration(days: 90)),
+  ),
+];
+
+/// Quick starts for an empty capsule.
+class _CapsuleTemplates extends StatelessWidget {
+  const _CapsuleTemplates({required this.onPick});
+
+  final ValueChanged<_CapsuleTemplate> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.sm,
+            Space.gutter,
+            Space.xs,
+          ),
+          child: Text('Start from a template'.tr, style: context.text.caption),
+        ),
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+            children: [
+              for (final template in [
+                ..._capsuleTemplates,
+                if (AppSettings.instance.islamic) ..._eidTemplates,
+              ])
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: Space.xs),
+                  child: Pressable(
+                    onTap: () => onPick(template),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: c.accentSoft,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                      ),
+                      child: Text(
+                        '${template.emoji}  ${template.title.tr}',
+                        style: context.text.label.copyWith(color: c.ink),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-      ),
+      ],
     ).animate().fadeIn(duration: Motion.base);
   }
 }
@@ -702,6 +978,58 @@ class _DateChip extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One-tap `#tags` under the text: the ones you used lately, then a few
+/// starters.
+class _TagBar extends StatelessWidget {
+  const _TagBar({required this.text, required this.onTag});
+
+  final String text;
+  final ValueChanged<String> onTag;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final tags = tagSuggestions(text);
+    if (tags.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.gutter,
+          vertical: 4,
+        ),
+        children: [
+          for (final tag in tags)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6),
+              child: Pressable(
+                onTap: () => onTag(tag),
+                scale: 0.92,
+                semanticLabel: '#$tag',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: c.accentSoft,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: context.text.caption.copyWith(
+                      color: c.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

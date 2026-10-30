@@ -4,13 +4,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/format.dart';
+import '../../core/hijri.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
+import '../capsules/hug_sheet.dart';
 import '../profile/user_profile_screen.dart';
 import 'note_detail_screen.dart';
+import 'tag_notes_screen.dart';
 
 /// A note rendered as a sheet of mood-tinted paper.
 class NoteCard extends StatelessWidget {
@@ -49,13 +52,21 @@ class NoteCard extends StatelessWidget {
         Space.md,
       ),
       decoration: BoxDecoration(
-        color: c.paperTint(note.mood, note.colorSeed),
+        color: context.paper.tint(
+          c.paperTint(note.mood, note.colorSeed),
+          dark: c.isDark,
+        ),
         borderRadius: BorderRadius.circular(Radii.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Header(note: note, author: author, showMenu: !inDetail && !preview),
+          _Header(
+            note: note,
+            author: author,
+            showMenu: !inDetail && !preview,
+            detail: inDetail,
+          ),
           if (note.prompt.isNotEmpty) ...[
             const SizedBox(height: Space.sm),
             Row(
@@ -78,13 +89,26 @@ class NoteCard extends StatelessWidget {
             const SizedBox(height: Space.sm),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: Space.xs),
-              child: ContentText(
-                note.text,
-                maxLines: inDetail ? null : 9,
-                overflow: inDetail ? null : TextOverflow.fade,
-                style: inDetail
-                    ? t.noteBody.copyWith(fontSize: 20)
-                    : t.noteBody,
+              child: PaperBackdrop(
+                lineHeight: lineHeightOf(
+                  inDetail ? t.noteBody.copyWith(fontSize: 20) : t.noteBody,
+                ),
+                child: TaggedText(
+                  note.text,
+                  // Tapping a tag of your own note lists your notes with it.
+                  onTag: preview || note.ownerId != Session.instance.uid
+                      ? null
+                      : (tag) => Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => TagNotesScreen(tag: tag),
+                          ),
+                        ),
+                  maxLines: inDetail ? null : 9,
+                  overflow: inDetail ? null : TextOverflow.fade,
+                  style: inDetail
+                      ? t.noteBody.copyWith(fontSize: 20)
+                      : t.noteBody,
+                ),
               ),
             ),
           ],
@@ -123,11 +147,15 @@ class _Header extends StatelessWidget {
     required this.note,
     required this.author,
     required this.showMenu,
+    this.detail = false,
   });
 
   final Note note;
   final AppUser author;
   final bool showMenu;
+
+  /// The detail view shows the full date (and its Hijri date).
+  final bool detail;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +202,7 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${relativeTime(note.time)}$moodLabel',
+                '${detail ? fullDateWithHijri(note.time) : relativeTime(note.time)}$moodLabel',
                 style: t.caption.copyWith(color: c.inkSoft),
               ),
             ],
@@ -182,6 +210,10 @@ class _Header extends StatelessWidget {
         ),
         if (note.pinned) ...[
           Icon(CupertinoIcons.pin_fill, size: 14, color: c.accent),
+          const SizedBox(width: 6),
+        ],
+        if (note.comfort) ...[
+          Icon(CupertinoIcons.heart_fill, size: 14, color: c.accent),
           const SizedBox(width: 6),
         ],
         ListenableBuilder(
@@ -240,7 +272,7 @@ class _Footer extends StatelessWidget {
     final t = context.text;
     final counts = note.reactionCounts;
     final mine = note.reactionOf(Session.instance.uid);
-    return Row(
+    final row = Row(
       children: [
         ReactButton(note: note, current: mine),
         const SizedBox(width: Space.xs),
@@ -267,6 +299,16 @@ class _Footer extends StatelessWidget {
           style: t.caption.copyWith(color: c.inkSoft),
         ),
         const SizedBox(width: Space.xs),
+      ],
+    );
+    if (!HugButton.shows(note)) return row;
+    // A friend writing in a blue mood gets a gentle way to reach out.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        row,
+        const SizedBox(height: Space.xs),
+        HugButton(note: note),
       ],
     );
   }
@@ -505,6 +547,22 @@ void showNoteActions(
             context,
             () => session.notes.setArchived(note, archived: !note.archived),
             note.archived ? 'Note restored'.tr : 'Note archived'.tr,
+          ),
+        ),
+      if (mine && note.audience == Audience.private)
+        SheetAction(
+          icon: note.comfort
+              ? CupertinoIcons.heart_slash
+              : CupertinoIcons.heart,
+          label: note.comfort
+              ? 'Remove from comfort box'.tr
+              : 'Keep for hard days'.tr,
+          onTap: () => _run(
+            context,
+            () => session.notes.setComfort(note, comfort: !note.comfort),
+            note.comfort
+                ? 'Removed from your comfort box'.tr
+                : 'Kept for hard days 🤍'.tr,
           ),
         ),
       if (mine && note.audience == Audience.private)

@@ -36,6 +36,7 @@ class CapsulesRepository {
     required String text,
     required Mood mood,
     required DateTime unlockAt,
+    String kind = '',
   }) async {
     final ref = _capsules.doc();
     final batch = _db.batch()
@@ -50,6 +51,7 @@ class CapsulesRepository {
         'createdAt': Timestamp.now(),
         'unlockAt': Timestamp.fromDate(unlockAt),
         'opened': false,
+        if (kind.isNotEmpty) 'kind': kind,
       })
       ..set(_sealed(ref.id), {'text': text});
     await batch.commit();

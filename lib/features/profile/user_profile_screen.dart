@@ -6,6 +6,7 @@ import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
+import '../capsules/morning_note_sheet.dart';
 import '../compose/compose_screen.dart';
 import '../messages/chat_screen.dart';
 import '../messages/people_screen.dart';
@@ -246,6 +247,12 @@ class _ProfileHero extends StatelessWidget {
                   target: ComposeTarget.capsule,
                   recipient: user,
                 ),
+              ),
+              NwuButton(
+                label: 'Send a morning note'.tr,
+                icon: CupertinoIcons.sun_max,
+                tone: ButtonTone.ghost,
+                onPressed: () => showMorningNoteSheet(context, user),
               ),
             ],
           ],

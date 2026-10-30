@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/birthdays.dart';
 import '../../core/drafts.dart';
 import '../../core/format.dart';
 import '../../core/insights.dart';
 import '../../core/l10n.dart';
 import '../../core/prompts.dart';
+import '../../core/reminders.dart';
+import '../../core/settings.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
@@ -14,7 +17,15 @@ import '../capsules/capsule_card.dart';
 import '../compose/compose_screen.dart';
 import '../insights/your_week_screen.dart';
 import '../messages/people_screen.dart';
+import '../capsules/morning_note_sheet.dart';
+import '../comfort/comfort_sheet.dart';
+import '../gratitude/gratitude_screen.dart';
+import '../islamic/occasion_card.dart';
+import '../messages/chat_screen.dart';
 import '../notes/note_card.dart';
+import '../together/ask_circle_screen.dart';
+import '../together/group_capsules_screen.dart';
+import '../together/notebooks_screen.dart';
 
 /// Home tab: a quick mood check-in, anything waiting for you, then what
 /// your circle shared.
@@ -32,6 +43,9 @@ class _TodayScreenState extends State<TodayScreen> {
   late Stream<List<Capsule>> _capsules;
   late Stream<List<Note>> _journal;
   late Stream<List<Note>> _mine;
+  late Stream<List<GroupCapsule>> _groups;
+  late Stream<List<SharedNotebook>> _notebooks;
+  late Stream<List<CircleAsk>> _asksForMe;
 
   /// 0 = Discover (shown first, and the default), 1 = My circle.
   int _feed = 0;
@@ -49,12 +63,18 @@ class _TodayScreenState extends State<TodayScreen> {
       // Guests only see public notes; nothing of their own exists yet.
       _circle = _journal = _mine = const Stream.empty();
       _capsules = const Stream.empty();
+      _groups = const Stream.empty();
+      _notebooks = const Stream.empty();
+      _asksForMe = const Stream.empty();
       return;
     }
     _circle = _session.notes.circleFeed(_session.uid);
     _capsules = _session.capsules.received(_session.uid);
     _journal = _session.notes.journal(_session.uid, limit: 200);
     _mine = _session.notes.mine(_session.uid);
+    _groups = _session.groupCapsules.mine(_session.uid);
+    _notebooks = _session.notebooks.mine(_session.uid);
+    _asksForMe = _session.asks.forMe(_session.uid);
   }
 
   void _retry() => setState(_subscribe);
@@ -67,6 +87,9 @@ class _TodayScreenState extends State<TodayScreen> {
         _session,
         DraftStore.instance,
         PromptState.instance,
+        PastSelfState.instance,
+        AppSettings.instance,
+        Reminders.instance,
       ]),
       builder: (context, _) => CustomScrollView(
         physics: const BouncingScrollPhysics(
@@ -74,12 +97,30 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
         slivers: [
           if (_session.isGuest) const SliverToBoxAdapter(child: _GuestBanner()),
-          const SliverToBoxAdapter(child: _PromptCard()),
+          const SliverToBoxAdapter(child: OccasionCard()),
+          if (!ramadanPromptShows(DateTime.now()))
+            const SliverToBoxAdapter(child: _PromptCard()),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            SliverToBoxAdapter(child: _CircleQuestion(stream: _circle)),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            const SliverToBoxAdapter(child: _BirthdayCard()),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _TogetherCard(
+                groups: _groups,
+                notebooks: _notebooks,
+                asks: _asksForMe,
+              ),
+            ),
           const SliverToBoxAdapter(child: _MoodRow()),
-          SliverToBoxAdapter(child: _WeekCard(stream: _mine)),
+          SliverToBoxAdapter(child: _MineSection(stream: _mine)),
+          if (!_session.isGuest)
+            SliverToBoxAdapter(child: _JarCard(stream: _journal)),
           const SliverToBoxAdapter(child: _DraftCard()),
           SliverToBoxAdapter(child: _CapsuleSection(stream: _capsules)),
           SliverToBoxAdapter(child: _Memories(stream: _journal)),
+          if (!_session.isGuest)
+            SliverToBoxAdapter(child: _PastSelfCard(stream: _journal)),
           SliverPersistentHeader(
             pinned: true,
             delegate: _FeedSwitcher(
@@ -310,6 +351,475 @@ class _PromptCard extends StatelessWidget {
   }
 }
 
+/// Today's question, answered together with your circle. Friends' answers
+/// stay hidden until you have answered yours.
+class _CircleQuestion extends StatelessWidget {
+  const _CircleQuestion({required this.stream});
+
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Session.instance;
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        final notes = (snap.data ?? const <Note>[]).where(
+          (n) => session.isVisible(n.ownerId),
+        );
+        final question = circleQuestionFor(notes, session.uid, DateTime.now());
+        final c = context.colors;
+        final prompt = PromptState.instance.today;
+        void answer() =>
+            openComposer(context, prompt: prompt, target: ComposeTarget.circle);
+
+        final waiting = question.others.length;
+        final String status;
+        if (question.answered) {
+          status = waiting == 0
+              ? 'You answered. Waiting for your circle.'.tr
+              : (waiting == 1 ? '1 friend answered' : '{n} friends answered').tr
+                    .replaceAll('{n}', '$waiting');
+        } else {
+          status = waiting == 0
+              ? 'Be the first to answer.'.tr
+              : (waiting == 1
+                        ? '1 friend answered. Answer to see it.'
+                        : '{n} friends answered. Answer to see them.')
+                    .tr
+                    .replaceAll('{n}', '$waiting');
+        }
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.md,
+            Space.gutter,
+            0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Pressable(
+                onTap: question.answered ? null : answer,
+                semanticLabel: '${'Circle question'.tr}: $prompt',
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(Space.md),
+                  decoration: BoxDecoration(
+                    color: c.raised,
+                    borderRadius: BorderRadius.circular(Radii.lg),
+                    border: Border.all(color: c.accent.withValues(alpha: 0.35)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.circle_grid_hex_fill,
+                            size: 14,
+                            color: c.accent,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Circle question'.tr.toUpperCase(),
+                            style: context.text.overline.copyWith(
+                              color: c.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        prompt,
+                        style: context.text.noteBody.copyWith(fontSize: 17),
+                      ),
+                      const SizedBox(height: Space.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              status,
+                              style: context.text.caption.copyWith(
+                                color: c.inkSoft,
+                              ),
+                            ),
+                          ),
+                          if (!question.answered)
+                            NwuButton(
+                              label: 'Answer'.tr,
+                              tone: ButtonTone.accent,
+                              compact: true,
+                              expand: false,
+                              onPressed: answer,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (question.answered)
+                for (final note in question.others.take(3))
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.sm),
+                    child: NoteCard(note: note),
+                  ),
+            ],
+          ),
+        ).animate().fadeIn(duration: Motion.base);
+      },
+    );
+  }
+}
+
+/// Friends in your circle with a birthday today or tomorrow, with one
+/// tap to say something kind.
+class _BirthdayCard extends StatelessWidget {
+  const _BirthdayCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Session.instance;
+    final birthdays = upcomingBirthdays(
+      session.circleMembers.where((u) => session.isVisible(u.uid)),
+      DateTime.now(),
+    ).take(2).toList();
+    if (birthdays.isEmpty) return const SizedBox.shrink();
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.md,
+        Space.gutter,
+        0,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(Space.md),
+        decoration: BoxDecoration(
+          color: c.accentSoft,
+          borderRadius: BorderRadius.circular(Radii.lg),
+        ),
+        child: Column(
+          children: [
+            for (final (i, birthday) in birthdays.indexed) ...[
+              if (i > 0) const SizedBox(height: Space.sm),
+              Row(
+                children: [
+                  Avatar(
+                    url: birthday.user.image,
+                    name: birthday.user.username,
+                    size: 40,
+                  ),
+                  const SizedBox(width: Space.sm),
+                  Expanded(
+                    child: Text(
+                      (birthday.daysAway == 0
+                              ? '{name}’s birthday is today 🎂'
+                              : '{name}’s birthday is tomorrow 🎂')
+                          .tr
+                          .replaceAll('{name}', birthday.user.firstName),
+                      style: context.text.label,
+                    ),
+                  ),
+                  const SizedBox(width: Space.xs),
+                  NwuButton(
+                    label: birthday.daysAway == 0
+                        ? 'Message'.tr
+                        : 'Send a morning note'.tr,
+                    tone: ButtonTone.accent,
+                    compact: true,
+                    expand: false,
+                    onPressed: () => birthday.daysAway == 0
+                        ? openChat(context, birthday.user)
+                        : showMorningNoteSheet(context, birthday.user),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: Motion.base);
+  }
+}
+
+/// A slim way into the gratitude jar, showing how full it is this month.
+class _JarCard extends StatelessWidget {
+  const _JarCard({required this.stream});
+
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        final now = DateTime.now();
+        final beads = gratitudeItems(
+          snap.data ?? const <Note>[],
+          month: DateTime(now.year, now.month),
+        ).length;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.md,
+            Space.gutter,
+            0,
+          ),
+          child: Pressable(
+            semanticLabel: 'Gratitude jar'.tr,
+            onTap: () => Navigator.of(context).push(
+              CupertinoPageRoute<void>(builder: (_) => const GratitudeScreen()),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.md,
+                vertical: Space.sm,
+              ),
+              decoration: BoxDecoration(
+                color: c.raised,
+                borderRadius: BorderRadius.circular(Radii.lg),
+                border: Border.all(color: c.line.withValues(alpha: 0.7)),
+              ),
+              child: Row(
+                children: [
+                  const Text('🫙', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: Space.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gratitude jar'.tr, style: context.text.label),
+                        Text(
+                          beads == 0
+                              ? 'Start filling it with what you are grateful for'
+                                    .tr
+                              : (beads == 1
+                                        ? '1 bead this month'
+                                        : '{n} beads this month')
+                                    .tr
+                                    .replaceAll('{n}', '$beads'),
+                          style: context.text.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? CupertinoIcons.chevron_left
+                        : CupertinoIcons.chevron_right,
+                    size: 16,
+                    color: c.muted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ).animate().fadeIn(duration: Motion.base);
+      },
+    );
+  }
+}
+
+/// Two ways to write with others: circle capsules and shared notebooks.
+class _TogetherCard extends StatelessWidget {
+  const _TogetherCard({
+    required this.groups,
+    required this.notebooks,
+    required this.asks,
+  });
+
+  final Stream<List<GroupCapsule>> groups;
+  final Stream<List<SharedNotebook>> notebooks;
+  final Stream<List<CircleAsk>> asks;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final uid = Session.instance.uid;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.md,
+        Space.gutter,
+        0,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.raised,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(color: c.line.withValues(alpha: 0.7)),
+        ),
+        child: Column(
+          children: [
+            StreamBuilder<List<GroupCapsule>>(
+              stream: groups,
+              builder: (context, snap) {
+                final all = (snap.data ?? const <GroupCapsule>[])
+                    .where((g) => Session.instance.isVisible(g.ownerId))
+                    .toList();
+                final ready = all.where((g) => g.isUnlocked).length;
+                final waiting = all.length - ready;
+                final needLetter = all
+                    .where((g) => !g.isUnlocked && !g.hasWritten(uid))
+                    .length;
+                final String subtitle;
+                if (ready > 0) {
+                  subtitle =
+                      (ready == 1 ? '1 ready to open ✨' : '{n} ready to open ✨')
+                          .tr
+                          .replaceAll('{n}', '$ready');
+                } else if (needLetter > 0) {
+                  subtitle = 'Your letter is missing ✍️'.tr;
+                } else if (waiting > 0) {
+                  subtitle = (waiting == 1 ? '1 waiting' : '{n} waiting').tr
+                      .replaceAll('{n}', '$waiting');
+                } else {
+                  subtitle = 'Everyone writes, all open together'.tr;
+                }
+                return _TogetherRow(
+                  emoji: '🎆',
+                  title: 'Circle capsules'.tr,
+                  subtitle: subtitle,
+                  highlight: ready > 0 || needLetter > 0,
+                  onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute<void>(
+                      builder: (_) => const GroupCapsulesScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Container(height: 1, color: c.line),
+            StreamBuilder<List<SharedNotebook>>(
+              stream: notebooks,
+              builder: (context, snap) {
+                final all = snap.data ?? const <SharedNotebook>[];
+                final myTurn = all.where((n) => n.isMyTurn(uid)).length;
+                final String subtitle;
+                if (myTurn > 0) {
+                  subtitle =
+                      (myTurn == 1
+                              ? 'Your turn in 1 notebook ✍️'
+                              : 'Your turn in {n} notebooks ✍️')
+                          .tr
+                          .replaceAll('{n}', '$myTurn');
+                } else if (all.isNotEmpty) {
+                  subtitle = 'Waiting for their page'.tr;
+                } else {
+                  subtitle = 'Take turns writing with one person'.tr;
+                }
+                return _TogetherRow(
+                  emoji: '📖',
+                  title: 'Shared notebooks'.tr,
+                  subtitle: subtitle,
+                  highlight: myTurn > 0,
+                  onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute<void>(
+                      builder: (_) => const NotebooksScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Container(height: 1, color: c.line),
+            StreamBuilder<List<CircleAsk>>(
+              stream: asks,
+              builder: (context, snap) {
+                final waiting = (snap.data ?? const <CircleAsk>[])
+                    .where(
+                      (a) =>
+                          !a.hasAnswered(uid) &&
+                          Session.instance.isVisible(a.ownerId),
+                    )
+                    .length;
+                final subtitle = waiting == 0
+                    ? 'Ask a question, read answers only you see'.tr
+                    : (waiting == 1
+                              ? '1 question waiting for you'
+                              : '{n} questions waiting for you')
+                          .tr
+                          .replaceAll('{n}', '$waiting');
+                return _TogetherRow(
+                  emoji: '💬',
+                  title: 'Ask your circle'.tr,
+                  subtitle: subtitle,
+                  highlight: waiting > 0,
+                  onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute<void>(
+                      builder: (_) => const AskCircleScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: Motion.base);
+  }
+}
+
+class _TogetherRow extends StatelessWidget {
+  const _TogetherRow({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.highlight,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final bool highlight;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      scale: 0.99,
+      semanticLabel: '$title. $subtitle',
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Space.md),
+        child: Row(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: Space.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.text.label),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: context.text.caption.copyWith(
+                      color: highlight ? c.accent : c.inkSoft,
+                      fontWeight: highlight ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? CupertinoIcons.chevron_left
+                  : CupertinoIcons.chevron_right,
+              size: 16,
+              color: c.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// One tap from "how do I feel" to a private note in that mood.
 class _MoodRow extends StatelessWidget {
   const _MoodRow();
@@ -333,11 +843,18 @@ class _MoodRow extends StatelessWidget {
               final mood = moods[i];
               return Pressable(
                 semanticLabel: mood.label.tr,
-                onTap: () => openComposer(
-                  context,
-                  target: ComposeTarget.private,
-                  mood: mood,
-                ),
+                onTap: () async {
+                  // A hard day first gets something kind to read.
+                  if (mood == Mood.blue && !Session.instance.isGuest) {
+                    await showComfortSheet(context);
+                    if (!context.mounted) return;
+                  }
+                  openComposer(
+                    context,
+                    target: ComposeTarget.private,
+                    mood: mood,
+                  );
+                },
                 child: Container(
                   width: 68,
                   decoration: BoxDecoration(
@@ -442,7 +959,9 @@ class _CapsuleSection extends StatelessWidget {
     return StreamBuilder<List<Capsule>>(
       stream: stream,
       builder: (context, snap) {
-        final all = snap.data ?? const <Capsule>[];
+        final all = (snap.data ?? const <Capsule>[])
+            .where((c) => !c.isSurpriseFor(Session.instance.uid))
+            .toList();
         final ready = all.where((c) => c.isUnlocked && !c.opened).toList();
         final upcoming = all.where((c) => !c.isUnlocked).toList();
         if (ready.isNotEmpty) {
@@ -550,9 +1069,10 @@ class _NextCapsule extends StatelessWidget {
   }
 }
 
-/// A one-line glance at the week; opens the full "Your week" screen.
-class _WeekCard extends StatelessWidget {
-  const _WeekCard({required this.stream});
+/// Your own notes drive two cards, so they share one listener (the
+/// stream can only be listened to once).
+class _MineSection extends StatelessWidget {
+  const _MineSection({required this.stream});
 
   final Stream<List<Note>> stream;
 
@@ -563,62 +1083,82 @@ class _WeekCard extends StatelessWidget {
       builder: (context, snap) {
         final notes = snap.data;
         if (notes == null || notes.isEmpty) return const SizedBox.shrink();
-        final c = context.colors;
-        final week = WeekInsights.from(notes, DateTime.now());
-        final line = week.streak >= 2
-            ? '🌱 ${'{n} days in a row'.tr.replaceAll('{n}', '${week.streak}')}'
-            : '{n} of 7 days'.tr.replaceAll('{n}', '${week.daysWritten}');
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.gutter,
-            Space.lg,
-            Space.gutter,
-            0,
-          ),
-          child: Pressable(
-            semanticLabel: 'Your week'.tr,
-            onTap: () => Navigator.of(context).push(
-              CupertinoPageRoute<void>(builder: (_) => const YourWeekScreen()),
-            ),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(
-                Space.md,
-                Space.sm,
-                Space.sm,
-                Space.sm,
-              ),
-              decoration: BoxDecoration(
-                color: c.raised,
-                borderRadius: BorderRadius.circular(Radii.lg),
-                border: Border.all(color: c.line.withValues(alpha: 0.7)),
-              ),
-              child: Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Your week'.tr, style: context.text.label),
-                      const SizedBox(height: 2),
-                      Text(line, style: context.text.caption),
-                    ],
-                  ),
-                  const SizedBox(width: Space.md),
-                  Expanded(child: WeekStrip(days: week.days)),
-                  const SizedBox(width: Space.xs),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? CupertinoIcons.chevron_left
-                        : CupertinoIcons.chevron_right,
-                    size: 16,
-                    color: c.muted,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ).animate().fadeIn(duration: Motion.base);
+        return Column(
+          children: [
+            _WeekCard(notes: notes),
+            if (!Session.instance.isGuest) _ReminderNudge(notes: notes),
+          ],
+        );
       },
     );
+  }
+}
+
+/// A one-line glance at the week; opens the full "Your week" screen.
+class _WeekCard extends StatelessWidget {
+  const _WeekCard({required this.notes});
+
+  final List<Note> notes;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final week = WeekInsights.from(notes, DateTime.now());
+    // Gentle by design: invite today's note, never count a loss.
+    final line = week.streak >= 2 && !week.wroteToday
+        ? '🌱 ${'Keep your {n}-day rhythm going today'.tr.replaceAll('{n}', '${week.streak}')}'
+        : week.streak >= 2
+        ? '🌱 ${'{n} days in a row'.tr.replaceAll('{n}', '${week.streak}')}'
+        : '{n} of 7 days'.tr.replaceAll('{n}', '${week.daysWritten}');
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.lg,
+        Space.gutter,
+        0,
+      ),
+      child: Pressable(
+        semanticLabel: 'Your week'.tr,
+        onTap: () => Navigator.of(context).push(
+          CupertinoPageRoute<void>(builder: (_) => const YourWeekScreen()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(
+            Space.md,
+            Space.sm,
+            Space.sm,
+            Space.sm,
+          ),
+          decoration: BoxDecoration(
+            color: c.raised,
+            borderRadius: BorderRadius.circular(Radii.lg),
+            border: Border.all(color: c.line.withValues(alpha: 0.7)),
+          ),
+          child: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Your week'.tr, style: context.text.label),
+                  const SizedBox(height: 2),
+                  Text(line, style: context.text.caption),
+                ],
+              ),
+              const SizedBox(width: Space.md),
+              Expanded(child: WeekStrip(days: week.days)),
+              const SizedBox(width: Space.xs),
+              Icon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? CupertinoIcons.chevron_left
+                    : CupertinoIcons.chevron_right,
+                size: 16,
+                color: c.muted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: Motion.base);
   }
 }
 
@@ -671,14 +1211,7 @@ class _Memories extends StatelessWidget {
         final journal = (snap.data ?? const <Note>[])
             .where((n) => !n.archived)
             .toList();
-        final memories = journal
-            .where(
-              (n) =>
-                  n.time.month == now.month &&
-                  n.time.day == now.day &&
-                  n.time.year < now.year,
-            )
-            .toList();
+        final memories = memoriesFor(journal, now);
         if (memories.isEmpty) {
           // No same-date memory: resurface one older note instead.
           final pick = noteOfTheDay(journal, now);
@@ -705,7 +1238,7 @@ class _Memories extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
                 itemCount: memories.length,
                 separatorBuilder: (_, _) => const SizedBox(width: Space.sm),
-                itemBuilder: (context, i) => _MemoryCard(note: memories[i]),
+                itemBuilder: (context, i) => _MemoryCard(memory: memories[i]),
               ),
             ),
           ],
@@ -715,15 +1248,121 @@ class _Memories extends StatelessWidget {
   }
 }
 
-class _MemoryCard extends StatelessWidget {
-  const _MemoryCard({required this.note});
+/// An old journal note brought back with a question: "do you still feel
+/// this way?". One at a time, and only until it is answered or put off.
+class _PastSelfCard extends StatelessWidget {
+  const _PastSelfCard({required this.stream});
 
-  final Note note;
+  final Stream<List<Note>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = PastSelfState.instance;
+    return StreamBuilder<List<Note>>(
+      stream: stream,
+      builder: (context, snap) {
+        final now = DateTime.now();
+        final window = pastSelfWindow(now);
+        if (state.isDone(window)) return const SizedBox.shrink();
+        final note = pastSelfNote(snap.data ?? const <Note>[], now);
+        if (note == null) return const SizedBox.shrink();
+        final c = context.colors;
+        final question = 'Do you still feel this way?'.tr;
+        void reflect() {
+          state.markDone(window);
+          openComposer(
+            context,
+            prompt:
+                '${'You wrote this on {date}.'.tr.replaceAll('{date}', fullDate(note.time))} $question',
+            target: ComposeTarget.private,
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionLabel('A note from past you'.tr),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(Space.md),
+                decoration: BoxDecoration(
+                  color: c.paperTint(note.mood, note.colorSeed),
+                  borderRadius: BorderRadius.circular(Radii.lg),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${note.mood == Mood.plain ? '📔' : note.mood.emoji}  ${fullDate(note.time)}',
+                      style: context.text.caption.copyWith(color: c.inkSoft),
+                    ),
+                    const SizedBox(height: Space.xs),
+                    ContentText(
+                      note.text,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.text.noteBody.copyWith(fontSize: 16),
+                    ),
+                    const SizedBox(height: Space.sm),
+                    Text(question, style: context.text.label),
+                    const SizedBox(height: Space.sm),
+                    Row(
+                      children: [
+                        NwuButton(
+                          label: 'Reflect'.tr,
+                          tone: ButtonTone.accent,
+                          compact: true,
+                          expand: false,
+                          onPressed: reflect,
+                        ),
+                        const SizedBox(width: Space.xs),
+                        NwuButton(
+                          label: 'Not now'.tr,
+                          tone: ButtonTone.ghost,
+                          compact: true,
+                          expand: false,
+                          onPressed: () => state.markDone(window),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ).animate().fadeIn(duration: Motion.base);
+      },
+    );
+  }
+}
+
+class _MemoryCard extends StatelessWidget {
+  const _MemoryCard({required this.memory});
+
+  final Memory memory;
+
+  Note get note => memory.note;
+
+  /// "1 month ago", "6 months ago", "1 year ago", "2 years ago".
+  String get _label {
+    final m = memory.months;
+    if (m >= 12) {
+      return (m == 12 ? '1 year ago' : '{n} years ago').tr.replaceAll(
+        '{n}',
+        '${m ~/ 12}',
+      );
+    }
+    return (m == 1 ? '1 month ago' : '{n} months ago').tr.replaceAll(
+      '{n}',
+      '$m',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final years = DateTime.now().year - note.time.year;
     return Container(
       width: 240,
       padding: const EdgeInsets.all(Space.md),
@@ -734,13 +1373,7 @@ class _MemoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            (years == 1 ? '1 year ago' : '{n} years ago').tr.replaceAll(
-              '{n}',
-              '$years',
-            ),
-            style: context.text.overline.copyWith(color: c.accent),
-          ),
+          Text(_label, style: context.text.overline.copyWith(color: c.accent)),
           const SizedBox(height: Space.xs),
           Expanded(
             child: ContentText(
@@ -752,6 +1385,92 @@ class _MemoryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Offered once, right after the first note: a daily reminder is the
+/// single best nudge to keep writing. One tap turns it on at the default
+/// time; it can be changed in Me.
+class _ReminderNudge extends StatelessWidget {
+  const _ReminderNudge({required this.notes});
+
+  final List<Note> notes;
+
+  @override
+  Widget build(BuildContext context) {
+    final reminders = Reminders.instance;
+    if (reminders.dailyEnabled || reminders.nudgeDismissed) {
+      return const SizedBox.shrink();
+    }
+    final c = context.colors;
+    final t = reminders.time;
+    final time = clockTime(DateTime(2000, 1, 1, t.hour, t.minute));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.md,
+        Space.gutter,
+        0,
+      ),
+      child: Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          Space.md,
+          Space.md,
+          Space.xs,
+          Space.md,
+        ),
+        decoration: BoxDecoration(
+          color: c.accentSoft,
+          borderRadius: BorderRadius.circular(Radii.lg),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(CupertinoIcons.bell_fill, color: c.accent, size: 20),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Make it a habit'.tr, style: context.text.label),
+                  const SizedBox(height: 2),
+                  Text(
+                    'A gentle reminder each evening helps you keep writing.'.tr,
+                    style: context.text.caption.copyWith(color: c.inkSoft),
+                  ),
+                  const SizedBox(height: Space.sm),
+                  NwuButton(
+                    label: 'Remind me at {time}'.tr.replaceAll('{time}', time),
+                    tone: ButtonTone.accent,
+                    compact: true,
+                    expand: false,
+                    onPressed: () async {
+                      final ok = await reminders.setDaily(true);
+                      if (!context.mounted) return;
+                      showToast(
+                        context,
+                        ok
+                            ? 'Reminder on. Change the time in Me.'.tr
+                            : 'Allow notifications in Settings'.tr,
+                        error: !ok,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            CircleIconButton(
+              icon: CupertinoIcons.xmark,
+              size: 32,
+              filled: false,
+              iconColor: c.muted,
+              semanticLabel: 'Not now'.tr,
+              onPressed: reminders.dismissNudge,
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: Motion.base);
   }
 }
 
@@ -823,11 +1542,24 @@ class _FeedList extends StatelessWidget {
             children: List.generate(3, (_) => const NoteSkeleton()),
           );
         }
-        final notes = snap.data!
+        final visible = snap.data!
             .where((n) => session.isVisible(n.ownerId))
             // Discover only shows notes from the new app, which have a feeling.
             .where((n) => isCircle || !n.fromOldApp)
             .toList();
+        // Friends' answers to today's circle question wait until you have
+        // answered it yourself.
+        final today = dayKey(DateTime.now());
+        final hideAnswers =
+            isCircle &&
+            !circleQuestionFor(visible, session.uid, DateTime.now()).answered;
+        final notes = hideAnswers
+            ? visible
+                  .where(
+                    (n) => n.promptDay != today || n.ownerId == session.uid,
+                  )
+                  .toList()
+            : visible;
         if (notes.isEmpty) {
           return SliverToBoxAdapter(
             child: isCircle

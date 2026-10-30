@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../core/insights.dart';
 import '../../core/l10n.dart';
@@ -9,6 +9,10 @@ import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../compose/compose_screen.dart';
+import 'calendar_screen.dart';
+import '../gratitude/gratitude_screen.dart';
+import 'garden_screen.dart';
+import 'patterns_screen.dart';
 
 /// A calm look back at the last week: which days you wrote, how you felt,
 /// and your moods over the month. Computed on the phone from your notes.
@@ -66,6 +70,16 @@ class _YourWeekScreenState extends State<YourWeekScreen> {
                       _Stats(insights: insights),
                       const SizedBox(height: Space.xl),
                       _MoodMix(counts: insights.moodsThisMonth),
+                      const SizedBox(height: Space.xl),
+                      const _CalendarLink(),
+                      const SizedBox(height: Space.sm),
+                      const _GardenLink(),
+                      const SizedBox(height: Space.sm),
+                      const _PatternsLink(),
+                      const SizedBox(height: Space.sm),
+                      const _JarLink(),
+                      const SizedBox(height: Space.xl),
+                      _Milestones(milestones: milestonesFor(snap.data!)),
                     ]
                     .animate(interval: 60.ms)
                     .fadeIn(duration: Motion.slow)
@@ -104,6 +118,13 @@ class _Headline extends StatelessWidget {
         Text(title, style: context.text.display),
         const SizedBox(height: Space.xs),
         Text(subtitle, style: context.text.body.copyWith(color: c.inkSoft)),
+        if (insights.streak >= 1) ...[
+          const SizedBox(height: Space.xs),
+          Text(
+            'One rest day a week never breaks your rhythm.'.tr,
+            style: context.text.caption,
+          ),
+        ],
       ],
     );
   }
@@ -320,6 +341,176 @@ class _MoodMix extends StatelessWidget {
                 ],
               ),
             ),
+      ],
+    );
+  }
+}
+
+/// A tappable card that opens another look at your writing.
+class _InsightLink extends StatelessWidget {
+  const _InsightLink({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.builder,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      semanticLabel: title,
+      onTap: () => Navigator.of(
+        context,
+      ).push(CupertinoPageRoute<void>(builder: builder)),
+      child: Container(
+        padding: const EdgeInsets.all(Space.md),
+        decoration: BoxDecoration(
+          color: c.raised,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(color: c.line.withValues(alpha: 0.7)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: c.accent, size: 22),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.text.label),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: context.text.caption),
+                ],
+              ),
+            ),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? CupertinoIcons.chevron_left
+                  : CupertinoIcons.chevron_right,
+              size: 16,
+              color: c.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarLink extends StatelessWidget {
+  const _CalendarLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.calendar,
+    title: 'Calendar'.tr,
+    subtitle: 'See every month, day by day'.tr,
+    builder: (_) => const CalendarScreen(),
+  );
+}
+
+class _JarLink extends StatelessWidget {
+  const _JarLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.heart,
+    title: 'Gratitude jar'.tr,
+    subtitle: 'Three good things a day, a bead for each'.tr,
+    builder: (_) => const GratitudeScreen(),
+  );
+}
+
+class _PatternsLink extends StatelessWidget {
+  const _PatternsLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.chart_bar_alt_fill,
+    title: 'Your patterns'.tr,
+    subtitle: 'What your notes say about you'.tr,
+    builder: (_) => const PatternsScreen(),
+  );
+}
+
+class _GardenLink extends StatelessWidget {
+  const _GardenLink();
+
+  @override
+  Widget build(BuildContext context) => _InsightLink(
+    icon: CupertinoIcons.leaf_arrow_circlepath,
+    title: 'Your garden'.tr,
+    subtitle: 'Every note grows a plant'.tr,
+    builder: (_) => const GardenScreen(),
+  );
+}
+
+/// Streak and note-count milestones: reached ones are bright, the rest
+/// are quiet outlines to look forward to.
+class _Milestones extends StatelessWidget {
+  const _Milestones({required this.milestones});
+
+  final List<Milestone> milestones;
+
+  static String _label(Milestone m) {
+    if (m.isStreak) {
+      return '{n} days in a row'.tr.replaceAll('{n}', '${m.target}');
+    }
+    return (m.target == 1 ? 'First note' : '{n} notes').tr.replaceAll(
+      '{n}',
+      '${m.target}',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('MILESTONES'.tr, style: context.text.overline),
+        const SizedBox(height: Space.sm),
+        Wrap(
+          spacing: Space.xs,
+          runSpacing: Space.xs,
+          children: [
+            for (final m in milestones)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.sm,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: m.reached ? c.accentSoft : null,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                  border: m.reached ? null : Border.all(color: c.line),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Opacity(
+                      opacity: m.reached ? 1 : 0.35,
+                      child: Text(m.emoji),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _label(m),
+                      style: context.text.caption.copyWith(
+                        color: m.reached ? c.ink : c.muted,
+                        fontWeight: m.reached ? FontWeight.w700 : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }

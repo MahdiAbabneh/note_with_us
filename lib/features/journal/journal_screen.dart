@@ -3,11 +3,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/format.dart';
 import '../../core/l10n.dart';
+import '../../core/tags.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../capsules/capsule_card.dart';
 import '../compose/compose_screen.dart';
+import 'export_sheet.dart';
 import '../notes/note_card.dart';
 
 /// Which Memories segment is showing (0 notes, 1 capsules, 2 favorites); lets a
@@ -35,6 +37,7 @@ class _JournalScreenState extends State<JournalScreen> {
   bool _searching = false;
   String _query = '';
   Mood? _mood;
+  String? _tag;
   bool _archived = false;
 
   @override
@@ -82,6 +85,12 @@ class _JournalScreenState extends State<JournalScreen> {
           overline: 'Just for you'.tr,
           title: 'Memories'.tr,
           actions: [
+            if (_tab == 0)
+              CircleIconButton(
+                icon: CupertinoIcons.square_arrow_up,
+                semanticLabel: 'Export as PDF'.tr,
+                onPressed: () => showExportSheet(context, tag: _tag),
+              ),
             if (_tab == 0)
               CircleIconButton(
                 icon: _searching ? CupertinoIcons.xmark : CupertinoIcons.search,
@@ -153,6 +162,8 @@ class _JournalScreenState extends State<JournalScreen> {
                     stream: _notes,
                     query: _query,
                     mood: _mood,
+                    tag: _tag,
+                    onTag: (t) => setState(() => _tag = t == _tag ? null : t),
                     archived: _archived,
                     limit: _limit,
                     onLoadMore: _loadMore,
@@ -254,12 +265,75 @@ class _MoodFilter extends StatelessWidget {
   }
 }
 
+/// Your most used tags as chips; tap one to show only those notes.
+class _TagFilter extends StatelessWidget {
+  const _TagFilter({
+    required this.tags,
+    required this.selected,
+    required this.onTag,
+  });
+
+  final List<MapEntry<String, int>> tags;
+  final String? selected;
+  final ValueChanged<String> onTag;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.xs,
+          Space.gutter,
+          Space.xs,
+        ),
+        children: [
+          for (final MapEntry(key: tag, value: count) in tags.take(20))
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6),
+              child: Pressable(
+                onTap: () => onTag(tag),
+                semanticLabel: '#$tag',
+                child: AnimatedContainer(
+                  duration: Motion.base,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: tag == selected
+                        ? c.accentSoft
+                        : const Color(0x00000000),
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    border: Border.all(
+                      color: tag == selected ? c.accent : c.line,
+                    ),
+                  ),
+                  child: Text(
+                    '#$tag · $count',
+                    style: context.text.caption.copyWith(
+                      color: tag == selected ? c.accent : c.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotesList extends StatelessWidget {
   const _NotesList({
     super.key,
     required this.stream,
     required this.query,
     required this.mood,
+    required this.tag,
+    required this.onTag,
     required this.archived,
     required this.limit,
     required this.onLoadMore,
@@ -269,6 +343,10 @@ class _NotesList extends StatelessWidget {
   final Stream<List<Note>> stream;
   final String query;
   final Mood? mood;
+
+  /// The tag being filtered on, without `#`.
+  final String? tag;
+  final ValueChanged<String> onTag;
   final bool archived;
   final int limit;
   final VoidCallback onLoadMore;
@@ -300,6 +378,7 @@ class _NotesList extends StatelessWidget {
         final filtered = all
             .where((n) => n.archived == archived)
             .where((n) => mood == null || n.mood == mood)
+            .where((n) => tag == null || hasTag(n, tag!))
             .where(
               (n) =>
                   query.isEmpty ||
@@ -339,6 +418,10 @@ class _NotesList extends StatelessWidget {
         );
 
         final items = <Widget>[];
+        final tags = tagCounts(all.where((n) => n.archived == archived));
+        if (tags.isNotEmpty) {
+          items.add(_TagFilter(tags: tags, selected: tag, onTag: onTag));
+        }
         if (pinned.isNotEmpty) {
           items.add(SectionLabel('Pinned'.tr));
           for (var i = 0; i < pinned.length; i++) {
@@ -407,7 +490,9 @@ class _CapsuleList extends StatelessWidget {
               children: List.generate(2, (_) => const NoteSkeleton()),
             );
           }
-          final inbox = receivedSnap.data!;
+          final inbox = receivedSnap.data!
+              .where((c) => !c.isSurpriseFor(Session.instance.uid))
+              .toList();
           final outbox = sentSnap.data!;
           if (inbox.isEmpty && outbox.isEmpty) {
             return EmptyState(

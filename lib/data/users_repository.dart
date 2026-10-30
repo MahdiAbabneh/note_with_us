@@ -192,7 +192,61 @@ class UsersRepository {
       }
     }
 
+    // Circle capsules you started go entirely; in the others, only your
+    // own letter. Your pages in shared notebooks go, the notebook stays
+    // for the other person to keep or delete.
+    Future<void> collectTogether() async {
+      final capsules = await _db
+          .collection('groupCapsules')
+          .where('members', arrayContains: uid)
+          .get();
+      for (final doc in capsules.docs) {
+        if (doc.data()['ownerId'] == uid) {
+          // By id, not listed: sealed letters can't be listed by anyone.
+          final members = (doc.data()['members'] as List? ?? const [])
+              .cast<String>();
+          refs.addAll([
+            for (final m in members) doc.reference.collection('entries').doc(m),
+            doc.reference,
+          ]);
+        } else {
+          refs.add(doc.reference.collection('entries').doc(uid));
+        }
+      }
+      // Questions you asked go with their answers; in the ones you were
+      // asked, only your own answer goes.
+      final asks = await _db
+          .collection('circleAsks')
+          .where('ownerId', isEqualTo: uid)
+          .get();
+      for (final doc in asks.docs) {
+        refs.addAll(
+          (await doc.reference.collection('answers').get()).docs.map(
+            (d) => d.reference,
+          ),
+        );
+        refs.add(doc.reference);
+      }
+      final asked = await _db
+          .collection('circleAsks')
+          .where('members', arrayContains: uid)
+          .get();
+      for (final doc in asked.docs) {
+        refs.add(doc.reference.collection('answers').doc(uid));
+      }
+      final notebooks = await _db
+          .collection('sharedNotebooks')
+          .where('members', arrayContains: uid)
+          .get();
+      for (final doc in notebooks.docs) {
+        await collect(
+          doc.reference.collection('entries').where('ownerId', isEqualTo: uid),
+        );
+      }
+    }
+
     await Future.wait([
+      collectTogether(),
       collect(_db.collection('postsOnlyMe').doc(uid).collection('myPost')),
       collect(_db.collection('postsMain').where('ownerId', isEqualTo: uid)),
       collect(_db.collection('circlePosts').where('ownerId', isEqualTo: uid)),
