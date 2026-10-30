@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
+import 'content_text.dart';
 
 /// Labelled text field with a soft filled style and accent focus ring.
 class NwuField extends StatefulWidget {
@@ -50,16 +51,37 @@ class _NwuFieldState extends State<NwuField> {
   final _focus = FocusNode();
   late bool _hidden = widget.obscure;
 
+  /// Direction of the typed text at the last rebuild. The field follows
+  /// the text, so English stays left-to-right in the Arabic app and the
+  /// other way round; this only avoids rebuilding on every keystroke.
+  TextDirection? _direction;
+
   @override
   void initState() {
     super.initState();
     _focus.addListener(() => setState(() {}));
+    widget.controller.addListener(_onText);
+  }
+
+  @override
+  void didUpdateWidget(NwuField old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(_onText);
+      widget.controller.addListener(_onText);
+    }
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onText);
     _focus.dispose();
     super.dispose();
+  }
+
+  void _onText() {
+    final direction = inputDirection(context, widget.controller.text);
+    if (direction != _direction) setState(() => _direction = direction);
   }
 
   OutlineInputBorder _border(Color color, [double width = 1]) =>
@@ -94,6 +116,7 @@ class _NwuFieldState extends State<NwuField> {
           readOnly: widget.readOnly,
           onTap: widget.onTap,
           textCapitalization: widget.textCapitalization,
+          textDirection: inputDirection(context, widget.controller.text),
           style: t.body,
           decoration: InputDecoration(
             hintText: widget.hint,

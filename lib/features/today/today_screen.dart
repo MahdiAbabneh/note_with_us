@@ -40,6 +40,12 @@ class _TodayScreenState extends State<TodayScreen> {
   final _session = Session.instance;
   late Stream<List<Note>> _everyone;
   late Stream<List<Note>> _circle;
+
+  /// The same circle notes for the circle question card. Kept separate from
+  /// [_circle]: a Firestore stream doesn't replay its last snapshot, so the
+  /// feed, subscribing later while the card still listens, would wait
+  /// forever on a shared one.
+  late Stream<List<Note>> _circleForQuestion;
   late Stream<List<Capsule>> _capsules;
   late Stream<List<Note>> _journal;
   late Stream<List<Note>> _mine;
@@ -61,7 +67,7 @@ class _TodayScreenState extends State<TodayScreen> {
     _everyone = _session.notes.everyone();
     if (_session.isGuest) {
       // Guests only see public notes; nothing of their own exists yet.
-      _circle = _journal = _mine = const Stream.empty();
+      _circle = _circleForQuestion = _journal = _mine = const Stream.empty();
       _capsules = const Stream.empty();
       _groups = const Stream.empty();
       _notebooks = const Stream.empty();
@@ -69,6 +75,7 @@ class _TodayScreenState extends State<TodayScreen> {
       return;
     }
     _circle = _session.notes.circleFeed(_session.uid);
+    _circleForQuestion = _session.notes.circleFeed(_session.uid);
     _capsules = _session.capsules.received(_session.uid);
     _journal = _session.notes.journal(_session.uid, limit: 200);
     _mine = _session.notes.mine(_session.uid);
@@ -95,32 +102,68 @@ class _TodayScreenState extends State<TodayScreen> {
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
+        // Cards appear and disappear above each other (the circle ones once
+        // the circle loads), so each has a key: without one a shifted card
+        // is rebuilt and re-subscribes to its stream, which crashes or
+        // leaves it blank.
         slivers: [
-          if (_session.isGuest) const SliverToBoxAdapter(child: _GuestBanner()),
-          const SliverToBoxAdapter(child: OccasionCard()),
+          if (_session.isGuest)
+            const SliverToBoxAdapter(
+              key: ValueKey('guest'),
+              child: _GuestBanner(),
+            ),
+          const SliverToBoxAdapter(
+            key: ValueKey('occasion'),
+            child: OccasionCard(),
+          ),
           if (!ramadanPromptShows(DateTime.now()))
-            const SliverToBoxAdapter(child: _PromptCard()),
-          if (!_session.isGuest && _session.circle.isNotEmpty)
-            SliverToBoxAdapter(child: _CircleQuestion(stream: _circle)),
-          if (!_session.isGuest && _session.circle.isNotEmpty)
-            const SliverToBoxAdapter(child: _BirthdayCard()),
+            const SliverToBoxAdapter(
+              key: ValueKey('prompt'),
+              child: _PromptCard(),
+            ),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(
+              key: const ValueKey('circleQuestion'),
+              child: _CircleQuestion(stream: _circleForQuestion),
+            ),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            const SliverToBoxAdapter(
+              key: ValueKey('birthday'),
+              child: _BirthdayCard(),
+            ),
+          if (!_session.isGuest && _session.circle.isNotEmpty)
+            SliverToBoxAdapter(
+              key: const ValueKey('together'),
               child: _TogetherCard(
                 groups: _groups,
                 notebooks: _notebooks,
                 asks: _asksForMe,
               ),
             ),
-          const SliverToBoxAdapter(child: _MoodRow()),
-          SliverToBoxAdapter(child: _MineSection(stream: _mine)),
+          const SliverToBoxAdapter(key: ValueKey('moods'), child: _MoodRow()),
+          SliverToBoxAdapter(
+            key: const ValueKey('mine'),
+            child: _MineSection(stream: _mine),
+          ),
           if (!_session.isGuest)
-            SliverToBoxAdapter(child: _JarCard(stream: _journal)),
-          const SliverToBoxAdapter(child: _DraftCard()),
-          SliverToBoxAdapter(child: _CapsuleSection(stream: _capsules)),
-          SliverToBoxAdapter(child: _Memories(stream: _journal)),
+            SliverToBoxAdapter(
+              key: const ValueKey('jar'),
+              child: _JarCard(stream: _journal),
+            ),
+          const SliverToBoxAdapter(key: ValueKey('draft'), child: _DraftCard()),
+          SliverToBoxAdapter(
+            key: const ValueKey('capsules'),
+            child: _CapsuleSection(stream: _capsules),
+          ),
+          SliverToBoxAdapter(
+            key: const ValueKey('memories'),
+            child: _Memories(stream: _journal),
+          ),
           if (!_session.isGuest)
-            SliverToBoxAdapter(child: _PastSelfCard(stream: _journal)),
+            SliverToBoxAdapter(
+              key: const ValueKey('pastSelf'),
+              child: _PastSelfCard(stream: _journal),
+            ),
           SliverPersistentHeader(
             pinned: true,
             delegate: _FeedSwitcher(

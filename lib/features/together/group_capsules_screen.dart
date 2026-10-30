@@ -35,11 +35,12 @@ class _GroupCapsulesScreenState extends State<GroupCapsulesScreen> {
       showToast(context, 'Add people to your circle first.'.tr, error: true);
       return;
     }
-    final created = await showNwuSheet<GroupCapsule?>(
+    // The sheet pops `true` once the capsule is saved.
+    final created = await showNwuSheet<bool>(
       context,
       builder: (_) => const _NewGroupCapsuleSheet(),
     );
-    if (created != null && mounted) showToast(context, 'Capsule started'.tr);
+    if (created == true && mounted) showToast(context, 'Capsule started'.tr);
   }
 
   @override
@@ -159,7 +160,7 @@ class _CapsuleTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(capsule.title, style: context.text.headline),
+                  ContentText(capsule.title, style: context.text.headline),
                   const SizedBox(height: 2),
                   Text(
                     ready

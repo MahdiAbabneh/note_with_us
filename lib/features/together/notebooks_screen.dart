@@ -159,7 +159,7 @@ class _NotebookTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(notebook.title, style: context.text.headline),
+                  ContentText(notebook.title, style: context.text.headline),
                   const SizedBox(height: 2),
                   Text(
                     '${partner.username} · ${(notebook.entryCount == 1 ? '1 page' : '{n} pages').tr.replaceAll('{n}', '${notebook.entryCount}')}',

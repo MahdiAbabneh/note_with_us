@@ -168,7 +168,7 @@ class _AskTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(ask.text, style: context.text.headline),
+            ContentText(ask.text, style: context.text.headline),
             const SizedBox(height: Space.xs),
             Text(
               '$status  ·  ${relativeTime(ask.createdAt)}',
@@ -404,7 +404,7 @@ class _AnswerAskScreenState extends State<AnswerAskScreen> {
                       style: context.text.caption,
                     ),
                     const SizedBox(height: Space.xs),
-                    Text(ask.text, style: context.text.display),
+                    ContentText(ask.text, style: context.text.display),
                     const SizedBox(height: Space.xs),
                     Row(
                       children: [
@@ -547,7 +547,7 @@ class _AskAnswersScreenState extends State<AskAnswersScreen> {
                         MediaQuery.of(context).padding.bottom + Space.xxl,
                       ),
                       children: [
-                        Text(ask.text, style: context.text.display),
+                        ContentText(ask.text, style: context.text.display),
                         const SizedBox(height: Space.xs),
                         Text(
                           'Only you can read these answers.'.tr,
