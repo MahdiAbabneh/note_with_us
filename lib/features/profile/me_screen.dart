@@ -15,7 +15,6 @@ import '../../design/design.dart';
 import '../auth/welcome_screen.dart';
 import 'circle_screen.dart';
 import 'edit_profile_screen.dart';
-import 'games_screen.dart';
 
 const _privacyUrl =
     'https://github.com/MahdiAbabneh/note-privacy/blob/main/prvacy-policy.md';
@@ -96,12 +95,6 @@ class MeScreen extends StatelessWidget {
             SectionLabel('More'.tr),
             GroupedList(
               children: [
-                ListRow(
-                  icon: CupertinoIcons.game_controller,
-                  title: 'For fun'.tr,
-                  subtitle: 'Quick games to play with friends'.tr,
-                  onTap: () => _push(context, const GamesScreen()),
-                ),
                 ListRow(
                   icon: CupertinoIcons.lock_shield,
                   title: 'Privacy policy'.tr,
@@ -225,14 +218,6 @@ class GuestMeScreen extends StatelessWidget {
           SectionLabel('More'.tr),
           GroupedList(
             children: [
-              ListRow(
-                icon: CupertinoIcons.game_controller,
-                title: 'For fun'.tr,
-                subtitle: 'Quick games to play with friends'.tr,
-                onTap: () => Navigator.of(context).push(
-                  CupertinoPageRoute<void>(builder: (_) => const GamesScreen()),
-                ),
-              ),
               ListRow(
                 icon: CupertinoIcons.lock_shield,
                 title: 'Privacy policy'.tr,
