@@ -10,7 +10,6 @@ import '../../core/prompts.dart';
 import '../../core/reminders.dart';
 import '../../core/settings.dart';
 import '../../data/models.dart';
-import '../../data/sample_notes.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
@@ -1619,11 +1618,7 @@ class _FeedList extends StatelessWidget {
                   )
                   .toList()
             : visible;
-        // A young Discover feed is padded with labelled example notes.
-        final examples = !isCircle && notes.length < minRealDiscoverNotes
-            ? sampleNotes()
-            : const <Note>[];
-        if (notes.isEmpty && examples.isEmpty) {
+        if (notes.isEmpty) {
           return SliverToBoxAdapter(
             child: isCircle
                 ? EmptyState(
@@ -1646,10 +1641,8 @@ class _FeedList extends StatelessWidget {
                   ),
           );
         }
-        // Real notes, then (if any) the examples under their own heading.
-        final items = [...notes, if (examples.isNotEmpty) null, ...examples];
         return SliverList.builder(
-          itemCount: items.length,
+          itemCount: notes.length,
           itemBuilder: (context, i) => Padding(
             padding: const EdgeInsets.fromLTRB(
               Space.gutter,
@@ -1657,44 +1650,13 @@ class _FeedList extends StatelessWidget {
               Space.gutter,
               Space.xs,
             ),
-            child:
-                (items[i] == null
-                        ? const _ExamplesHeading()
-                        : NoteCard(note: items[i]!))
-                    .animate(delay: (i.clamp(0, 6) * 50).ms)
-                    .fadeIn(duration: Motion.slow)
-                    .slideY(begin: 0.06, curve: Motion.ease),
+            child: NoteCard(note: notes[i])
+                .animate(delay: (i.clamp(0, 6) * 50).ms)
+                .fadeIn(duration: Motion.slow)
+                .slideY(begin: 0.06, curve: Motion.ease),
           ),
         );
       },
-    );
-  }
-}
-
-/// Introduces the example notes at the end of a young Discover feed.
-class _ExamplesHeading extends StatelessWidget {
-  const _ExamplesHeading();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.only(top: Space.md, bottom: Space.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Examples to inspire you'.tr.toUpperCase(),
-            style: context.text.overline,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Discover is just getting started. These examples show the kinds of notes people share here. Share yours to be among the first!'
-                .tr,
-            style: context.text.small.copyWith(color: c.inkSoft),
-          ),
-        ],
-      ),
     );
   }
 }

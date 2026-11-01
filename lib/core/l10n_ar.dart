@@ -564,12 +564,8 @@ const Map<String, String> arabicStrings = {
   'Days written': 'أيام الكتابة',
   'Longest streak': 'أطول سلسلة',
   'Most felt': 'الأكثر شعورًا',
-  // Example notes in Discover
-  'Example': 'مثال',
+  // Official accounts
   'Official': 'رسمي',
-  'Examples to inspire you': 'أمثلة تلهمك',
-  'Discover is just getting started. These examples show the kinds of notes people share here. Share yours to be among the first!':
-      'اكتشف ما زال في بدايته. هذه أمثلة لنوع الملاحظات التي يشاركها الناس هنا. شارك ملاحظتك وكن من الأوائل!',
   // Birthdays
   '{name}’s birthday is tomorrow 🎂': 'عيد ميلاد {name} غدًا 🎂',
   '{name}’s birthday is today 🎂': 'عيد ميلاد {name} اليوم 🎂',

@@ -42,8 +42,7 @@ class NoteCard extends StatelessWidget {
       name: note.ownerName,
       image: note.ownerImage,
     );
-    final social =
-        note.audience != Audience.private && !preview && !note.example;
+    final social = note.audience != Audience.private && !preview;
 
     final card = Container(
       padding: const EdgeInsets.fromLTRB(
@@ -65,7 +64,7 @@ class NoteCard extends StatelessWidget {
           _Header(
             note: note,
             author: author,
-            showMenu: !inDetail && !preview && !note.example,
+            showMenu: !inDetail && !preview,
             detail: inDetail,
           ),
           if (note.prompt.isNotEmpty) ...[
@@ -170,7 +169,7 @@ class _Header extends StatelessWidget {
         : ' · ${note.mood.emoji} ${note.mood.label.tr}';
 
     void openProfile() {
-      if (mine || note.example) return;
+      if (mine) return;
       if (needsAccount(context, 'Join to see profiles'.tr)) return;
       Navigator.of(context).push(
         CupertinoPageRoute<void>(
@@ -182,7 +181,7 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         Pressable(
-          onTap: mine || note.example ? null : openProfile,
+          onTap: mine ? null : openProfile,
           child: Avatar(
             url: author.image,
             name: author.username,
@@ -213,9 +212,7 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                note.example
-                    ? moodLabel.replaceFirst(' · ', '')
-                    : '${detail ? fullDate(note.time) : relativeTime(note.time)}$moodLabel',
+                '${detail ? fullDate(note.time) : relativeTime(note.time)}$moodLabel',
                 style: t.caption.copyWith(color: c.inkSoft),
               ),
             ],
@@ -243,10 +240,7 @@ class _Header extends StatelessWidget {
                 )
               : const SizedBox.shrink(),
         ),
-        if (note.example)
-          Tag(icon: CupertinoIcons.lightbulb, label: 'Example'.tr)
-        else
-          _AudienceTag(audience: note.audience),
+        _AudienceTag(audience: note.audience),
         if (showMenu)
           IconButton(
             visualDensity: VisualDensity.compact,
