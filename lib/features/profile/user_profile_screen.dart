@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/l10n.dart';
 import '../../data/models.dart';
+import '../../data/official.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../capsules/morning_note_sheet.dart';
@@ -190,10 +191,21 @@ class _ProfileHero extends StatelessWidget {
             duration: Motion.slow,
           ),
           const SizedBox(height: Space.md),
-          Text(
-            user.username,
-            style: context.text.display,
-            textAlign: TextAlign.center,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  user.username,
+                  style: context.text.display,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              if (isOfficial(user.uid)) ...[
+                const SizedBox(width: Space.xs),
+                const OfficialBadge(size: 24),
+              ],
+            ],
           ),
           if (details.isNotEmpty) ...[
             const SizedBox(height: Space.xxs),

@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/format.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
+import '../../data/official.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
 import '../auth/join_sheet.dart';
@@ -41,7 +42,8 @@ class NoteCard extends StatelessWidget {
       name: note.ownerName,
       image: note.ownerImage,
     );
-    final social = note.audience != Audience.private && !preview;
+    final social =
+        note.audience != Audience.private && !preview && !note.example;
 
     final card = Container(
       padding: const EdgeInsets.fromLTRB(
@@ -63,7 +65,7 @@ class NoteCard extends StatelessWidget {
           _Header(
             note: note,
             author: author,
-            showMenu: !inDetail && !preview,
+            showMenu: !inDetail && !preview && !note.example,
             detail: inDetail,
           ),
           if (note.prompt.isNotEmpty) ...[
@@ -168,7 +170,7 @@ class _Header extends StatelessWidget {
         : ' · ${note.mood.emoji} ${note.mood.label.tr}';
 
     void openProfile() {
-      if (mine) return;
+      if (mine || note.example) return;
       if (needsAccount(context, 'Join to see profiles'.tr)) return;
       Navigator.of(context).push(
         CupertinoPageRoute<void>(
@@ -180,7 +182,7 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         Pressable(
-          onTap: mine ? null : openProfile,
+          onTap: mine || note.example ? null : openProfile,
           child: Avatar(
             url: author.image,
             name: author.username,
@@ -193,15 +195,27 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                mine ? 'You'.tr : author.username,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: t.label.copyWith(fontSize: 15),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      mine ? 'You'.tr : author.username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.label.copyWith(fontSize: 15),
+                    ),
+                  ),
+                  if (isOfficial(note.ownerId)) ...[
+                    const SizedBox(width: 4),
+                    OfficialBadge(size: 15),
+                  ],
+                ],
               ),
               const SizedBox(height: 2),
               Text(
-                '${detail ? fullDate(note.time) : relativeTime(note.time)}$moodLabel',
+                note.example
+                    ? moodLabel.replaceFirst(' · ', '')
+                    : '${detail ? fullDate(note.time) : relativeTime(note.time)}$moodLabel',
                 style: t.caption.copyWith(color: c.inkSoft),
               ),
             ],
@@ -229,7 +243,10 @@ class _Header extends StatelessWidget {
                 )
               : const SizedBox.shrink(),
         ),
-        _AudienceTag(audience: note.audience),
+        if (note.example)
+          Tag(icon: CupertinoIcons.lightbulb, label: 'Example'.tr)
+        else
+          _AudienceTag(audience: note.audience),
         if (showMenu)
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -669,4 +686,21 @@ Future<void> blockUser(BuildContext context, String uid, String name) async {
   if (context.mounted) {
     showToast(context, '{name} is blocked'.tr.replaceAll('{name}', name));
   }
+}
+
+/// The check seal next to the name of a Note With Us team account.
+class OfficialBadge extends StatelessWidget {
+  const OfficialBadge({super.key, this.size = 18});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Official'.tr,
+    child: Icon(
+      CupertinoIcons.checkmark_seal_fill,
+      size: size,
+      color: context.colors.accent,
+    ),
+  );
 }

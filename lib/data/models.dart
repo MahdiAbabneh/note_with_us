@@ -92,6 +92,7 @@ class Note {
     this.comfort = false,
     this.kind = '',
     this.fromOldApp = false,
+    this.example = false,
   });
 
   factory Note.fromDoc(
@@ -168,6 +169,11 @@ class Note {
   /// Written by the old app, before notes had a feeling. Kept in the
   /// database, but left out of public lists.
   final bool fromOldApp;
+
+  /// One of the app's own example notes (see `sample_notes.dart`), shown
+  /// in Discover while there are few real ones. Not stored anywhere and
+  /// not written by a real person, so it can't be reacted to or opened.
+  final bool example;
 
   /// Identifies this note across its three collections; used as the id
   /// of a saved favorite.

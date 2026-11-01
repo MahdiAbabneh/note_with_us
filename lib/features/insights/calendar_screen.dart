@@ -190,9 +190,7 @@ class _MonthHeader extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(monthYear(month), style: context.text.display),
-            ],
+            children: [Text(monthYear(month), style: context.text.display)],
           ),
         ),
         CircleIconButton(
