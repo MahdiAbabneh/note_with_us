@@ -47,3 +47,4 @@ app.*.map.json
 **/android/key.properties
 **/android/app/app-keystore.jks
 
+backups/
