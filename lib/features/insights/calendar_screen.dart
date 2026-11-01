@@ -6,11 +6,9 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:printing/printing.dart';
 
 import '../../core/format.dart';
-import '../../core/hijri.dart';
 import '../../core/insights.dart';
 import '../../core/journal_pdf.dart';
 import '../../core/l10n.dart';
-import '../../core/settings.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
 import '../../design/design.dart';
@@ -59,7 +57,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         authorName: _session.me.username,
         fontData: font.buffer.asUint8List(),
         now: DateTime.now(),
-        hijri: AppSettings.instance.hijri,
       );
       await Printing.sharePdf(
         bytes: bytes,
@@ -147,7 +144,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const SizedBox(height: Space.xl),
               Text(
-                fullDateWithHijri(_selected).toUpperCase(),
+                fullDate(_selected).toUpperCase(),
                 style: context.text.overline,
               ),
               const SizedBox(height: Space.sm),
@@ -195,11 +192,6 @@ class _MonthHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(monthYear(month), style: context.text.display),
-              if (AppSettings.instance.hijri)
-                Text(
-                  hijriRangeOf(month, DateTime(month.year, month.month + 1, 0)),
-                  style: context.text.caption,
-                ),
             ],
           ),
         ),
@@ -382,15 +374,6 @@ class _MonthGrid extends StatelessWidget {
                           : c.ink,
                     ),
                   ),
-                  if (AppSettings.instance.hijri)
-                    Text(
-                      formatHijri(day, withYear: false).split(' ').first,
-                      style: TextStyle(
-                        fontSize: 9,
-                        height: 1,
-                        color: c.muted.withValues(alpha: isFuture ? 0.4 : 0.9),
-                      ),
-                    ),
                 ],
               ),
       ),

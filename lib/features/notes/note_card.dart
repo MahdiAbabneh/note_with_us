@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/format.dart';
-import '../../core/hijri.dart';
 import '../../core/l10n.dart';
 import '../../data/models.dart';
 import '../../data/session.dart';
@@ -154,7 +153,7 @@ class _Header extends StatelessWidget {
   final AppUser author;
   final bool showMenu;
 
-  /// The detail view shows the full date (and its Hijri date).
+  /// The detail view shows the full date.
   final bool detail;
 
   @override
@@ -202,7 +201,7 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${detail ? fullDateWithHijri(note.time) : relativeTime(note.time)}$moodLabel',
+                '${detail ? fullDate(note.time) : relativeTime(note.time)}$moodLabel',
                 style: t.caption.copyWith(color: c.inkSoft),
               ),
             ],

@@ -48,6 +48,9 @@ class PaperPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (lineHeight < 6) return;
+    // The loops below round up to whole lines; keep the extra one inside
+    // the text area so it never spills past the card's edge.
+    canvas.clipRect(Offset.zero & size);
     final line = Paint()
       ..color = color
       ..strokeWidth = 1;

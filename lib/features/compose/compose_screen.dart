@@ -7,8 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/drafts.dart';
 import '../../core/format.dart';
-import '../../core/islamic.dart';
-import '../../core/settings.dart';
 import '../../core/insights.dart';
 import '../../core/prompts.dart';
 import '../../core/tags.dart';
@@ -676,43 +674,17 @@ class _CapsuleTemplate {
     required this.body,
     required this.mood,
     required this.unlockAt,
-    this.eid,
   });
 
   final String emoji;
   final String title;
   final String body;
 
-  /// Set for an Eid greeting, whose text comes from [eidGreeting].
-  final IslamicOccasion? eid;
-
   /// The starting letter in the app language.
-  String text() => eid == null
-      ? body.tr
-      : '${eidGreeting(eid!)}\n\n${'This year I am grateful for…'.tr}';
+  String text() => body.tr;
   final Mood mood;
   final DateTime Function(DateTime now) unlockAt;
 }
-
-/// Eid greetings, offered only when Ramadan and Eid features are on.
-final _eidTemplates = <_CapsuleTemplate>[
-  _CapsuleTemplate(
-    emoji: '🌙',
-    title: 'Eid al-Fitr greeting',
-    body: '',
-    eid: IslamicOccasion.eidAlFitr,
-    mood: Mood.joy,
-    unlockAt: (now) => nextOccasionStart(IslamicOccasion.eidAlFitr, now),
-  ),
-  _CapsuleTemplate(
-    emoji: '✨',
-    title: 'Eid al-Adha greeting',
-    body: '',
-    eid: IslamicOccasion.eidAlAdha,
-    mood: Mood.joy,
-    unlockAt: (now) => nextOccasionStart(IslamicOccasion.eidAlAdha, now),
-  ),
-];
 
 final _capsuleTemplates = <_CapsuleTemplate>[
   _CapsuleTemplate(
@@ -775,10 +747,7 @@ class _CapsuleTemplates extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
             children: [
-              for (final template in [
-                ..._capsuleTemplates,
-                if (AppSettings.instance.islamic) ..._eidTemplates,
-              ])
+              for (final template in _capsuleTemplates)
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: Space.xs),
                   child: Pressable(

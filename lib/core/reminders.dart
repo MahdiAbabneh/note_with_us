@@ -186,14 +186,32 @@ class Reminders extends ChangeNotifier {
   Future<void> setDays(Set<int> value) async {
     if (value.isEmpty) return;
     await Prefs.setString('reminderDays', (value.toList()..sort()).join(','));
-    await _rescheduleDaily();
+    // Show the choice at once; rescheduling talks to the system and can
+    // be slow, so it must not hold the picker.
     notifyListeners();
+    await _rescheduleQuietly();
   }
 
   Future<void> setTime(TimeOfDay value) async {
     await Prefs.setString('reminderTime', '${value.hour}:${value.minute}');
-    await _rescheduleDaily();
     notifyListeners();
+    await _rescheduleQuietly();
+  }
+
+  /// [_rescheduleDaily] for a changed day or time: the setting is already
+  /// saved and shown, so a failure is only logged; the next change or
+  /// app start tries again.
+  Future<void> _rescheduleQuietly() async {
+    try {
+      await _rescheduleDaily();
+    } catch (error, stack) {
+      developer.log(
+        'Rescheduling the daily reminder failed',
+        name: 'note_with_us.reminders',
+        error: error,
+        stackTrace: stack,
+      );
+    }
   }
 
   /// Turns capsule alerts on or off. Returns false if permission was

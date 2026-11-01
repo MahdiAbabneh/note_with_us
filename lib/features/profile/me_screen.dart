@@ -7,7 +7,6 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/format.dart';
-import '../../core/hijri.dart';
 import '../../core/l10n.dart';
 import '../../core/reminders.dart';
 import '../../core/settings.dart';
@@ -88,7 +87,6 @@ class MeScreen extends StatelessWidget {
                   value: settings.isArabic ? 'العربية' : 'English',
                   onTap: () => _showLanguage(context),
                 ),
-                ..._hijriRows(context, settings),
               ],
             ),
             SectionLabel('More'.tr),
@@ -218,7 +216,6 @@ class GuestMeScreen extends StatelessWidget {
                 value: settings.isArabic ? 'العربية' : 'English',
                 onTap: () => _showLanguage(context),
               ),
-              ..._hijriRows(context, settings),
             ],
           ),
           SectionLabel('More'.tr),
@@ -308,90 +305,6 @@ class _Header extends StatelessWidget {
       ).animate().fadeIn(duration: Motion.slow).slideY(begin: 0.05),
     );
   }
-}
-
-/// The Hijri date switch and, when it is on, the day adjustment.
-List<Widget> _hijriRows(BuildContext context, AppSettings settings) => [
-  ListRow(
-    icon: CupertinoIcons.moon_stars,
-    title: 'Hijri dates'.tr,
-    subtitle: 'Show the Hijri date next to the usual one'.tr,
-    trailing: CupertinoSwitch(
-      value: settings.hijri,
-      activeTrackColor: context.colors.accent,
-      onChanged: settings.setHijri,
-    ),
-  ),
-  ListRow(
-    icon: CupertinoIcons.sparkles,
-    title: 'Ramadan and Eid'.tr,
-    subtitle: 'Daily Ramadan prompts, Eid greetings and Eid capsule dates'.tr,
-    trailing: CupertinoSwitch(
-      value: settings.islamic,
-      activeTrackColor: context.colors.accent,
-      onChanged: settings.setIslamic,
-    ),
-  ),
-  if (settings.hijri || settings.islamic)
-    ListRow(
-      icon: CupertinoIcons.plus_slash_minus,
-      title: 'Hijri adjustment'.tr,
-      value: switch (settings.hijriOffset) {
-        < 0 => 'A day earlier'.tr,
-        > 0 => 'A day later'.tr,
-        _ => 'As calculated'.tr,
-      },
-      onTap: () => _showHijriAdjustment(context),
-    ),
-];
-
-void _showHijriAdjustment(BuildContext context) {
-  final settings = AppSettings.instance;
-  showNwuSheet<void>(
-    context,
-    builder: (ctx) => ListenableBuilder(
-      listenable: settings,
-      builder: (ctx, _) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          Space.gutter,
-          Space.md,
-          Space.gutter,
-          Space.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Hijri adjustment'.tr, style: ctx.text.title),
-            const SizedBox(height: Space.xs),
-            Text(
-              'Dates follow the Umm al-Qura calendar. If your country starts the month a day earlier or later, adjust it here.'
-                  .tr,
-              style: ctx.text.small,
-            ),
-            const SizedBox(height: Space.lg),
-            SegmentedPills(
-              labels: [
-                'A day earlier'.tr,
-                'As calculated'.tr,
-                'A day later'.tr,
-              ],
-              index: settings.hijriOffset.clamp(-1, 1) + 1,
-              onChanged: (i) => settings.setHijriOffset(i - 1),
-            ),
-            const SizedBox(height: Space.sm),
-            Text(
-              'Today: {date}'.tr.replaceAll(
-                '{date}',
-                formatHijri(DateTime.now()),
-              ),
-              style: ctx.text.label,
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 void _showAppearance(BuildContext context) {
@@ -943,8 +856,15 @@ class _NotificationSettings extends StatelessWidget {
     }
   }
 
+  // Listens itself: it is built as a const child, which its parent's
+  // rebuilds skip, so it would not see Reminders change.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Reminders.instance,
+    builder: (context, _) => _build(context),
+  );
+
+  Widget _build(BuildContext context) {
     final reminders = Reminders.instance;
     final t = reminders.time;
     return GroupedList(
@@ -1043,6 +963,9 @@ String _daysSummary(Set<int> days) {
   if (days.length == 2 && days.containsAll([6, 7])) return 'Weekends'.tr;
   return (days.toList()..sort()).map(_weekdayName).join(', ');
 }
+
+@visibleForTesting
+void pickReminderDays(BuildContext context) => _pickDays(context);
 
 void _pickDays(BuildContext context) {
   final reminders = Reminders.instance;

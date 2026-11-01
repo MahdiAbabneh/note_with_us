@@ -138,18 +138,18 @@ class Session extends ChangeNotifier {
     status = SessionStatus.loading;
     notifyListeners();
     _subs
-      ..add(users.watch(user.uid).listen(_onProfile))
+      ..add(users.watch(user.uid).listen(_onProfile, onError: _onProfileError))
       ..add(
         users.circle(user.uid).listen((c) {
           circle = c;
           notifyListeners();
-        }),
+        }, onError: (_) {}),
       )
       ..add(
         users.blocked(user.uid).listen((b) {
           blocked = b;
           notifyListeners();
-        }),
+        }, onError: (_) {}),
       )
       ..add(
         users.incomingRequests(user.uid).listen((r) {
@@ -173,8 +173,18 @@ class Session extends ChangeNotifier {
         users.all().listen((list) {
           directory = {for (final u in list) u.uid: u};
           notifyListeners();
-        }),
+        }, onError: (_) {}),
       );
+  }
+
+  /// The server refused to load the profile (a revoked or deleted
+  /// account, or a sign-in from another Firebase project). Without the
+  /// profile the app would wait on the splash forever, so sign out and
+  /// show the welcome screen.
+  void _onProfileError(Object error) {
+    if (error is FirebaseException && error.code == 'permission-denied') {
+      auth.signOut();
+    }
   }
 
   void _onProfile(AppUser? profile) {

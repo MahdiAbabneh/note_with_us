@@ -7,9 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mahdeko/core/birthdays.dart';
 import 'package:mahdeko/core/format.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:mahdeko/core/hijri.dart';
 import 'package:mahdeko/core/insights.dart';
-import 'package:mahdeko/core/islamic.dart';
+import 'package:pdf/widgets.dart' as pdf show TextDirection;
 import 'package:mahdeko/core/journal_pdf.dart';
 import 'package:mahdeko/data/models.dart';
 import 'package:mahdeko/design/tokens.dart';
@@ -474,142 +473,6 @@ void main() {
     });
   });
 
-  group('hijri dates', () {
-    test('converts known Umm al-Qura dates both ways', () {
-      // Ramadan 1446 began on 1 March 2025, Eid al-Fitr on 30 March and
-      // Eid al-Adha on 6 June.
-      expect(
-        hijriOf(DateTime(2025, 3, 1), offset: 0),
-        const HijriDate(1446, 9, 1),
-      );
-      expect(
-        hijriOf(DateTime(2025, 3, 30), offset: 0),
-        const HijriDate(1446, 10, 1),
-      );
-      expect(
-        hijriOf(DateTime(2025, 6, 6), offset: 0),
-        const HijriDate(1446, 12, 10),
-      );
-      expect(gregorianOf(1446, 9, 1, offset: 0), DateTime(2025, 3, 1));
-      expect(gregorianOf(1446, 12, 10, offset: 0), DateTime(2025, 6, 6));
-    });
-
-    test('the day adjustment moves dates and round-trips', () {
-      // A country one day behind: 2 March is its 1 Ramadan.
-      expect(
-        hijriOf(DateTime(2025, 3, 2), offset: -1),
-        const HijriDate(1446, 9, 1),
-      );
-      expect(gregorianOf(1446, 9, 1, offset: -1), DateTime(2025, 3, 2));
-      for (final offset in [-2, -1, 0, 1, 2]) {
-        final date = DateTime(2026, 7, 15);
-        final h = hijriOf(date, offset: offset);
-        expect(gregorianOf(h.year, h.month, h.day, offset: offset), date);
-      }
-    });
-
-    test('month names come in both languages', () {
-      L10n.arabic = false;
-      expect(hijriMonthName(9), 'Ramadan');
-      L10n.arabic = true;
-      expect(hijriMonthName(9), 'رمضان');
-      expect(hijriMonthName(12), 'ذو الحجة');
-      L10n.arabic = false;
-    });
-  });
-
-  group('islamic occasions', () {
-    test('finds Ramadan, the Eids and the days after, by Hijri date', () {
-      IslamicOccasion? on(int y, int m, int d) =>
-          occasionOn(DateTime(y, m, d), offset: 0);
-      // Ramadan 1446: 1 March to 29 March 2025; Eid al-Fitr 30 March.
-      expect(on(2025, 2, 28), isNull);
-      expect(on(2025, 3, 1), IslamicOccasion.ramadan);
-      expect(on(2025, 3, 29), IslamicOccasion.ramadan);
-      expect(on(2025, 3, 30), IslamicOccasion.eidAlFitr);
-      expect(on(2025, 4, 1), IslamicOccasion.eidAlFitr);
-      expect(on(2025, 4, 2), isNull);
-      expect(isAfterRamadan(DateTime(2025, 4, 2), offset: 0), isTrue);
-      expect(isAfterRamadan(DateTime(2025, 3, 31), offset: 0), isFalse);
-      // Arafah 5 June, Eid al-Adha 6-8 June 2025.
-      expect(on(2025, 6, 5), IslamicOccasion.arafahDay);
-      expect(on(2025, 6, 6), IslamicOccasion.eidAlAdha);
-      expect(on(2025, 6, 8), IslamicOccasion.eidAlAdha);
-      expect(on(2025, 6, 9), isNull);
-      expect(on(2025, 6, 26), IslamicOccasion.islamicNewYear);
-      expect(ramadanDay(DateTime(2025, 3, 10), offset: 0), 10);
-      expect(ramadanDay(DateTime(2025, 4, 10), offset: 0), isNull);
-    });
-
-    test('finds the next start of an occasion, a day or more away', () {
-      final from = DateTime(2025, 4, 10, 12);
-      expect(
-        nextOccasionStart(IslamicOccasion.eidAlAdha, from, offset: 0),
-        DateTime(2025, 6, 6, 8),
-      );
-      final next = nextOccasionStart(
-        IslamicOccasion.eidAlFitr,
-        from,
-        offset: 0,
-      );
-      expect(next.isAfter(DateTime(2026, 3, 1)), isTrue);
-      expect(next.isBefore(DateTime(2026, 4, 1)), isTrue);
-      expect(next.hour, 8);
-      // Too close to seal a capsule: it moves to the following year.
-      final eve = DateTime(2025, 3, 30, 1);
-      expect(
-        nextOccasionStart(IslamicOccasion.eidAlFitr, eve, offset: 0).year,
-        2026,
-      );
-    });
-
-    test('Ramadan range and stats', () {
-      final (start, end) = ramadanRange(1446, offset: 0);
-      expect(start, DateTime(2025, 3, 1));
-      expect(end, DateTime(2025, 3, 29));
-      Note n(DateTime time, Mood mood, String text) => Note(
-        id: '${time.millisecondsSinceEpoch}',
-        audience: Audience.private,
-        text: text,
-        images: const [],
-        time: time,
-        ownerId: 'me',
-        ownerName: 'Me',
-        ownerImage: '',
-        mood: mood,
-      );
-      final notes = [
-        n(DateTime(2025, 2, 28, 9), Mood.joy, 'before'),
-        n(DateTime(2025, 3, 1, 21), Mood.calm, 'start #ramadan'),
-        n(DateTime(2025, 3, 2, 21), Mood.calm, 'day two #ramadan'),
-        n(DateTime(2025, 3, 3, 21), Mood.joy, 'day three'),
-        n(DateTime(2025, 3, 10, 21), Mood.calm, 'later'),
-        n(DateTime(2025, 3, 30, 9), Mood.joy, 'eid'),
-      ];
-      final stats = RamadanStats.from(notes, start, end, DateTime(2025, 3, 12));
-      expect(stats.totalDays, 29);
-      expect(stats.elapsedDays, 12);
-      expect(stats.notes, 4);
-      expect(stats.daysWritten, 4);
-      expect(stats.longestStreak, 3);
-      expect(stats.topMood, Mood.calm);
-      expect(stats.topTags, ['ramadan']);
-      // After the month, every day has started.
-      expect(
-        RamadanStats.from(notes, start, end, DateTime(2025, 4, 5)).elapsedDays,
-        29,
-      );
-    });
-
-    test('every Ramadan day has a prompt in both languages', () {
-      expect(ramadanPrompts.length, 30);
-      for (final (en, ar) in ramadanPrompts) {
-        expect(en.trim(), isNotEmpty);
-        expect(ar.trim(), isNotEmpty);
-      }
-    });
-  });
-
   group('friends birthdays', () {
     AppUser person(String name, String dob) =>
         AppUser(uid: name, username: name, dateOfBirth: dob);
@@ -997,21 +860,6 @@ void main() {
         expect(streakFromDays(days, DateTime(2026, 3, 13)), 8);
       },
     );
-
-    test(
-      'Ramadan has as many days as its Hijri month, whatever the clocks do',
-      () {
-        for (final year in [1446, 1447, 1448]) {
-          final (start, end) = ramadanRange(year, offset: 0);
-          final days = daysBetween(start, end) + 1;
-          expect(days, anyOf(29, 30));
-          final stats = RamadanStats.from(const [], start, end, end);
-          expect(stats.totalDays, days);
-          expect(stats.elapsedDays, days);
-          expect(RamadanStats.from(const [], start, end, start).elapsedDays, 1);
-        }
-      },
-    );
   });
 
   group('pdf export', () {
@@ -1164,6 +1012,17 @@ void main() {
     };
     expect(tints.contains(c.raised), isFalse);
     expect(tints.length, greaterThan(1));
+  });
+
+  test('any Arabic in a PDF is shaped right to left', () {
+    // Unshaped Arabic anywhere in a PDF breaks every Arabic word after it,
+    // so even a mostly-English line with one Arabic word must go RTL.
+    expect(pdfDirection('Mahdi مهدي Ababneh'), pdf.TextDirection.rtl);
+    expect(
+      pdfDirection('Dinner with mom, she made مقلوبة'),
+      pdf.TextDirection.rtl,
+    );
+    expect(pdfDirection('Quiet evening reading.'), pdf.TextDirection.ltr);
   });
 
   test('user text keeps its own direction', () {

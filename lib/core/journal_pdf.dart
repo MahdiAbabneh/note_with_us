@@ -10,7 +10,6 @@ import 'package:pdf/widgets.dart' as pw;
 import '../data/models.dart';
 import '../design/tokens.dart';
 import 'format.dart';
-import 'hijri.dart';
 import 'insights.dart';
 import 'l10n.dart';
 
@@ -102,15 +101,11 @@ Future<Uint8List> buildJournalPdf({
     double height = 1.45,
   }) => pw.TextStyle(font: font, fontSize: size, color: color, height: height);
 
-  pw.TextDirection directionOf(String text) =>
-      Bidi.detectRtlDirectionality(text)
-      ? pw.TextDirection.rtl
-      : pw.TextDirection.ltr;
-
   pw.Widget body(String text) {
     final clean = pdfText(text).trim();
-    final dir = directionOf(clean);
-    final rtl = dir == pw.TextDirection.rtl;
+    final dir = pdfDirection(clean);
+    // Aligned by the note's main language, even when shaped right to left.
+    final rtl = Bidi.detectRtlDirectionality(clean);
     final paragraph = pw.Text(
       clean,
       textDirection: dir,
@@ -148,11 +143,16 @@ Future<Uint8List> buildJournalPdf({
             pw.SizedBox(height: 24),
             pw.Text(
               tag == null ? 'My notes'.tr : '#${pdfText(tag)}',
+              textDirection: tag == null ? null : pdfDirection(tag),
               style: style(40),
               textAlign: pw.TextAlign.center,
             ),
             pw.SizedBox(height: 14),
-            pw.Text(pdfText(authorName), style: style(16, color: soft)),
+            pw.Text(
+              pdfText(authorName),
+              textDirection: pdfDirection(authorName),
+              style: style(16, color: soft),
+            ),
             pw.SizedBox(height: 28),
             pw.Container(width: 60, height: 2, color: accent),
             pw.SizedBox(height: 28),
@@ -231,6 +231,14 @@ Future<Uint8List> buildJournalPdf({
 
 PdfColor _pdfColor(int argb) => PdfColor.fromInt(argb);
 
+/// The direction to lay out [text] in a PDF. The PDF library only shapes
+/// Arabic (joins its letters) on its right-to-left path, and a single
+/// unshaped Arabic word breaks the letter forms of every Arabic word
+/// printed after it in the same file. So anything with Arabic in it goes
+/// right to left, whatever the app language or the text's main language.
+pw.TextDirection pdfDirection(String text) =>
+    Bidi.hasAnyRtl(text) ? pw.TextDirection.rtl : pw.TextDirection.ltr;
+
 /// A one-page mood report for a month of notes: how many days and notes,
 /// the moods as bars, and a day-by-day calendar coloured by mood. It is
 /// made to be shown to someone you trust, such as a doctor or a therapist,
@@ -240,7 +248,6 @@ Future<Uint8List> buildMoodReportPdf({
   required String authorName,
   required Uint8List fontData,
   required DateTime now,
-  bool hijri = false,
 }) async {
   final font = pw.Font.ttf(ByteData.sublistView(fontData));
   final arabic = L10n.arabic;
@@ -311,9 +318,6 @@ Future<Uint8List> buildMoodReportPdf({
       () {
         final day = DateTime(first.year, first.month, d);
         final mood = month.moodOf(day);
-        final hijriDay = hijri
-            ? formatHijri(day, withYear: false).split(' ').first
-            : null;
         return pw.Container(
           width: 56,
           height: 40,
@@ -327,9 +331,7 @@ Future<Uint8List> buildMoodReportPdf({
             children: [
               pw.Text('$d', style: style(11)),
               if (mood != null && mood != Mood.plain)
-                pw.Text(mood.label.tr, style: style(7, color: soft))
-              else if (hijriDay != null)
-                pw.Text(hijriDay, style: style(7, color: soft)),
+                pw.Text(mood.label.tr, style: style(7, color: soft)),
             ],
           ),
         );
@@ -359,15 +361,11 @@ Future<Uint8List> buildMoodReportPdf({
           pw.Text('Mood report'.tr, style: style(28)),
           pw.SizedBox(height: 4),
           pw.Text(monthYear(first), style: style(16, color: soft)),
-          if (hijri)
-            pw.Text(
-              hijriRangeOf(
-                first,
-                DateTime(first.year, first.month, daysInMonth),
-              ),
-              style: style(10, color: soft),
-            ),
-          pw.Text(pdfText(authorName), style: style(11, color: soft)),
+          pw.Text(
+            pdfText(authorName),
+            textDirection: pdfDirection(authorName),
+            style: style(11, color: soft),
+          ),
           pw.SizedBox(height: 18),
           pw.Row(
             children: [

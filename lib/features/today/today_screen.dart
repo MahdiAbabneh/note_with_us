@@ -20,7 +20,6 @@ import '../messages/people_screen.dart';
 import '../capsules/morning_note_sheet.dart';
 import '../comfort/comfort_sheet.dart';
 import '../gratitude/gratitude_screen.dart';
-import '../islamic/occasion_card.dart';
 import '../messages/chat_screen.dart';
 import '../notes/note_card.dart';
 import '../together/ask_circle_screen.dart';
@@ -113,14 +112,9 @@ class _TodayScreenState extends State<TodayScreen> {
               child: _GuestBanner(),
             ),
           const SliverToBoxAdapter(
-            key: ValueKey('occasion'),
-            child: OccasionCard(),
+            key: ValueKey('prompt'),
+            child: _PromptCard(),
           ),
-          if (!ramadanPromptShows(DateTime.now()))
-            const SliverToBoxAdapter(
-              key: ValueKey('prompt'),
-              child: _PromptCard(),
-            ),
           if (!_session.isGuest && _session.circle.isNotEmpty)
             SliverToBoxAdapter(
               key: const ValueKey('circleQuestion'),
@@ -250,8 +244,15 @@ class _GuestBanner extends StatelessWidget {
 class _PromptCard extends StatelessWidget {
   const _PromptCard();
 
+  // Listens itself: it is built as a const child, which its parent's
+  // rebuilds skip, so it would not see PromptState change.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: PromptState.instance,
+    builder: (context, _) => _build(context),
+  );
+
+  Widget _build(BuildContext context) {
     final state = PromptState.instance;
     if (state.hiddenToday) return const SizedBox.shrink();
     final c = context.colors;
@@ -521,8 +522,15 @@ class _CircleQuestion extends StatelessWidget {
 class _BirthdayCard extends StatelessWidget {
   const _BirthdayCard();
 
+  // Listens itself: it is built as a const child, which its parent's
+  // rebuilds skip, so it would not see Session change.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Session.instance,
+    builder: (context, _) => _build(context),
+  );
+
+  Widget _build(BuildContext context) {
     final session = Session.instance;
     final birthdays = upcomingBirthdays(
       session.circleMembers.where((u) => session.isVisible(u.uid)),
@@ -933,8 +941,15 @@ class _MoodRow extends StatelessWidget {
 class _DraftCard extends StatelessWidget {
   const _DraftCard();
 
+  // Listens itself: it is built as a const child, which its parent's
+  // rebuilds skip, so it would not see DraftStore change.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: DraftStore.instance,
+    builder: (context, _) => _build(context),
+  );
+
+  Widget _build(BuildContext context) {
     final draft = DraftStore.instance.current;
     if (draft == null) return const SizedBox.shrink();
     final c = context.colors;

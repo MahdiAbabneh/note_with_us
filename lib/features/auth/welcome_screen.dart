@@ -22,6 +22,9 @@ class WelcomeScreen extends StatelessWidget {
     final c = context.colors;
     final settings = AppSettings.instance;
     return Scaffold(
+      // No text fields here; without this, a keyboard on a screen above
+      // squeezes the sample cards.
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Column(
           children: [
@@ -50,7 +53,23 @@ class WelcomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Expanded(child: IgnorePointer(child: _HeroStack())),
+            Expanded(
+              child: IgnorePointer(
+                // Small phones have less room than the cards need, so
+                // they shrink as a group instead of overflowing.
+                child: LayoutBuilder(
+                  builder: (context, box) => box.maxHeight >= _HeroStack.height
+                      ? const _HeroStack()
+                      : FittedBox(
+                          child: SizedBox(
+                            width: box.maxWidth,
+                            height: _HeroStack.height,
+                            child: const _HeroStack(),
+                          ),
+                        ),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
               child: Column(
@@ -254,6 +273,9 @@ class LegalLine extends StatelessWidget {
 class _HeroStack extends StatelessWidget {
   const _HeroStack();
 
+  /// Height the three cards need.
+  static const height = 330.0;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -322,7 +344,7 @@ class _HeroStack extends StatelessWidget {
 
     return Center(
       child: SizedBox(
-        height: 330,
+        height: height,
         width: double.infinity,
         child: Stack(
           alignment: Alignment.center,
