@@ -163,8 +163,15 @@ class _SignInOptionsState extends State<SignInOptions> {
     }
   }
 
+  // Listens itself: it is built as a const child, which its parent's
+  // rebuilds skip, so it would keep the old language's labels.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: AppSettings.instance,
+    builder: (context, _) => _build(context),
+  );
+
+  Widget _build(BuildContext context) {
     final auth = Session.instance.auth;
     return Column(
       mainAxisSize: MainAxisSize.min,

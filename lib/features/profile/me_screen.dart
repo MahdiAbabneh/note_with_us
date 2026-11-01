@@ -37,6 +37,10 @@ class MeScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([session, settings, Reminders.instance]),
       builder: (context, _) {
+        // After signing out this screen fades away with no profile left.
+        if (session.status != SessionStatus.ready) {
+          return const SizedBox.shrink();
+        }
         final me = session.me;
         return ListView(
           padding: EdgeInsets.only(
