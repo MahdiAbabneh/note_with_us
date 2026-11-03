@@ -48,3 +48,4 @@ app.*.map.json
 **/android/app/app-keystore.jks
 
 backups/
+store_screenshots/
